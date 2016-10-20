@@ -8,11 +8,10 @@ public class ToolBar extends JPanel
 
 	public void paintComponent(Graphics g) 
 	{
-		if(MIDIMain.getMode() > 0)
-			drawMenuFunctions(g);
+		drawMenuFunctions(g);
 	}
 	
-	//drawMenuFunctions(Graphics g) draws the menu containing the buttons at the topo of the screen
+	//drawMenuFunctions(Graphics g) draws the menu containing the buttons at the top of the screen
 	public void drawMenuFunctions(Graphics g)
 	{
 		g.setColor(Color.LIGHT_GRAY);
@@ -21,3 +20,4 @@ public class ToolBar extends JPanel
 		g.drawRect(0, 0, 719, 40);
 	}
 }
+
