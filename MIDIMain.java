@@ -81,6 +81,7 @@ public class MIDIMain implements ActionListener
         //window.addKeyListener(key);
         window.addMouseListener(mouse);
         window.addMouseMotionListener(mouse);
+        window.addMouseWheelListener(mouse);
         window.setVisible(true);
 	}
 	
@@ -233,6 +234,7 @@ public class MIDIMain implements ActionListener
 		{
 			scrollY = (short) scroll.getValue();
 			button.setLocation(GUI.toolBarHeight+30, GUI.toolBarHeight+30-scrollY);
+		
 		}
 	}
 	
@@ -287,30 +289,42 @@ public class MIDIMain implements ActionListener
 	//mouseControl() responds to mouse inputs recorded in the CursorListener class
 	public void mouseControl()
 	{
-		if(mouse.getLeftClick() && mouse.getObjectNumber() >= 0 && mode == 2)
+		if(mode == 2)
 		{
-			notes[mouse.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + coordinates[0], CursorListener.getLocation()[1] + coordinates[1]);
-		}
-		else if(mouse.getRightClick() && mouse.getObjectNumber() >= 0 && mode == 2)
-		{
-			notes[mouse.getObjectNumber()].setLength(CursorListener.getLocation()[0] + coordinates[0]);
-		}
-		else if(mouse.getLeftClick() && mode == 2)
-		{
-			coordinates[0] = CursorListener.getLocationDif()[0];
-			coordinates[1] = CursorListener.getLocationDif()[1];
+			if(CursorListener.getMiddleClick())
+			{
+				scale[0] = (short) (CursorListener.getLocationDif()[0]);
+				scale[1] = (short) (CursorListener.getLocationDif()[1]);
+			}
 			
-			if(coordinates[0] < 0)
-				coordinates[0] = 0;
-			if(coordinates[1] < 0)
-				coordinates[1] = 0;
-			if(coordinates[1] > 100*scale[1])
-				coordinates[1] = (short) (100*scale[1]);
-		}
-		else if(mouse.getMiddleClick() && mode == 2)
-		{
-			scale[0] = (short) (CursorListener.getLocationDif()[0]);
-			scale[1] = (short) (CursorListener.getLocationDif()[1]);
+			if(CursorListener.getLeftClick() && CursorListener.getObjectNumber() >= 0)
+			{
+				notes[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + coordinates[0], CursorListener.getLocation()[1] + coordinates[1]);
+			}
+			else if(CursorListener.getLeftClick())
+			{
+				coordinates[0] = CursorListener.getLocationDif()[0];
+				coordinates[1] = CursorListener.getLocationDif()[1];
+				
+				if(coordinates[0] < 0)
+					coordinates[0] = 0;
+				if(coordinates[1] < 0)
+					coordinates[1] = 0;
+				if(coordinates[1] > 100*scale[1])
+					coordinates[1] = (short) (100*scale[1]);
+			}
+			
+			if(CursorListener.getRightClick() && CursorListener.getObjectNumber() >= 0)
+			{
+				notes[CursorListener.getObjectNumber()].setLength(CursorListener.getLocation()[0] + coordinates[0]);
+			}
+			
+			if(CursorListener.getMouseWheel() != 0)
+			{
+				scale[0] -= CursorListener.getMouseWheel()*2;
+				scale[1] -= CursorListener.getMouseWheel()*2;
+				CursorListener.setMouseWheel((byte) 0);
+			}
 			
 			if(scale[0] < 10)
 				scale[0] = 10;
@@ -320,6 +334,14 @@ public class MIDIMain implements ActionListener
 				scale[0] = 100;
 			if(scale[1] > 100)
 				scale[1] = 100;
+		}
+		else if(mode == 1)
+		{
+			if(CursorListener.getMouseWheel() != 0)
+			{
+				scroll.setValue(scroll .getValue() + CursorListener.getMouseWheel()*10);
+				CursorListener.setMouseWheel((byte) 0);
+			}
 		}
 	}
 	
