@@ -1,8 +1,10 @@
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
 
-public class CursorListener implements MouseListener, MouseMotionListener
+public class CursorListener implements MouseListener, MouseMotionListener, MouseWheelListener
 {
 	/**
 	 * Note 1: This class contains required methods that CANNOT be removed
@@ -18,8 +20,10 @@ public class CursorListener implements MouseListener, MouseMotionListener
 	private static int object = 0;
 	//Records location of mouse on screen; [0] = x, [1] = y
 	private static short[] coordinates = {0, 0};
-	
+	//The location of the mouse before dragging
 	private static short[] origin = {0, 0};
+	//The value assigned to the mouse scroll wheel
+	private static byte wheelScroll = 0;
 	
 	//mouseClicked(MouseEvent e) responds to any digital input on the mouse
 	//MouseEvent e = information of the mouse event
@@ -134,6 +138,13 @@ public class CursorListener implements MouseListener, MouseMotionListener
 		
 	}	
 	
+	//mouseWheelMoved(MouseEvent e) responds to any movement of the mouse scroll wheel
+	//MouseWheelEvent e = information of the mouse scroll event
+	public void mouseWheelMoved(MouseWheelEvent e) {
+		wheelScroll = (byte) e.getWheelRotation();
+		System.out.println(wheelScroll);
+	}
+	
 	//getLocation() returns the location of the mouse cursor as (x, y)
 	public static short[] getLocation()
 	{
@@ -149,26 +160,38 @@ public class CursorListener implements MouseListener, MouseMotionListener
 	
 	//*Placeholder
 	//getObjectNumber() returns the value of the object being held
-	public int getObjectNumber()
+	public static int getObjectNumber()
 	{
 		return object;
 	}
 	
 	//getLeftClick() returns the status of the left click input
-	public boolean getLeftClick()
+	public static boolean getLeftClick()
 	{
 		return leftClick;
 	}
 	
 	//getRightClick() returns the status of the middle button input
-	public boolean getMiddleClick()
+	public static boolean getMiddleClick()
 	{
 		return middleClick;
 	}
 	
 	//getRightClick() returns the status of the right click input
-	public boolean getRightClick()
+	public static boolean getRightClick()
 	{
 		return rightClick;
+	}
+	
+	//getMouseWheel() returns the value of the mouse wheel
+	public static byte getMouseWheel()
+	{
+		return wheelScroll;
+	}
+	
+	//setMouseWheel() sets the value of the mouse wheel
+	public static void setMouseWheel(byte value)
+	{
+		wheelScroll = value;
 	}
 }
