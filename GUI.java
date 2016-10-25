@@ -14,7 +14,13 @@ public class GUI extends JPanel
 	
 	//GUI Size = 720 x 480
 	private static final long serialVersionUID = 1L;
-
+	public final static short toolBarHeight = 40;
+	public final static short topBarHeight = 20;
+	public final static short fullAddHeight = toolBarHeight + topBarHeight ;
+	public final static short sideBarWidth = 100;
+	public final static short screenHeight = 480;
+	public final static short screenWidth = 720;
+	
 	//paintComponent(Graphics g) responds to the .repaint() method when used
 	//Graphics g = component of the JPanel used to create visual elements
 	public void paintComponent(Graphics g) 
@@ -63,53 +69,106 @@ public class GUI extends JPanel
 		g.fillRect(20, 430, 500, 50);
 		g.setColor(Color.BLACK);
 		g.drawRect(20, 430, 500, 50);
-		
-		drawMenuFunctions(g);
 	}
 	
 	//drawNoteEditor(Graphics g) draws the note editor (menu = 2)
 	public void drawNoteEditor(Graphics g)
 	{
-		for(byte i = 0; i < 23; i++)
-		{
-			g.drawLine(100, 40+20*i-MIDIMain.getCoordinates()[1]%20, 720, 40+20*i-MIDIMain.getCoordinates()[1]%20);
-		}
-		g.drawLine(100, 40, 100, 480);
-		g.setColor(Color.LIGHT_GRAY);
-		for(byte i = 0; i < 32; i++)
-		{
-			g.drawLine(100+20*i-MIDIMain.getCoordinates()[0]%20, 40, 100+20*i-MIDIMain.getCoordinates()[0]%20, 480);
-		}
-		g.setColor(Color.BLACK);
-		g.fillRect((int)(MIDIMain.rect.getX()) - MIDIMain.getCoordinates()[0], (int)(MIDIMain.rect.getY() + 1) - MIDIMain.getCoordinates()[1], (int)(MIDIMain.rect.getWidth()), (int)(MIDIMain.rect.getHeight() - 1));
-		g.drawLine(100, 40, 100, 480);
-		
-		g.setColor(Color.WHITE);
-		g.fillRect(0, 0, 100, 480);
-		g.setColor(Color.BLACK);
-		for(short i = (short) (MIDIMain.getCoordinates()[1]/20); i < (short) (MIDIMain.getCoordinates()[1]/20 + 23); i++)
-		{
-			g.drawLine(0, 40+20*i-MIDIMain.getCoordinates()[1], 100, 40+20*i-MIDIMain.getCoordinates()[1]);
-			g.drawString(i+"", 20, 55+20*i-MIDIMain.getCoordinates()[1]);
-		}
-		
-		drawMenuFunctions(g);
+		g.setFont(new Font("FONT", Font.ROMAN_BASELINE, 12));
+		drawGridField(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
+		drawNotes(g);
+		drawGridLabels(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
 	}
 	
-	//drawMenuFunctions(Graphics g) draws the menu containing the buttons at the topo of the screen
-	public void drawMenuFunctions(Graphics g)
+	public void drawGridLabels(Graphics g, short height, short width)
 	{
-		g.setColor(Color.LIGHT_GRAY);
-		g.fillRect(0, 0, 720, 40);
-		g.setColor(Color.BLACK);
-		g.drawRect(0, 0, 720, 40);
+		drawSideGridLabel(g, (short) height);
+		drawTopGridLabel(g, (short) width);
 		
-		for(byte i = 0; i < 10; i++)
+		g.setColor(Color.WHITE);
+		g.fillRect(0, toolBarHeight, sideBarWidth, topBarHeight);
+		
+		g.setColor(Color.BLACK);
+		g.drawRect(0, toolBarHeight, sideBarWidth, topBarHeight);
+		g.drawString("INSERT TITLE", 10, toolBarHeight + 15);
+		
+	}
+	
+	public void drawTopGridLabel(Graphics g, short width)
+	{
+		g.setColor(Color.WHITE);
+		g.fillRect(0, toolBarHeight, screenWidth, topBarHeight);
+		
+		g.setColor(Color.BLACK);
+		g.drawRect(0, toolBarHeight, screenWidth, topBarHeight);
+		for(short i = (short) (MIDIMain.getCoordinates()[0]/MIDIMain.getPreLength()); i < (short) (MIDIMain.getCoordinates()[0]/MIDIMain.getPreLength() + width); i++)
 		{
-			g.setColor(Color.WHITE);
-			g.fillOval(5+40*i, 5, 30, 30);
-			g.setColor(Color.BLACK);
-			g.drawOval(5+40*i, 5, 30, 30);
+			if(MIDIMain.getPreLength() > 20)
+			{
+				g.drawLine(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], 0, sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], fullAddHeight);
+				g.drawString(i+"", sideBarWidth + MIDIMain.getPreLength()/2 - 5 + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], fullAddHeight - 5);
+			}
+			else if(MIDIMain.getPreLength() > 15 && i%2 == 0)
+			{
+				g.drawLine(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], 0, sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], fullAddHeight);
+				g.drawString(i+"", sideBarWidth + MIDIMain.getPreLength() - 5 + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], fullAddHeight - 5);
+			}
+			else if(i%4 == 0)
+			{
+				g.drawLine(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], 0, sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], fullAddHeight);
+				g.drawString(i+"", sideBarWidth + MIDIMain.getPreLength()*2 - 5 + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0], fullAddHeight - 5);
+			}
+		}
+	}
+	
+	public void drawSideGridLabel(Graphics g, short height)
+	{
+		g.setColor(Color.WHITE);
+		g.fillRect(0, fullAddHeight, sideBarWidth, screenHeight - fullAddHeight);
+		
+		g.setColor(Color.BLACK);
+		g.drawRect(0, fullAddHeight, sideBarWidth, screenHeight - fullAddHeight);
+		for(byte i = (byte) (MIDIMain.getCoordinates()[1]/MIDIMain.getPreHeight()); i < MIDIMain.getCoordinates()[1]/MIDIMain.getPreHeight() + height; i++)
+		{
+			if(MIDIMain.getPreHeight() > 15)
+			{
+				g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1], sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1]);
+				g.drawString(Notes.convertToNote((byte)(Notes.maxTone - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight()/2 + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1]);
+			}
+			else if(i%2 == 0)
+			{
+				g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1], sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1]);
+				g.drawString(Notes.convertToNote((byte)(Notes.maxTone - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight() + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1]);
+			}
+		}
+	}
+	
+	public void drawGridField(Graphics g, short height, short width)
+	{
+		//Vertical Lines
+		g.setColor(Color.BLUE);
+		for(byte i = 0; i < width; i++)
+		{
+			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%2 == 0) || i%4 == 0)
+				g.drawLine(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0]%MIDIMain.getPreLength(), fullAddHeight, sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getCoordinates()[0]%MIDIMain.getPreLength(), screenHeight);
+		}
+		
+		//Horizontal Lines
+		g.setColor(Color.LIGHT_GRAY);
+		for(byte i = 0; i < height; i++)
+		{
+			if(MIDIMain.getPreHeight() > 15 || i%2 == 0)
+				g.drawLine(sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1]%MIDIMain.getPreHeight(), screenWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getCoordinates()[1]%MIDIMain.getPreHeight());
+		}
+	}
+	
+	public void drawNotes(Graphics g)
+	{
+		//Loops through every note and draws it as a rectangle
+		g.setColor(Color.BLACK);
+		for(int i = 0; i < Notes.getNumNotes(); i++)
+		{
+			g.fillRect(MIDIMain.getNote(i).getX() - MIDIMain.getCoordinates()[0] + sideBarWidth, (int)MIDIMain.getNote(i).getY() + 1 - MIDIMain.getCoordinates()[1] + fullAddHeight, MIDIMain.getNote(i).getLength(), (int)(MIDIMain.getPreHeight() - 1));
 		}
 	}
 }
