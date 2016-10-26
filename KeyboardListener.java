@@ -1,5 +1,6 @@
 /**
- * Class for keyboard inputs
+ * This class is responsible for all of the keyboard shortcuts present within the audio tool
+ * Shortcuts include copy, paste, cut, undo and redo
  * Date: October 17, 2016
  * 
  */
@@ -145,6 +146,13 @@ public class KeyboardListener implements KeyListener{
 			if(e.getKeyCode() == KeyEvent.VK_Y && (e.getModifiers() | KeyEvent.CTRL_DOWN_MASK) != 0)
 			{
 				letters [24] = true;
+				ctrl = true;
+			}
+			
+			//determines if control and the 'z' key are being pressed simultaneously 
+			if(e.getKeyCode() == KeyEvent.VK_Z && (e.getModifiers() | KeyEvent.CTRL_DOWN_MASK) != 0)
+			{
+				letters [25] = true;
 				ctrl = true;
 			}
 			
