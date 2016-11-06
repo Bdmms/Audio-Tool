@@ -2,6 +2,13 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 
+/** 
+ * Date: October 24, 2016
+ *
+ * This class controls the animation and text of the message
+ * panel that slide onto screen
+ */
+
 public class NotifyAnimation 
 {
 	//Sets minimum limit to character space in notification window
