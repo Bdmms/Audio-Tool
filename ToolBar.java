@@ -2,7 +2,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import javax.swing.JPanel;
 
-/* 
+/**
  * Date: October 24, 2016
  *
  * This class contains all elements of the toolbar at the
