@@ -1,19 +1,15 @@
-/**
- * Class for keyboard inputs
- * Date: October 17, 2016
- * 
- */
-
-//libraries
-
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-public class KeyboardListener implements KeyListener{
+/**
+ * This class registers and records keyboard inputs.
+ * 
+ * Date: October 17, 2016
+ */
 
-	//variables
+public class KeyboardListener implements KeyListener
+{
 	private boolean space, ctrl, enter;
-	
 	private boolean[] letters = new boolean[26];
 	private boolean[] numbers = new boolean[10];
 

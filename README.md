@@ -3,4 +3,5 @@ Audio-Tool Project
 
 Classes needed:
 
-  - KeyBoardListener
+  - Midi Player and Reader classes
+  

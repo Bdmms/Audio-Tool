@@ -4,39 +4,41 @@ import java.awt.Font;
 
 import javax.swing.*;
 import java.awt.event.*;
+import java.io.File;
 
 public class MIDIMain implements ActionListener
 {
 	/**
-	 * Note 1: All comments are displayed above the targeted line of code 
+	 * Date: October 15, 2016
+	 * 
+	 * The Main class contains all of the components of the window and
+	 * responds to all user inputs to create the appropriate response since
+	 * it is connected to all other classes in the project. This class controls
+	 * most of the menu information (i.e. menu type, menu location, etc.)
+	 * 
+	 * Note 1: All comments in this project are displayed above the targeted line of code 
 	 */
 	
-	//The window the components are displayed on
-	private JFrame window = new JFrame("MIDI EDITOR TOOL");
-	//The drawing component used to display most graphics
-	private GUI visual = new GUI();
-	//Mouse Listener used to register mouse movement and inputs
-	private CursorListener mouse = new CursorListener();
-	//Key Listener used to register key inputs
-	//private KeyBoardListener key = new KeyBoardListener();
+	private JFileChooser fileIn = new JFileChooser();		//The file directory that opens when choosing a file
+	private MidiFilter filter = new MidiFilter();			//The file filter for the JFileChooser
+	private JFrame window = new JFrame("MIDI EDITOR TOOL");	//The window the components are displayed on
+	private GUI visual = new GUI();							//The drawing component used to display most graphics
+	private CursorListener mouse = new CursorListener();	//Mouse Listener used to register mouse movement and inputs
+	private KeyboardListener key = new KeyboardListener();	//Key Listener used to register key inputs
+	private MIDIPlayer player = new MIDIPlayer();			//The class that can play midi files
+	private MIDIReader reader = new MIDIReader();			//The class that reads and creates midi files
 	
-	//*Placeholder for buttons
-	private JButton button = new JButton("Track 1");
-	//The scroll bar used in the track editor
-	private JScrollBar scroll = new JScrollBar();
-	//Tool bar buttons
-	private JButton[] tools = new JButton[18];
+	private JScrollBar scroll = new JScrollBar();			//The scroll bar used in the track editor
+	private JButton[] tools = new JButton[18];				//Tool bar buttons
+	private JButton[] trackButtons = new JButton[0];		//Buttons for tracks
 	
-	//Determines which menu the program displays
-	private static byte mode = 0;
-	//The notes of the song (note this is a temporary location)
-	private static Notes[] notes = new Notes[10];
-	//The x and y values used in the note editor (x, y)
-	private static short[] coordinates = {0,0};
-	//The values that are used to space the grid layout (x, y)
-	private static short[] scale = {20, 20};
-	//The value assigned to the scroll bar
-	private static short scrollY = 0;
+	private static boolean play = false;					//Determines if the song is being played or not
+	private static byte mode = 0;							//Determines which menu the program displays
+	private static byte track = -1;							//Determines which track has been entered
+	private static long x = 0;								//The x value used in the note editor
+	private static short y = 0;								//The y value used in the note editor
+	private static short[] scale = {20, 20};				//The values that are used to space the grid layout (x, y)
+	private static short scrollY = 0;						//The value assigned to the scroll bar
 	
 	public static void main(String[] args) {
 		//Removes forced static methods and variables
@@ -45,27 +47,14 @@ public class MIDIMain implements ActionListener
 
 	//initialization() initializes basic graphical components
 	public void initialization(){
-		for(byte i = 0; i < 10; i++)
-		{
-			notes[i] = new Notes();
-		}
-		
-		//button is initialized
-		button.setBackground(Color.WHITE);
-		button.setFont(new Font("A", Font.BOLD, 14));
-		button.addActionListener(this);
-		button.setBounds(620, 0, 100, 20); 
-		
 		//scroll bar is initialized
 		scroll.setBounds(680, 50, 20, 320);
-		scroll.setValues(0, 100, 0, 400);
 		scroll.setUnitIncrement(10);
 		
 		//drawing component is initialized and contains buttons
 		visual.setPreferredSize(new Dimension(720,480));
 		visual.setLayout(null);
 		visual.add(createToolBar());
-		visual.add(button);
 		visual.add(scroll);
 		
 		//JFrame is initialized and contains all other components and listeners
@@ -78,11 +67,21 @@ public class MIDIMain implements ActionListener
         //Special method for setting the menu bar
         window.setJMenuBar(createMenuBar());
         window.pack();
-        //window.addKeyListener(key);
+        window.addKeyListener(key);
         window.addMouseListener(mouse);
         window.addMouseMotionListener(mouse);
         window.addMouseWheelListener(mouse);
         window.setVisible(true);
+        
+        setFileChooser();
+	}
+	
+	public void setFileChooser()
+	{
+		fileIn.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileIn.setAcceptAllFileFilterUsed(false);
+		fileIn.addChoosableFileFilter(new MidiFilter());
+		fileIn.setFileFilter(new MidiFilter());
 	}
 	
 	//createToolBar() initializes the tool bar and returns it
@@ -150,6 +149,26 @@ public class MIDIMain implements ActionListener
 		return menuBar;
 	}
 	
+	public void setTrackButtons(byte length)
+	{
+		for(byte i = 0; i < trackButtons.length; i++)
+		{
+			visual.remove(trackButtons[i]);
+		}
+		
+		trackButtons = new JButton[length];
+		for(byte i = 0; i < trackButtons.length; i++)
+		{
+			trackButtons[i] = new JButton("Track "+(i+1));
+			trackButtons[i].setBackground(Color.WHITE);
+			trackButtons[i].setFont(new Font("A", Font.BOLD, 14));
+			trackButtons[i].setSize(100, 20); 
+			trackButtons[i].setVisible(true);
+			trackButtons[i].addActionListener(this);
+			visual.add(trackButtons[i]);
+		}
+	}
+	
 	public MIDIMain()
 	{
 		//Initialization process
@@ -159,15 +178,17 @@ public class MIDIMain implements ActionListener
 		//Program starts
 		while(true)
 		{
-			//Inputs (More will be added)
+			//Inputs
 			mouseControl();
 			scrollBar();
 			
 			//Process
 			if(mode == 1)
 				trackLayout();
+			if(mode == 2 && play)
+				x = scale[0]*player.getTickPosition();
 			
-			//Outputs (More will be added)
+			//Outputs
 			window.repaint();
 			
 			//Pause (Repeat)
@@ -183,6 +204,14 @@ public class MIDIMain implements ActionListener
         {
 			window.getJMenuBar().getMenu(i).setEnabled(true);
         }
+		//set trackButtons
+		for(byte i = 0; i < trackButtons.length; i++)
+		{
+			if(mode == 1)
+				trackButtons[i].setVisible(true);
+			else
+				trackButtons[i].setVisible(false);
+		}
 		
 		//Unspecific menu type
 		if(mode > 0)
@@ -199,22 +228,27 @@ public class MIDIMain implements ActionListener
 		{
 			visual.getComponent(0).setVisible(false);
 			scroll.setVisible(false);
-			button.setVisible(false);
-			for(byte i = 1; i < 5; i++)
-	        {
-				window.getJMenuBar().getMenu(i).setEnabled(false);
-	        }
 			for(byte i = 0; i < tools.length; i++)
 			{
 				tools[i].setVisible(false);
 			}
+			for(byte i = 1; i < 5; i++)
+	        {
+				window.getJMenuBar().getMenu(i).setEnabled(false);
+	        }
 		}
 		//Track Editor
 		else if(mode == 1)
 		{
 			tools[17].setVisible(false);
+			
+			//If scroll bar is needed in list
+			if(trackButtons.length > 5)
+				scroll.setValues(0, (Tracks.trackHeight+5)*5, 0, (Tracks.trackHeight+5)*trackButtons.length);
+			else
+				scroll.setValues(0, 100, 0, 100);
+			
 			scroll.setVisible(true);
-			button.setVisible(true);
 			window.getJMenuBar().getMenu(2).setEnabled(false);
 		}
 		//Note Editor
@@ -222,7 +256,6 @@ public class MIDIMain implements ActionListener
 		{
 			tools[17].setVisible(true);
 			scroll.setVisible(false);
-			button.setVisible(false);
 			window.getJMenuBar().getMenu(3).setEnabled(false);
 		}
 	}
@@ -230,44 +263,86 @@ public class MIDIMain implements ActionListener
 	//scrollBar() processes the input of the scroll bar
 	public void scrollBar()
 	{
+		//Track editor
 		if(mode == 1)
 		{
 			scrollY = (short) scroll.getValue();
-			button.setLocation(GUI.toolBarHeight+30, GUI.toolBarHeight+30-scrollY);
-		
+			for(byte i = 0; i < trackButtons.length; i++)
+			{
+				trackButtons[i].setLocation(GUI.toolBarHeight+30, GUI.toolBarHeight+30-scrollY+(Tracks.trackHeight+5)*i); 
+			}
 		}
 	}
 	
 	//trackLayout() sets the components correctly in the track editor
 	public void trackLayout()
 	{
-		if(button.getLocation().getY() < 40)
-			button.setEnabled(false);
-		else
-			button.setEnabled(true);
+		//Checks if button is behind components
+		for(byte i = 0; i < trackButtons.length; i++)
+		{
+			if(trackButtons[i].getLocation().getY() < GUI.toolBarHeight)
+				trackButtons[i].setEnabled(false);
+			else
+				trackButtons[i].setEnabled(true);
+		}
 	}
 	
 	//actionPerformed(ActionEvent e) is the main direct listener for all components in the JFrame
 	//ActionEvent e = event triggered containing event information
 	public void actionPerformed(ActionEvent e) 
 	{
-		//Placeholder button
-		if(e.getSource() == button)
+		//Tool #1: PLAY
+		if(e.getSource() == tools[0] && mode == 2)
 		{
-			mode = 2;
-			mode();
+			//If song is playing
+			if(play == true)
+			{
+				play = false;
+				player.stop();
+			}
+			else
+			{
+				play = true;
+				player.play(MIDISong.getSequence(), true);
+			}
+		}
+		//Tool #2: STOP
+		if(e.getSource() == tools[1] && mode == 2)
+		{
+			
 		}
 		//Tool #18: GO BACK
 		if(e.getSource() == tools[17])
 		{
+			MIDISong.closeTrack(track);
+			track = -1;
 			mode = 1;
 			mode();
 		}
+		
 		//MenuBar -> File -> New
 		if(e.getActionCommand().equals("New"))
 		{
+			MIDISong.setSong(reader.createFile());
+			setTrackButtons(MIDISong.getTracksLength());
 			mode = 1;
 			mode();
+		}
+		//MenuBar -> File -> Open
+		if(e.getActionCommand().equals("Open"))
+		{
+			filter.setFilterMIDI(true);
+			int v = fileIn.showOpenDialog(window);
+			//If file is usable
+			if (v == JFileChooser.APPROVE_OPTION) {
+	            MIDISong.setSong(reader.readFile(fileIn.getSelectedFile()));
+	            NotifyAnimation.sendMessage("Opening: "+reader.getFileName());
+				setTrackButtons(MIDISong.getTracksLength());
+	            mode = 1;
+				mode();
+	        } else {
+	        	NotifyAnimation.sendMessage("File could not be opened.");
+	        }
 		}
 		//MenuBar -> File -> Save
 		if(e.getActionCommand().equals("Save"))
@@ -279,70 +354,103 @@ public class MIDIMain implements ActionListener
 		{
 			NotifyAnimation.sendMessage("What are you doing with your life?");
 		}
+		//MenuBar -> File -> Delete File
+		if(e.getActionCommand().equals("Delete File"))
+		{
+			NotifyAnimation.sendMessage("Are you sure about that!?");
+		}
 		//MenuBar -> File -> Quit
 		if(e.getActionCommand().equals("Quit"))
 		{
 			System.exit(1);
+		}
+		
+		//Track buttons
+		for(byte i = 0; i < trackButtons.length; i++)
+		{
+			if(e.getSource() == trackButtons[i])
+			{
+				track = i;
+				MIDISong.openTrack(track);
+				mode = 2;
+				mode();
+			}
 		}
 	}
 	
 	//mouseControl() responds to mouse inputs recorded in the CursorListener class
 	public void mouseControl()
 	{
+		//Note Editor
 		if(mode == 2)
 		{
-			if(CursorListener.getMiddleClick())
+			//Middle Click
+			if(CursorListener.getClick() == 2)
 			{
 				scale[0] = (short) (CursorListener.getLocationDif()[0]);
 				scale[1] = (short) (CursorListener.getLocationDif()[1]);
 			}
-			
-			if(CursorListener.getLeftClick() && CursorListener.getObjectNumber() >= 0)
+			//Left Click while holding an object
+			if(CursorListener.getClick() == 1)
 			{
-				notes[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + coordinates[0], CursorListener.getLocation()[1] + coordinates[1]);
+				//Object is being held
+				if(CursorListener.getObjectNumber() >= 0)
+					MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + x, (short)(CursorListener.getLocation()[1] + y));
+				//Left Click while not holding an object
+				else
+				{
+					x = CursorListener.getLocationDif()[0];
+					y = CursorListener.getLocationDif()[1];
+				}
 			}
-			else if(CursorListener.getLeftClick())
+			//Right Click on an object
+			if(CursorListener.getClick() == 3 && CursorListener.getObjectNumber() >= 0)
 			{
-				coordinates[0] = CursorListener.getLocationDif()[0];
-				coordinates[1] = CursorListener.getLocationDif()[1];
-				
-				if(coordinates[0] < 0)
-					coordinates[0] = 0;
-				if(coordinates[1] < 0)
-					coordinates[1] = 0;
-				if(coordinates[1] > 100*scale[1])
-					coordinates[1] = (short) (100*scale[1]);
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLength((int)(CursorListener.getLocation()[0] + x));
 			}
-			
-			if(CursorListener.getRightClick() && CursorListener.getObjectNumber() >= 0)
-			{
-				notes[CursorListener.getObjectNumber()].setLength(CursorListener.getLocation()[0] + coordinates[0]);
-			}
-			
+			//When the Mouse Wheel is moving
 			if(CursorListener.getMouseWheel() != 0)
 			{
 				scale[0] -= CursorListener.getMouseWheel()*2;
 				scale[1] -= CursorListener.getMouseWheel()*2;
+				if(scale[0] > 0 && scale[1] > 0 && scale[0] > 100 && scale[1] > 100)
+				{
+					x += CursorListener.getMouseWheel()*(CursorListener.getLocation()[0]/scale[0] - GUI.sideBarWidth);
+					y += CursorListener.getMouseWheel()*(CursorListener.getLocation()[1]/scale[1] - GUI.fullAddHeight);
+				}
 				CursorListener.setMouseWheel((byte) 0);
 			}
-			
-			if(scale[0] < 10)
-				scale[0] = 10;
-			if(scale[1] < 10)
-				scale[1] = 10;
-			if(scale[0] > 100)
-				scale[0] = 100;
-			if(scale[1] > 100)
-				scale[1] = 100;
 		}
+		//Track Editor
 		else if(mode == 1)
 		{
+			//When the Mouse Wheel is moving
 			if(CursorListener.getMouseWheel() != 0)
 			{
 				scroll.setValue(scroll .getValue() + CursorListener.getMouseWheel()*10);
 				CursorListener.setMouseWheel((byte) 0);
 			}
 		}
+		
+		//MOVE THIS:
+		//Limits to the scale
+		if(scale[0] < 1)
+			scale[0] = 1;
+		if(scale[1] < 5)
+			scale[1] = 5;
+		if(scale[0] > 100)
+			scale[0] = 100;
+		if(scale[1] > 100)
+			scale[1] = 100;
+		
+		//MOVE THIS:
+		//Limits to the coordinates
+		if(x < 0)
+			x = 0;
+		if(y < 0)
+			y = 0;
+		if(y > 120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight))
+			y = (short) (120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight));
 	}
 	
 	//pause(int t) stops the program temporary for the designated amount of time
@@ -361,9 +469,14 @@ public class MIDIMain implements ActionListener
 	}
 	
 	//getCoordinates() returns the x and y values of the display
-	public static short[] getCoordinates()
+	public static long getXCoordinate()
 	{
-		return coordinates;
+		return x;
+	}
+	
+	public static short getYCoordinate()
+	{
+		return y;
 	}
 	
 	public static short getScrollValue()
@@ -381,8 +494,8 @@ public class MIDIMain implements ActionListener
 		return scale[1];
 	}
 	
-	public static Notes getNote(int index)
+	public static byte getTrackMenu()
 	{
-		return notes[index];
+		return track;
 	}
 }
