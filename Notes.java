@@ -4,6 +4,13 @@ import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.ShortMessage;
 
+/**
+ * Date: October 26, 2016
+ * 
+ * This class contains all of the data effecting the notes
+ * inside the song
+ */
+
 public class Notes 
 {
 	public final static byte maxTone = 120;	//The maximum note value
