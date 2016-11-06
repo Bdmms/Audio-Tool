@@ -16,13 +16,13 @@ public class MIDIReader {
 	 * readFile(String fileName) returns sequence of the opened file
 	 * String fileName = the name of the file
 	 */
-	public Sequence readFile(String file){
+	public Sequence readFile(File file){
 	
-		fileName = file;
+		fileName = file.getName();
 				
 		try
 		{
-			InputStream is = new FileInputStream(new File (fileName));
+			InputStream is = new FileInputStream(file);
 			
 			//if the file type is supported then create a buffered input stream for is
 			if(!is.markSupported())
@@ -55,6 +55,7 @@ public class MIDIReader {
 		try
 		{
 			Sequence s = new Sequence(javax.sound.midi.Sequence.PPQ,24);
+			s.createTrack();
 			fileName = "MIDI Song";
 			
 			//GENERAL INFO		
