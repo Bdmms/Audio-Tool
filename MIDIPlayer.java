@@ -68,6 +68,13 @@ public class MIDIPlayer implements MetaEventListener
 		}
 	}
 	
+	
+	//setTickPosition() sets the tick position of the song being played
+	public void setTickPosition(long t)
+	{
+		sequencer.setTickPosition(t);
+	}
+	
 	//getTickPosition() returns the tick position of the song being played
 	public long getTickPosition()
 	{
