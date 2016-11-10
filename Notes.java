@@ -1,8 +1,10 @@
 import java.awt.Rectangle;
-
+/*
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
 import javax.sound.midi.ShortMessage;
+*/
 
 /**
  * Date: October 26, 2016
@@ -11,14 +13,19 @@ import javax.sound.midi.ShortMessage;
  * inside the song
  */
 
-public class Notes 
+public class Notes
 {
-	public final static byte maxTone = 120;	//The maximum note value
-	private static int numNotes = 0;		//Number of notes processed
+	public final static byte MAX_TONE = 120;	//The maximum note value
+	public final static byte DATA_STATUS = 0;	//value assigned to the message's status
+	public final static byte DATA_TONE = 1;		//value assigned to the tone of the note
+	public final static byte DATA_VELOCITY = 2;	//value assigned to the volume of the note
+	
+	private static int numNotes = 0;	//Number of notes processed
 	
 	private int begin = 0;				//start of note in sequence
 	private int end = 0;				//end of note in sequence
-
+	private byte tone = 60;				//tone of the note
+	
 	//Initial method
 	//int s = start of note (in array)
 	//int e = end of note (in array)
@@ -26,6 +33,7 @@ public class Notes
 	{
 		begin = s;
 		end = e;
+		tone = MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(s).getMessage().getMessage()[DATA_TONE];
 		numNotes++;
 	}
 	
@@ -61,15 +69,63 @@ public class Notes
 	//byte t = new tone
 	public void setTone(byte t)
 	{
-		try {
-			MidiEvent eve = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, MIDIMain.getTrackMenu(), t, MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[3]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getTick());
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin + 1));
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve);
-	
-			MidiEvent eve2 = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, MIDIMain.getTrackMenu(), t, MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getMessage().getMessage()[3]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getTick());
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end + 1));
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve2);
-		} catch (ArrayIndexOutOfBoundsException e) {} catch (InvalidMidiDataException e) {}
+		/*
+		if(t != MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[DATA_TONE])
+		{
+			try {
+				MidiEvent eve = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, MIDIMain.getTrackMenu(), t, MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getTick());
+				for(int i = 0; i < begin; i++)
+				{
+					if(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getEnd() == begin && MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getMessage().getStatus() == ShortMessage.NOTE_ON)
+					{
+						MidiEvent eveEnd = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, MIDIMain.getTrackMenu(), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[DATA_TONE], MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getTick());
+						MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i));
+						MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eveEnd);
+					}
+					if(i == begin - 1)
+					{
+						MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin));
+					}
+				}
+				MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve);
+				
+				for(int i = 0; i < MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].size(); i++)
+				{
+					if(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).equals(eve))
+					{
+						begin = i;
+						break;
+					}
+				}
+		
+				MidiEvent eve2 = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, MIDIMain.getTrackMenu(), t, MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getMessage().getMessage()[DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getTick());
+				for(int i = end; i < numNotes; i++)
+				{
+					if(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getBeginning() == end && MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getMessage().getStatus() == ShortMessage.NOTE_ON)
+					{
+						MidiEvent eveStart = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, MIDIMain.getTrackMenu(), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[DATA_TONE], MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getTick());
+						MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i));
+						MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eveStart);
+					}
+					if(i == numNotes - 1)
+					{
+						MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end));
+					}
+				}
+				MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve2);
+				
+				for(int i = 0; i < MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].size(); i++)
+				{
+					if(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).equals(eve2))
+					{
+						end = i;
+						break;
+					}
+				}
+			} catch (ArrayIndexOutOfBoundsException e) {} catch (InvalidMidiDataException e) {}
+		}
+		*/
+		tone = t;
 	}
 	
 	//setLength(int l) sets the length of the note
@@ -97,7 +153,7 @@ public class Notes
 	public void setLocation(long x, short y)
 	{
 		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
-		y = (short) (maxTone - (y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight());
+		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
 		if(x < 0)
 			x = 0;
 		if(y < 0)
@@ -106,7 +162,19 @@ public class Notes
 			y = 120;
 		MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).setTick(x + getLength()/MIDIMain.getPreLength());
 		MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).setTick(x);
-		//setTone((byte) y);
+		setTone((byte) y);
+	}
+	
+	//getBeginning()() returns the point of the star message in the array of messages
+	public int getBeginning()
+	{
+		return begin;
+	}
+	
+	//getEnd() returns the point of the end message in the array of messages
+	public int getEnd()
+	{
+		return end;
 	}
 	
 	//getX() returns the x location of the note
@@ -118,7 +186,14 @@ public class Notes
 	//getY() returns the y location of the note
 	public int getY()
 	{
-		return (maxTone - MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[2]) * MIDIMain.getPreHeight();
+		//return (MAX_TONE - MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[2]) * MIDIMain.getPreHeight();
+		return (MAX_TONE - tone) * MIDIMain.getPreHeight();
+	}
+	
+	//getTone() retuns the tone of the note
+	public byte getTone()
+	{
+		return tone;
 	}
 	
 	//getLength() returns the exact length of the note
