@@ -1,6 +1,8 @@
 import java.awt.Color;
 import java.awt.Graphics;
 
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiEvent;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Track;
 
@@ -54,6 +56,30 @@ public class Tracks
 	//Track track = the track being closed
 	public void closeTrack()
 	{
+		int i = MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].size() - 1;
+		int n = 0;
+		MidiEvent[] eve = new MidiEvent[Notes.getNumNotes()];
+		MidiEvent[] eve2 = new MidiEvent[Notes.getNumNotes()];
+		try {
+			for(; n < Notes.getNumNotes(); n++)
+			{
+				eve[n] = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, MIDIMain.getTrackMenu(), notes[n].getTone(), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getBeginning()).getMessage().getMessage()[Notes.DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getBeginning()).getTick());
+				eve2[n] = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, MIDIMain.getTrackMenu(), notes[n].getTone(), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getEnd()).getMessage().getMessage()[Notes.DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getEnd()).getTick());
+			}
+			for(;i >= 0; i--)
+			{
+				if(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getMessage().getStatus() == ShortMessage.NOTE_ON || MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getMessage().getStatus() == ShortMessage.NOTE_OFF)
+					MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i));
+			}
+			for(n = 0; n < Notes.getNumNotes(); n++)
+			{
+				MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve[n]);
+				MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve2[n]);
+			}
+		} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error: Array Index Out of Bound! ("+i+", "+n+")");
+		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error: Invalid midi data!");}
+
+		notes = new Notes[0];
 		Notes.resetNotes();
 	}
 	
