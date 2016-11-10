@@ -1,11 +1,14 @@
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiEvent;
 import javax.sound.midi.Sequence;
+import javax.sound.midi.ShortMessage;
 
 public class MIDISong 
 {
 	private static Sequence sequence;			//The sequence for the song
 	private static long length = 100;			//The length of the song in ticks
 	private static short measureLength = 16;	//The length of each measure in ticks
-	private static Tracks[] tracks;			//The tracks contained ini the song
+	private static Tracks[] tracks;				//The tracks contained in the song
 	
 	//setSong(Sequence seq) sets the sequence for the song and other information
 	//Sequence seq = sequence the song reads
@@ -13,11 +16,41 @@ public class MIDISong
 	{
 		sequence = seq;
 		length = sequence.getTickLength();
+		resetTracks();
+	}
+	
+	private static void resetTracks()
+	{
 		tracks = new Tracks[sequence.getTracks().length];
 		for(byte i = 0; i < tracks.length; i++)
 		{
 			tracks[i] = new Tracks(i);
 		}
+	}
+	
+	public static void addTrack()
+	{
+		if(tracks.length < 16)
+		{
+			sequence.createTrack();
+			resetTracks();
+		}
+		else
+		{
+			NotifyAnimation.sendMessage("Track limit has been reached. (Only 16 tracks can exist in one song)");
+		}
+	}
+	
+	//addNote(byte trackNum) adds a note to the track in a sequence
+	//byte trackNum
+	public static void addNote(byte trackNum)
+	{
+		tracks[trackNum].closeTrack();
+		try {
+			sequence.getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, trackNum, 60, 70), 0));
+			sequence.getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, 60, 70), 8));
+		} catch (InvalidMidiDataException e) {}
+		tracks[trackNum].openTrack(sequence.getTracks()[trackNum]);
 	}
 	
 	//openTrack(byte trackNum) opens the designated track to be used in the note editor
