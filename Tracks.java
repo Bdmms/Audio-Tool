@@ -1,160 +1,143 @@
-import java.awt.Color;
-import java.awt.Graphics;
-
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
-import javax.sound.midi.Track;
 
-public class Tracks 
+/**
+ * Date: October 31, 2016
+ * 
+ * This class stores all data in the song, including the sequence, 
+ * length, and the tempo.
+ */
+
+public class MIDISong 
 {
-	/**
-	 * Date: October 31, 2016
-	 * 
-	 * This class stores all data that remains in a track of the song. The
-	 * class stores all notes present in the track.
-	 */
+	private static Sequence sequence;			//The sequence for the song
+	private static long length = 100;			//The length of the song in ticks
+	private static short measureLength = 16;	//The length of each measure in ticks
+	private static Tracks[] tracks;				//The tracks contained in the song
 	
-	public static final short trackHeight = 70;	//The height of the track window
-	
-	private byte instrument = 0;				//The instrument used for the track
-	private byte channel = 0;					//The channel that corresponds with class
-	private Notes[] notes;						//The array of note contained in the track
-	
-	//Initial method
-	//byte chan = channel of track
-	public Tracks(byte chan)
+	//setSong(Sequence seq) sets the sequence for the song and other information
+	//Sequence seq = sequence the song reads
+	public static void setSong(Sequence seq)
 	{
-		channel = chan;
+		sequence = seq;
+		length = sequence.getTickLength();
+		resetTracks();
 	}
 	
-	//openTrack(Track track) opens the data in a track for use in the note editor
-	//Track track = the track being opened
-	public void openTrack(Track track)
+	private static void resetTracks()
 	{
-		notes = new Notes[countMessage_NOTE_ON(track)];
-		int n = 0;
-		
-		for(int i = 0; i < track.size(); i++)
+		tracks = new Tracks[sequence.getTracks().length];
+		for(byte i = 0; i < tracks.length; i++)
 		{
-			//If start of a note is found
-			if(track.get(i).getMessage().getStatus() == ShortMessage.NOTE_ON)
-			{
-				//a = end of note's location
-				int a = readFor(track, (short)ShortMessage.NOTE_OFF, (short)ShortMessage.NOTE_ON, track.get(i).getMessage().getMessage()[1], i);
-				//If an end of note can be identified
-				if(a >= 0)
-				{
-					notes[n] = new Notes(i, a);
-				}
-				n++;
-			}
+			tracks[i] = new Tracks(i);
 		}
 	}
 	
-	//closeTrack(Track track) closes the data in a track for use in the note editor
-	//Track track = the track being closed
-	public void closeTrack()
+	public static void addTrack()
 	{
-		int i = MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].size() - 1;
-		int n = 0;
-		MidiEvent[] eve = new MidiEvent[Notes.getNumNotes()];
-		MidiEvent[] eve2 = new MidiEvent[Notes.getNumNotes()];
+		if(tracks.length < 16)
+		{
+			sequence.createTrack();
+			resetTracks();
+		}
+		else
+		{
+			NotifyAnimation.sendMessage("Notification", "Track limit has been reached. (Only 16 tracks can exist in one song)");
+		}
+	}
+	
+	//addNote(byte trackNum) adds a note to the track in a sequence
+	//byte trackNum
+	public static void addNote(byte trackNum)
+	{
+		tracks[trackNum].closeTrack();
 		try {
-			for(; n < Notes.getNumNotes(); n++)
-			{
-				eve[n] = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, MIDIMain.getTrackMenu(), notes[n].getTone(), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getBeginning()).getMessage().getMessage()[Notes.DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getBeginning()).getTick());
-				eve2[n] = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, MIDIMain.getTrackMenu(), notes[n].getTone(), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getEnd()).getMessage().getMessage()[Notes.DATA_VELOCITY]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(notes[n].getEnd()).getTick());
-			}
-			for(;i >= 0; i--)
-			{
-				if(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getMessage().getStatus() == ShortMessage.NOTE_ON || MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i).getMessage().getStatus() == ShortMessage.NOTE_OFF)
-					MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(i));
-			}
-			for(n = 0; n < Notes.getNumNotes(); n++)
-			{
-				MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve[n]);
-				MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve2[n]);
-			}
-		} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error: Array Index Out of Bound! ("+i+", "+n+")");
-		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error: Invalid midi data!");}
-
-		notes = new Notes[0];
-		Notes.resetNotes();
+			sequence.getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, trackNum, 60, 70), 0));
+			sequence.getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, 60, 70), 8));
+		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "note could note be added to track because it may have been deleted or corrupted");}
+		tracks[trackNum].openTrack();
 	}
 	
-	//countMessage_NOTE_ON(Track track) counts the number of notes in the class and returns it
-	//Track track = track being identified
-	public static int countMessage_NOTE_ON(Track track)
+	//openTrack(byte trackNum) opens the designated track to be used in the note editor
+	//byte teackNum = specified track in the array
+	public static void openTrack(byte trackNum)
 	{
-		int counter = 0;
-		for(int i = 0; i < track.size(); i++)
-		{
-			//If message is a note
-			if(track.get(i).getMessage().getStatus() == ShortMessage.NOTE_ON)
-			{
-				counter++;
-			}
-		}
-		return counter;
+		tracks[trackNum].openTrack();
 	}
 	
-	/*
-	 * readFor(Track track, int status, int statusALT, byte tone, int EventFrom) searches for the end of a note
-	 * Track track = track that is being searched
-	 * short status = status message being searched
-	 * short statusALT = secondary status message being searched
-	 * byte tone = tone of the start of the note
-	 * int EventFrom = location being searched from
-	 */
-	public static int readFor(Track track, short status, short statusALT, byte tone, int EventFrom)
+	//closeTrack(byte trackNum) closes the designated track to be used in the note editor
+	//byte teackNum = specified track in the array
+	public static void closeTrack(byte trackNum)
 	{
-		for(int i = EventFrom + 1; i < track.size(); i++)
-		{
-			//If status of message equals status being searched
-			if(track.get(i).getMessage().getStatus() == status && track.get(i).getMessage().getMessage()[1] == tone)
-			{
-				return i;
-			}
-			else if(track.get(i).getMessage().getStatus() == statusALT && track.get(i).getMessage().getMessage()[1] == tone)
-			{
-				return i;
-			}
-		}
-		return -1;
+		tracks[trackNum].closeTrack();
 	}
 	
-	//getNotes() returns the array of notes in the track
-	public Notes[] getNotes()
+	//getNotes(byte trackNum) returns the array of notes in a designated track
+	//byte teackNum = specified track in the array
+	public static Notes[] getNotes(byte trackNum)
 	{
-		return notes;
+		return tracks[trackNum].getNotes();
 	}
 	
-	//setInstrument(byte inst) sets the instrument of the track
-	//byte inst = instrument value to set
-	public void setInstrument(byte inst)
+	//getTracks() returns the designated track in the song
+	//byte teackNum = specified track in the array
+	public static Tracks getTracks(byte trackNum)
 	{
-		instrument = inst;
+		return tracks[trackNum];
 	}
 	
-	//getInstrument() returns the instrument of the track
-	public byte getInstrument()
+	//getTracksLength() returns the amount of tracks in the song
+	public static byte getTracksLength()
 	{
-		return instrument;
+		return (byte) tracks.length;
 	}
 	
-	//getChannel() returns the channel the track is assigned to
-	public byte getChannel()
+	//getSequence() returns the sequence of the song
+	public static Sequence getSequence()
 	{
-		return channel;
+		return sequence;
 	}
 	
-	//drawTrack(Graphics g, int y) draws the track window for the track
-	//Graphics g = component of the JPanel used to create visual elements
-	//int y = y location of the window
-	public void drawTrack(Graphics g, int y)
+	//getMidiEvent(byte trackNum, int eventNum) returns the MidiEvent specified from the sequence
+	//byte trackNum = track event is to be taken from
+	//int eventNum = location of event in track
+	public static MidiEvent getEvent(byte trackNum, int eventNum)
 	{
-		g.setColor(Color.LIGHT_GRAY);
-		g.fillRoundRect(50, 10+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+		return sequence.getTracks()[trackNum].get(eventNum);
+	}
+	
+	//getMidiEvent(byte trackNum, int eventNum) returns the MidiMessage specified from the sequence
+	//byte trackNum = track event is to be taken from
+	//int eventNum = location of event in track
+	public static MidiMessage getMessage(byte trackNum, int eventNum)
+	{
+		return sequence.getTracks()[trackNum].get(eventNum).getMessage();
+	}
+	
+	//getLength() returns the length of the song in ticks
+	public static long getLength()
+	{
+		return length;
+	}
+	
+	//setLength(long l) sets the length of the song in ticks
+	public void setLength(long l)
+	{
+		length = l;
+	}
+	
+	//getMeasureLength() returns the length of each measure in ticks
+	public static long getMeasureLength()
+	{
+		return measureLength;
+	}
+	
+	//setMeasureLength(short l) sets the length of each measure in ticks (max of 65534)
+	public static void setMeasureLength(short l)
+	{
+		measureLength = l;
 	}
 }
