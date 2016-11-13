@@ -68,6 +68,13 @@ public class MIDIPlayer implements MetaEventListener
 		}
 	}
 	
+	
+	//setTickPosition() sets the tick position of the song being played
+	public void setTickPosition(long t)
+	{
+		sequencer.setTickPosition(t);
+	}
+	
 	//getTickPosition() returns the tick position of the song being played
 	public long getTickPosition()
 	{
@@ -75,15 +82,14 @@ public class MIDIPlayer implements MetaEventListener
 	}
 	
 	//play(Sequence seq, boolean loop) plays the the song
-	//Sequence seq = sequence being played
 	//boolean loop = whether the song should loop
-	public void play(Sequence seq, boolean loop)
+	public void play(boolean loop)
 	{
-		if(sequencer != null && seq != null && sequencer.isOpen())
+		if(sequencer != null && MIDISong.getSequence() != null && sequencer.isOpen())
 		{
 			try{
 				if(sequencer.getSequence() == null)
-					sequencer.setSequence(seq);
+					sequencer.setSequence(MIDISong.getSequence());
 				sequencer.start();
 				this.loop = loop;
 			}catch (Exception ex){ex.printStackTrace();}

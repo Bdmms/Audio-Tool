@@ -1,40 +1,55 @@
-import java.awt.Rectangle;
-
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiEvent;
-import javax.sound.midi.ShortMessage;
 
 /**
  * Date: October 26, 2016
  * 
  * This class contains all of the data effecting the notes
- * inside the song
+ * inside the song. Notes are only loaded when entering the
+ * note editor of a track. Only one track's notes are loaded
+ * at a time.
  */
 
-public class Notes 
+public class Notes
 {
-	public final static byte maxTone = 120;	//The maximum note value
-	private static int numNotes = 0;		//Number of notes processed
+	public final static byte MAX_TONE = 120;	//The maximum note value
+	public final static byte DATA_STATUS = 0;	//value assigned to the message's status
+	public final static byte DATA_TONE = 1;		//value assigned to the tone of the note
+	public final static byte DATA_VELOCITY = 2;	//value assigned to the volume of the note
+	
+	private static int numNotes = 0;	//Number of notes processed
+	private static byte track = 0;		//Track being accessed
 	
 	private int begin = 0;				//start of note in sequence
 	private int end = 0;				//end of note in sequence
-
-	//Initial method
+	private byte tone = 60;				//tone of the note
+	private byte volume = 0;			//volume of the note
+	
+	//Constructor method
 	//int s = start of note (in array)
 	//int e = end of note (in array)
 	public Notes(int s, int e)
 	{
 		begin = s;
 		end = e;
+		tone = MIDISong.getMessage(MIDIMain.getTrackMenu(), s).getMessage()[DATA_TONE];
+		volume =  MIDISong.getMessage(MIDIMain.getTrackMenu(), s).getMessage()[DATA_VELOCITY];
 		numNotes++;
 	}
 	
-	//contains(int x, int y) checks whether the sent coordinates are inside the note's rectangle and returns true or false
-	//int x = x coordinate of mouse
-	//int y = y coordinate of mouse
+	//contains(long x, short y) checks whether the sent coordinates are inside the note's rectangle and returns true or false
+	//long x = x coordinate of mouse
+	//short y = y coordinate of mouse
 	public boolean contains(long x, short y)
 	{
-		return new Rectangle((int)getX(), getY(), getLength(), MIDIMain.getPreHeight()).contains((int)x, y);
+		//If x coordinate is between the x values of the note
+		if(x >= getX() && x <= getX() + getLength())
+		{
+			//If y coordinate is between the y values of the note
+			if(y >= getY() && y <= getY() + MIDIMain.getPreHeight())
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	//identifyContained(int x, int y) checks every existing note to determine which note is being clicked on, the object number of the note is returned
@@ -42,13 +57,14 @@ public class Notes
 	//int y = y coordinate of mouse
 	public static int identifyContained(long x, short y)
 	{
+		//Notes are not sorted
 		for(int i = 0; i < numNotes; i++)
 		{
 			//If note is on screen
 			if(GUI.isNoteVisible(i))
 			{
 				//If note contains coordinates
-				if(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].contains(x, y))
+				if(MIDISong.getNotes(track)[i].contains(x, y))
 				{
 					return i;
 				}
@@ -61,22 +77,7 @@ public class Notes
 	//byte t = new tone
 	public void setTone(byte t)
 	{
-		try {
-			MidiEvent eve = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, MIDIMain.getTrackMenu(), t, MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[3]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getTick());
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin + 1));
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve);
-	
-			MidiEvent eve2 = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, MIDIMain.getTrackMenu(), t, MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getMessage().getMessage()[3]), MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getTick());
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].remove(MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end + 1));
-			MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].add(eve2);
-		} catch (ArrayIndexOutOfBoundsException e) {} catch (InvalidMidiDataException e) {}
-	}
-	
-	//setLength(int l) sets the length of the note
-	//int l = length of note
-	public void setLength(int l)
-	{
-		setEnd(begin + l);
+		tone = t;
 	}
 	
 	//setEnd(long x) sets the end location of the note
@@ -85,52 +86,85 @@ public class Notes
 	{
 		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
 			
-		if(x <= 0 || x <= getX())
-			x = getX() + 1;
+		if(x <= 0 || x <= getTick())
+			x = getTick() / MIDIMain.getPreLength() + 1;
 		
-		MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).setTick(x);
+		MIDISong.getEvent(track, end).setTick(x);
 	}
 	
 	//setLocation(byte t) sets the location of the note
-	//int x = x location of note
-	//int y = tone / y location of note
+	//long x = x location of note
+	//short y = tone / y location of note
 	public void setLocation(long x, short y)
 	{
 		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
-		y = (short) (maxTone - (y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight());
+		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
 		if(x < 0)
 			x = 0;
 		if(y < 0)
 			y = 0;
 		if(y > 120)
 			y = 120;
-		MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).setTick(x + getLength()/MIDIMain.getPreLength());
-		MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).setTick(x);
-		//setTone((byte) y);
+		MIDISong.getEvent(track, end).setTick(x + getLength()/MIDIMain.getPreLength());
+		MIDISong.getEvent(track, begin).setTick(x);
+		setTone((byte) y);
+	}
+	
+	//setTrack(byte trackNum) sets the track that notes come from
+	//byte trackNum = track in sequence
+	public static void setTrack(byte trackNum)
+	{
+		track = trackNum;
+	}
+	
+	//getBeginning()() returns the point of the star message in the array of messages
+	public int getBeginning()
+	{
+		return begin;
+	}
+	
+	//getEnd() returns the point of the end message in the array of messages
+	public int getEnd()
+	{
+		return end;
+	}
+	
+	//getTick() returns the tick of the note
+	public long getTick()
+	{
+		return MIDISong.getEvent(track, begin).getTick();
 	}
 	
 	//getX() returns the x location of the note
 	public long getX()
 	{
-		return MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getTick() * MIDIMain.getPreLength();
+		return MIDISong.getEvent(track, begin).getTick() * MIDIMain.getPreLength();
 	}
 	
 	//getY() returns the y location of the note
 	public int getY()
 	{
-		return (maxTone - MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[2]) * MIDIMain.getPreHeight();
+		//return (MAX_TONE - MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[2]) * MIDIMain.getPreHeight();
+		return (MAX_TONE - tone) * MIDIMain.getPreHeight();
+	}
+	
+	//getTone() retuns the tone of the note
+	public byte getTone()
+	{
+		return tone;
 	}
 	
 	//getLength() returns the exact length of the note
 	public int getLength()
 	{
-		return (int)((MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(end).getTick() - MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getTick()) * MIDIMain.getPreLength());
+		return (int)(MIDISong.getEvent(track, end).getTick() - MIDISong.getEvent(track, begin).getTick()) * MIDIMain.getPreLength();
 	}
 	
 	//getVolume() returns the volume of the note
 	public byte getVolume()
 	{
-		return MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[3];
+		//return MIDISong.getMessage(MIDIMain.getTrackMenu(), begin).getMessage()[DATA_VELOCITY];
+		return volume;
 	}
 	
 	//getNumNotes() returns the number of notes counted
@@ -139,10 +173,11 @@ public class Notes
 		return numNotes;
 	}
 	
-	//resetNotes() resets the value of numNotes, it resets the number of notes
+	//resetNotes() resets the value of numNotes, which resets the number of notes
 	public static void resetNotes()
 	{
 		numNotes = 0;
+		track = 0;
 	}
 	
 	//convertToNote(byte c, boolean sharp) returns the note letter assigned to a note value
@@ -226,5 +261,14 @@ public class Notes
 		{
 			return c+"?";
 		}
+	}
+
+	//isMessageStatus(byte status, byte comparison) returns true or false whether the status of the message is a variant of its type
+	public static boolean isMessageStatus(byte mesStatus, byte statusType)
+	{
+		if(mesStatus >= statusType && mesStatus <= statusType+16)
+			return true;
+		else
+			return false;
 	}
 }

@@ -53,12 +53,12 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 		if(e.getButton() == MouseEvent.BUTTON1)
 		{
 			click = 1;
-			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth, (short)(e.getY() - 50 + MIDIMain.getYCoordinate() - GUI.fullAddHeight));
+			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth, (short)(e.getY() - GUI.windowBarHeight + MIDIMain.getYCoordinate() - GUI.fullAddHeight));
 			//Object is being held
 			if(object >= 0)
 			{
-				coordinates[0] = (short) (e.getX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getLength()/2 - GUI.sideBarWidth);
-				coordinates[1] = (short) (e.getY() - 50 - MIDIMain.getPreHeight()/2 - GUI.fullAddHeight);
+				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
+				coordinates[1] = (short) (e.getY() - GUI.fullAddHeight);
 			}
 			//No object is being held
 			else
@@ -82,11 +82,11 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 		else if(e.getButton() == MouseEvent.BUTTON3)
 		{
 			click = 3;
-			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth, (short)(e.getY() - 50 + MIDIMain.getYCoordinate() - GUI.fullAddHeight));
+			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth, (short)(e.getY() - 55 + MIDIMain.getYCoordinate() - GUI.fullAddHeight));
 			//Object is being held
 			if(object >= 0)
 			{
-				coordinates[0] = (short) (e.getX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getX() - GUI.sideBarWidth);
+				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
 			}
 		}
 	}
@@ -110,8 +110,8 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 			//Object is being held
 			if(object >= 0 && MIDISong.getNotes(MIDIMain.getTrackMenu()).length - 1 >= object)
 			{
-				coordinates[0] = (short) (e.getX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getLength()/2 - GUI.sideBarWidth);
-				coordinates[1] = (short) (e.getY() - 50 - MIDIMain.getPreHeight()/2 - GUI.fullAddHeight);
+				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
+				coordinates[1] = (short) (e.getY() - GUI.fullAddHeight);
 			}
 			//Object is not being held
 			else
@@ -132,7 +132,7 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 			//Object is being held
 			if(object >= 0)
 			{
-				coordinates[0] = (short) (e.getX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getX() - GUI.sideBarWidth);
+				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
 			}
 		}
 	}
@@ -169,13 +169,6 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 		return object;
 	}
 	
-	//getObjectNumber() sets the object number
-	//int obj = object number
-	public static int setObjectNumber(int obj)
-	{
-		return object;
-	}
-	
 	//getLeftClick() returns the status of the mouse button presses
 	public static byte getClick()
 	{
@@ -186,6 +179,13 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	public static byte getMouseWheel()
 	{
 		return wheelScroll;
+	}
+	
+	//getObjectNumber() sets the object number
+	//int obj = object number
+	public static int setObjectNumber(int obj)
+	{
+		return object;
 	}
 	
 	//setMouseWheel() sets the value of the mouse wheel

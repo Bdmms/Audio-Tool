@@ -22,6 +22,8 @@ public class NotifyAnimation
 	private static short value = 480;
 	//The message contained in the window
 	private static String[] message;
+	//The header of the message
+	private static String header;
 	
 	//drawNoteWindow(Graphics g) draws the notification window
 	//Graphics g = component of the JPanel used to create visual elements
@@ -30,20 +32,25 @@ public class NotifyAnimation
 		{
 			//50 = 500 milliseconds
 			
-			//250 milliseconds
+			//for 250 milliseconds
 			if(anmTimer < 25)
 			{
 				value -= 4;
 			}
-			//2500 milliseconds
+			//for 2500 milliseconds
 			else if(anmTimer < 275)
 			{
 				
 			}
-			//250 milliseconds
+			//for 250 milliseconds
 			else if(anmTimer < 300)
 			{
 				value += 4;
+			}
+			//end of animation
+			else
+			{
+				trigger = false;
 			}
 			
 			anmTimer++;
@@ -54,7 +61,7 @@ public class NotifyAnimation
 			g.drawRect(530, value, 180, 100);
 			
 			g.setFont(new Font("AAA",Font.BOLD, 12));
-			g.drawString("- Notification -", 540, value + 20);
+			g.drawString("- "+header+" -", 540, value + 20);
 			g.setFont(new Font("AAA",Font.ROMAN_BASELINE, 12));
 			for(byte i = 0; i < message.length; i++)
 			{
@@ -65,8 +72,9 @@ public class NotifyAnimation
 	
 	//sendMessage(String s) receives a sent class
 	//String s = full length string of message
-	public static void sendMessage(String s){
+	public static void sendMessage(String head, String s){
 		
+		header = head;
 		message = new String[(s.length())/characterLimit+1];
 		byte a = 0;
 		
