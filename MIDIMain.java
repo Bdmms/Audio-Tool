@@ -47,6 +47,7 @@ public class MIDIMain implements ActionListener
 	//initialization() initializes basic graphical components
 	public void initialization(){
 		//scroll bar is initialized
+		
 		scroll.setBounds(680, 50, 20, 320);
 		scroll.setUnitIncrement(10);
 		
@@ -72,11 +73,11 @@ public class MIDIMain implements ActionListener
         window.addMouseWheelListener(mouse);
         window.setVisible(true);
         
-        setFileChooser();
+        createFileChooser();
 	}
 	
-	//setFileChooser() prepares the fileChooser (file explorer) in the program for when file selection is needed
-	public void setFileChooser()
+	//createFileChooser() prepares the fileChooser (file explorer) in the program for when file selection is needed
+	public void createFileChooser()
 	{
 		fileIn.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fileIn.setAcceptAllFileFilterUsed(false);
@@ -110,6 +111,7 @@ public class MIDIMain implements ActionListener
 	
 	//createMenuBar() initializes a JMenuBar and returns it
 	public JMenuBar createMenuBar(){
+		//Size = (720 pixels x 23 pixels)
 		//Menu bar component is created
 		JMenuBar menuBar = new JMenuBar();
 		//Each branch of the menu bar is created
@@ -274,12 +276,11 @@ public class MIDIMain implements ActionListener
 			{
 				for(byte i = 0; i < trackButtons.length; i++)
 				{
-					trackButtons[i].setLocation(GUI.toolBarHeight+30, GUI.toolBarHeight+30-scrollY+(Tracks.trackHeight+5)*i); 
+					trackButtons[i].setLocation(70, 20+GUI.toolBarHeight-scrollY+(Tracks.trackHeight+5)*i); 
 				}
 			}
-			catch(NullPointerException ex)
-			{
-				
+			catch(NullPointerException ex){
+				//The null pointer exception is fairly common when mixed with the action listener
 			}
 		}
 	}
@@ -317,7 +318,7 @@ public class MIDIMain implements ActionListener
 			else
 			{
 				play = true;
-				player.play(MIDISong.getSequence(), true);
+				player.play(true);
 			}
 		}
 		//Tool #2: STOP
@@ -334,7 +335,7 @@ public class MIDIMain implements ActionListener
 			{
 				play = true;
 				player.setTickPosition(0);
-				player.play(MIDISong.getSequence(), true);
+				player.play(true);
 			}
 		}
 		//Tool #3: ADD
@@ -382,28 +383,28 @@ public class MIDIMain implements ActionListener
 			//If file is usable
 			if (v == JFileChooser.APPROVE_OPTION) {
 	            MIDISong.setSong(reader.readFile(fileIn.getSelectedFile()));
-	            NotifyAnimation.sendMessage("Opening: "+reader.getFileName());
+	            NotifyAnimation.sendMessage("Notification","Opening: "+reader.getFileName());
 				setTrackButtons(MIDISong.getTracksLength());
 	            mode = 1;
 				mode();
 	        } else {
-	        	NotifyAnimation.sendMessage("File could not be opened.");
+	        	NotifyAnimation.sendMessage("Notification","File was not be opened.");
 	        }
 		}
 		//MenuBar -> File -> Save
 		if(e.getActionCommand().equals("Save"))
 		{
-			NotifyAnimation.sendMessage("File saved...");
+			NotifyAnimation.sendMessage("Notification","File saved...");
 		}
 		//MenuBar -> File -> Save As
 		if(e.getActionCommand().equals("Save As"))
 		{
-			NotifyAnimation.sendMessage("What are you doing with your life?");
+			NotifyAnimation.sendMessage("Notification","Save as what!?");
 		}
 		//MenuBar -> File -> Delete File
 		if(e.getActionCommand().equals("Delete File"))
 		{
-			NotifyAnimation.sendMessage("Are you sure about that!?");
+			NotifyAnimation.sendMessage("Error","Are you sure about that!?");
 		}
 		//MenuBar -> File -> Quit
 		if(e.getActionCommand().equals("Quit"))
@@ -414,6 +415,7 @@ public class MIDIMain implements ActionListener
 		//Track buttons
 		for(byte i = 0; i < trackButtons.length; i++)
 		{
+			//If source is equall to one of the track buttons
 			if(e.getSource() == trackButtons[i])
 			{
 				track = i;
@@ -441,7 +443,7 @@ public class MIDIMain implements ActionListener
 			{
 				//Object is being held
 				if(CursorListener.getObjectNumber() >= 0)
-					MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + x, (short)(CursorListener.getLocation()[1] + y));
+					MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + x - scale[0]/2, (short)(CursorListener.getLocation()[1] + y - GUI.windowBarHeight - MIDIMain.getPreHeight()/2));
 				//Left Click while not holding an object
 				else
 				{
@@ -452,7 +454,7 @@ public class MIDIMain implements ActionListener
 			//Right Click on an object
 			if(CursorListener.getClick() == 3 && CursorListener.getObjectNumber() >= 0)
 			{
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLength((int)(CursorListener.getLocation()[0] + x));
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x));
 			}
 			//When the Mouse Wheel is moving
 			if(CursorListener.getMouseWheel() != 0)
@@ -461,8 +463,8 @@ public class MIDIMain implements ActionListener
 				scale[1] -= CursorListener.getMouseWheel()*2;
 				if(scale[0] > 0 && scale[1] > 0 && scale[0] < 100 && scale[1] < 100)
 				{
-					x += CursorListener.getMouseWheel()*(CursorListener.getLocation()[0] - GUI.sideBarWidth)/scale[0];
-					y += CursorListener.getMouseWheel()*(CursorListener.getLocation()[1] - GUI.fullAddHeight)/scale[1];
+					x += CursorListener.getMouseWheel()*(CursorListener.getLocation()[0])/scale[0];
+					y += CursorListener.getMouseWheel()*(CursorListener.getLocation()[1])/scale[1];
 				}
 				CursorListener.setMouseWheel((byte) 0);
 			}
