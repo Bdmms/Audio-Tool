@@ -11,17 +11,18 @@ public class GUI extends JPanel
 	 * This class displays / outputs visual information by drawing pixels
 	 * on the program's window.
 	 * 
-	 * Note 1: This class contains required methods that CANNOT be removed
+	 * Note 1: This class contains required methods that CANNOT be removed.
 	 * 
 	 * Note 2: Most methods in this class contain the parameter Graphics g, 
-	 * therefore the explanation will not be repeated
+	 * therefore the explanation will not be repeated.
 	 */
 	
 	//GUI Size = 720 x 480
 	private static final long serialVersionUID = 1L;						
-	public final static short toolBarHeight = 40;							//Height of toolBar
-	public final static short topBarHeight = 20;							//Height of top label
-	public final static short fullAddHeight = toolBarHeight + topBarHeight ;//Combined height
+	public final static byte toolBarHeight = 40;							//Height of toolBar
+	public final static byte topBarHeight = 20;								//Height of top label
+	public final static byte fullAddHeight = toolBarHeight + topBarHeight ;//Combined height
+	public final static byte windowBarHeight = 55;							//Height Window label bar
 	public final static short sideBarWidth = 100;							//Side label width
 	public final static short screenHeight = 480;							//Screen height
 	public final static short screenWidth = 720;							//Screen width
@@ -68,10 +69,14 @@ public class GUI extends JPanel
 		{
 			MIDISong.getTracks(i).drawTrack(g, i);
 		}
-		g.setColor(Color.WHITE);
-		g.fillRect(20, 430, 500, 50);
-		g.setColor(Color.BLACK);
-		g.drawRect(20, 430, 500, 50);
+		/* 
+		 * The status window
+		 * 
+		 * g.setColor(Color.WHITE);
+		 * g.fillRect(20, 430, 500, 50);
+		 * g.setColor(Color.BLACK);
+		 * g.drawRect(20, 430, 500, 50);
+		 */
 	}
 	
 	//drawNoteEditor(Graphics g) draws the note editor (menu = 2)
@@ -109,7 +114,7 @@ public class GUI extends JPanel
 		
 		g.setColor(Color.BLACK);
 		g.drawRect(0, toolBarHeight, screenWidth, topBarHeight);
-		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width); i++)
+		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()-1); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width + 1); i++)
 		{
 			//If scale > 20
 			if(MIDIMain.getPreLength() > 20)
@@ -148,19 +153,19 @@ public class GUI extends JPanel
 		
 		g.setColor(Color.BLACK);
 		g.drawRect(0, fullAddHeight, sideBarWidth, screenHeight - fullAddHeight);
-		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height; i++)
+		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
 		{
 			//If scale > 15
 			if(MIDIMain.getPreHeight() > 15)
 			{
 				g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
-				g.drawString(Notes.convertToNote((byte)(Notes.maxTone - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight()/2 + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+				g.drawString(Notes.convertToNote((byte)(Notes.MAX_TONE - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight()/2 + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 			}
 			//If scale < 15
 			else if(i%2 == 0)
 			{
 				g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
-				g.drawString(Notes.convertToNote((byte)(Notes.maxTone - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight() + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+				g.drawString(Notes.convertToNote((byte)(Notes.MAX_TONE - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight() + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 			}
 		}
 	}
@@ -172,7 +177,7 @@ public class GUI extends JPanel
 	{
 		//Vertical Lines
 		g.setColor(Color.BLUE);
-		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width); i++)
+		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width + 1); i++)
 		{
 			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%2 == 0) || (MIDIMain.getPreLength() > 10 && i%4 == 0) || i%8 == 0)
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), screenHeight);
@@ -180,22 +185,11 @@ public class GUI extends JPanel
 		
 		//Horizontal Lines
 		g.setColor(Color.LIGHT_GRAY);
-		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height; i++)
+		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
 		{
 			if(MIDIMain.getPreHeight() > 15 || i%2 == 0)
 				g.drawLine(sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), screenWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 		}
-	}
-	
-	//isNoteVisible(int note) returns true if note would be visible on the screen
-	//int note = note being checked
-	public static boolean isNoteVisible(int note)
-	{
-		if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() + MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getLength() >  MIDIMain.getXCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() < MIDIMain.getXCoordinate() + (screenWidth - sideBarWidth))
-		{
-			return true;
-		}
-		return false;
 	}
 	
 	//drawNotes(Graphics g) draws the notes in a track
@@ -211,5 +205,17 @@ public class GUI extends JPanel
 				g.fillRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1);
 			}
 		}
+	}
+	
+	//isNoteVisible(int note) returns true if note would be visible on the screen
+	//int note = note being checked
+	public static boolean isNoteVisible(int note)
+	{
+		if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() + MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getLength() >  MIDIMain.getXCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() < MIDIMain.getXCoordinate() + (screenWidth - sideBarWidth))
+		{
+			if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getY() + MIDIMain.getPreHeight() > MIDIMain.getYCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getY() < MIDIMain.getYCoordinate() + (screenHeight - fullAddHeight))
+				return true;
+		}
+		return false;
 	}
 }
