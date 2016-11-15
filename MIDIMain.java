@@ -8,6 +8,9 @@ import java.awt.event.*;
 public class MIDIMain implements ActionListener
 {
 	/**
+	 * Audio Tool Project
+	 * 
+	 * By: Ethan Lee and Sean Rannie
 	 * Date: October 15, 2016
 	 * 
 	 * The Main class contains all of the components of the window and
@@ -15,7 +18,7 @@ public class MIDIMain implements ActionListener
 	 * it is connected to all other classes in the project. This class controls
 	 * most of the menu information (i.e. menu type, menu location, etc.)
 	 * 
-	 * Note 1: All comments in this project are displayed above the targeted line of code 
+	 * (Note #1: All comments in this project are displayed above the targeted line of code) 
 	 */
 	
 	private JFileChooser fileIn = new JFileChooser();		//The file directory that opens when choosing a file
@@ -443,7 +446,9 @@ public class MIDIMain implements ActionListener
 			{
 				//Object is being held
 				if(CursorListener.getObjectNumber() >= 0)
-					MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + x - scale[0]/2, (short)(CursorListener.getLocation()[1] + y - GUI.windowBarHeight - MIDIMain.getPreHeight()/2));
+				{
+					MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin(), (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
+				}
 				//Left Click while not holding an object
 				else
 				{
@@ -454,7 +459,7 @@ public class MIDIMain implements ActionListener
 			//Right Click on an object
 			if(CursorListener.getClick() == 3 && CursorListener.getObjectNumber() >= 0)
 			{
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x));
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
 			}
 			//When the Mouse Wheel is moving
 			if(CursorListener.getMouseWheel() != 0)
