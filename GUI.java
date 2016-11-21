@@ -1,223 +1,280 @@
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import javax.sound.midi.InvalidMidiDataException;
-import javax.sound.midi.MidiEvent;
-import javax.sound.midi.ShortMessage;
+import javax.swing.JPanel;
 
-/**
- * Date: October 31, 2016
- * 
- * This class stores all data that remains in a track of the song. The
- * class stores all notes present in the track.
- */
-
-public class Tracks 
-{	
-	public static final short trackSpace = 10;	//Spacing between track menus
-	public static final short trackHeight = 70;	//The height of the track menus
+public class GUI extends JPanel
+{
+	/**
+	 * Date: October 15, 2016
+	 * 
+	 * This class displays / outputs visual information by drawing pixels
+	 * on the program's window.
+	 * 
+	 * Note 1: This class contains required methods that CANNOT be removed.
+	 * 
+	 * Note 2: Most methods in this class contain the parameter Graphics g, 
+	 * therefore the explanation will not be repeated.
+	 */
 	
-	private int numNotes = 0;					//The number of notes in a track
-	private byte instrument = 0;				//The instrument used for the track
-	private byte volume = 100;					//The master volume of every note in a track
-	private byte channel = 0;					//The channel that corresponds with track
-	private Notes[] notes;						//The array of note contained in the track
+	//GUI Size = 720 x 480
+	private static final long serialVersionUID = 1L;						//Default serial ID
+	public final static byte toolBarHeight = 40;							//Height of toolBar
+	public final static byte topBarHeight = 20;								//Height of top label
+	public final static byte fullAddHeight = toolBarHeight + topBarHeight ; //Combined height
+	public final static short sideBarWidth = 100;							//Side label width
+	public final static short screenHeight = 480;							//Screen height
+	public final static short screenWidth = 720;							//Screen width
 	
-	//Constructor method
-	//byte chan = channel of track
-	public Tracks(byte chan)
+	public final static byte windowBarHeight = 54;							//Height of window label bar (It's very annoying to deal with)
+	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
+	
+	public final static BasicStroke basic = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);	//Default thin border
+	public final static BasicStroke bold = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);		//Thick border
+	
+	//paintComponent(Graphics g) responds to the .repaint() method when used
+	//Graphics g = component of the JPanel used to create visual elements
+	public void paintComponent(Graphics g) 
 	{
-		channel = chan;
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
-
-		//DEBUG
-		/*
-		System.out.println("Track "+channel+" ----------------------------------------");
-		for(int i = 0; i < MIDISong.getSequence().getTracks()[chan].size(); i++)
+		Graphics2D g2D = (Graphics2D) g;	//Graphics2D allows access more methods
+		
+		g2D.setColor(Color.BLACK);
+		g2D.setStroke(basic);
+    
+		//Welcome Screen
+		if(MIDIMain.getMode() == 0){drawStartScreen(g2D);}
+		//Track Editor
+		else if(MIDIMain.getMode() == 1){drawTrackEditor(g2D);}
+		//Note Editor
+		else if(MIDIMain.getMode() >= 2){drawNoteEditor(g2D);}
+		
+		if(MIDIMain.isSelecting() == true)
 		{
-			System.out.println(MIDISong.getSequence().getTracks()[chan].get(i).getMessage().getStatus()+" - "+Integer.toHexString(MIDISong.getSequence().getTracks()[chan].get(i).getMessage().getStatus()));
+			g2D.setColor(new Color(0, 0, 255, 100));
+			g2D.fill(MIDIMain.getSelectBox());
 		}
+		
+		NotifyAnimation.drawNoteWindow(g2D);
+		
+		/*
+		g2D.setColor(Color.BLACK);
+		g2D.fillOval(CursorListener.getLocation()[0] - 10 - mouseDisplacement, CursorListener.getLocation()[1] - fullAddHeight - 10 + 5, 20, 20);
+		g2D.setColor(Color.WHITE);
+		g2D.fillOval(CursorListener.getLocation()[0] - 2 - mouseDisplacement, CursorListener.getLocation()[1] - fullAddHeight - 2 + 5, 4, 4);
 		*/
 	}
 	
-	//openTrack(byte trackNum) opens the data in a track for use in the note editor
-	//byte trackNum = the track being opened in the sequence
-	public void openTrack()
+	//drawStartScreen(Graphics2D g) draws the welcome screen (menu = 0)
+	public void drawStartScreen(Graphics2D g)
 	{
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
-		//If their are a real amount of notes
-		if(numNotes >= 0)
+		g.setFont(new Font("FONT", Font.BOLD, 50));
+		g.drawString("WELCOME", 230, 240);
+	}
+	
+	//drawTrackEditor(Graphics2D g) draws the track editor (menu = 1)
+	public void drawTrackEditor(Graphics2D g)
+	{
+		for(byte i = 0; i < MIDISong.getTracksLength(); i++)
 		{
-			notes = new Notes[numNotes];
-			Notes.setTrack(channel);
-			int n = 0;
-			
-			for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); )
-			{
-				//If start of a note is found
-				if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_ON))
-				{
-					//a = end of note's location
-					int a = readForNotes(channel, MIDISong.getMessage(channel, i).getMessage()[Notes.DATA_TONE], i);
-					//If an end of note can be identified
-					if(a >= 0)
-					{
-						notes[n] = new Notes(i, a);
-						n++;
-					}
-					else
-					{
-						MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, i));
-						numNotes--;
-					}
-				}
-				i++;
-			}
+			MIDISong.getTracks(i).drawTrack(g, i);
 		}
-		//If note length is invalid
-		else
-		{
-			NotifyAnimation.sendMessage("Error", "Track "+channel+" cannot be edited because it exceeds note limit!");
-		}
+		/* 
+		 * The status window
+		 * 
+		 * g.setColor(Color.WHITE);
+		 * g.fillRect(20, 430, 500, 50);
+		 * g.setColor(Color.BLACK);
+		 * g.drawRect(20, 430, 500, 50);
+		 */
 	}
 	
-	//closeTrack() closes the data in a track for use in the note editor
-	public void closeTrack()
+	//drawNoteEditor(Graphics2D g) draws the note editor (menu = 2)
+	public void drawNoteEditor(Graphics2D g)
 	{
-		saveTrack();
-		notes = new Notes[0];
-		Notes.resetNotes();
+		g.setFont(new Font("FONT", Font.ROMAN_BASELINE, 12));
+		drawGridField(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
+		drawNotes(g);
+		drawGridLabels(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
 	}
 	
-	//saveTrack() updates the values of the notes to the sequence
-	public void saveTrack()
+	//drawGridLabels(Graphics2D g, short height, short width) draws the labels on the sides of the grid
+	//short height = height of the grid (in tones)
+	//short width = width of the grid (in ticks)
+	public void drawGridLabels(Graphics2D g, short height, short width)
 	{
-		//int i = event in the sequence
-		int i = MIDISong.getSequence().getTracks()[channel].size() - 1;
-		//int n = note in the sequence
-		int n = 0;
-		MidiEvent[] eve = new MidiEvent[Notes.getNumNotes()];
-		MidiEvent[] eve2 = new MidiEvent[Notes.getNumNotes()];
-		try {
-			for(; n < Notes.getNumNotes(); n++)
-			{
-				eve[n]  = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, channel, notes[n].getTone(), MIDISong.getMessage(channel, notes[n].getBeginning()).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(channel, notes[n].getBeginning()).getTick());
-				eve2[n] = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, channel, notes[n].getTone(), MIDISong.getMessage(channel, notes[n].getEnd()).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(channel, notes[n].getEnd()).getTick());
-			}
-			for(; i >= 0; i--)
-			{
-				if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_ON) || Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_OFF))
-					MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, i));
-			}
-			for(n = 0; n < eve.length; n++)
-			{
-				MIDISong.getSequence().getTracks()[channel].add(eve[n]);
-				MIDISong.getSequence().getTracks()[channel].add(eve2[n]);
-			}
-		} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array index out of bound! ("+i+", "+n+")");
-		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "The current track has been deleted or corrupted!");}
-	}
-	
-	//countMessage(byte trackNum, byte message) counts the number of notes in the class and returns it
-	//byte trackNum = track being identified in sequence
-	//byte message =  status type being counted
-	public static int countMessage(byte trackNum, byte message)
-	{
-		int counter = 0;
-		for(int i = 0; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
-		{
-			//If message is a note
-			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), message))
-			{
-				counter++;
-			}
-			//If track size is too long
-			if(i == 0xFFFFFFF)
-			{
-				counter = -1;
-				break;
-			}
-		}
-		return counter;
-	}
-	
-	/*
-	 * readForNotes(byte trackNum, byte tone, int eventFrom) searches for the end of a note
-	 * byte trackNum = = track that is being searched in sequence
-	 * byte tone = tone of the start of the note
-	 * int EventFrom = location being searched from
-	 */
-	public static int readForNotes(byte trackNum, byte tone, int eventFrom)
-	{
-		boolean add = false;	//If a message is added in, then it cannot add any more messages afterwards
-		for(int i = eventFrom + 1; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
-		{
-			//If status of message equals status being searched
-			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), (byte)ShortMessage.NOTE_OFF) && MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_TONE] == tone)
-			{
-				return i;
-			}
-			//If note has no end before the start of the next note
-			else if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), (byte)ShortMessage.NOTE_ON) && MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_TONE] == tone && add == false)
-			{
-				try {
-					MIDISong.getSequence().getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, tone, MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(trackNum, i).getTick()));
-					i = eventFrom + 1;
-					add = true;
-				} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array Index Out of Bound! (No Value Assigned)");
-				} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Invalid midi data!");}
-			}
-		}
-		return -1;
-	}
-	
-	//setInstrument(byte inst) sets the instrument of the track
-	//byte inst = instrument value to set
-	public void setInstrument(byte inst)
-	{
-		instrument = inst;
-	}
-	
-	//getInstrument() returns the instrument of the track
-	public byte getInstrument()
-	{
-		return instrument;
-	}
-	
-	//getNotes() returns the array of notes in the track
-	public Notes[] getNotes()
-	{
-		return notes;
-	}
-	
-	//getChannel() returns the channel the track is assigned to
-	public byte getChannel()
-	{
-		return channel;
-	}
-	
-	//drawTrack(Graphics g, short y) draws the track window for the track
-	//Graphics g = component of the JPanel used to create visual elements
-	//short y = y location of the window
-	public void drawTrack(Graphics2D g, short y)
-	{
-		//Background
-		g.setColor(Color.LIGHT_GRAY);
-		g.fillRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+		drawSideGridLabel(g, (short) height);
+		drawTopGridLabel(g, (short) width);
 		
-		//Text Boxes
+		g.setStroke(bold);
 		g.setColor(Color.WHITE);
-		g.fillRect(201, 11+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
-		g.fillRect(201, 41+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
-		//Borders
+		g.fillRect(0, toolBarHeight, sideBarWidth, topBarHeight);
+		
 		g.setColor(Color.BLACK);
-		g.drawRect(200, 10+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 100, 20);
-		g.drawRect(200, 40+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 100, 20);
-		//Text
-		g.drawString("Instrument: "+instrument, 215, 25+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue());
-		g.drawString("Volume: "+volume+"%", 215, 55+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue());
-		g.drawString(numNotes+" notes", 90, 55+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue());
-		//Divider
-		g.drawLine(GUI.screenWidth/2, 5+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth/2, trackHeight+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue()-5);
+		g.setFont(new Font("A", Font.PLAIN, 10));
+		g.drawRect(0, toolBarHeight, sideBarWidth, topBarHeight);
+		g.drawString("INSERT TITLE", 10, toolBarHeight + 15);
+		g.setStroke(basic);
+		
+	}
+	
+	//drawTopGridLabel(Graphics2D g, short width) draws the label on the top side of the grid
+	//short width = width of the grid (in ticks)
+	public void drawTopGridLabel(Graphics2D g, short width)
+	{
+		//Box
+		g.setStroke(bold);
+		g.setColor(Color.WHITE);
+		g.fillRect(0, toolBarHeight, screenWidth, topBarHeight);
+		g.setColor(Color.BLACK);
+		g.drawRect(0, toolBarHeight, screenWidth, topBarHeight);
+		g.setStroke(basic);
+
+		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()-1); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width + 1); i++)
+		{
+			//If line represents start of measure
+			if((i%MIDISong.getMeasureLength() == 0 && MIDIMain.getPreLength() > 2) || (i%(MIDISong.getMeasureLength()*2) == 0 && i/MIDISong.getMeasureLength() < 999) || i%(MIDISong.getMeasureLength()*4) == 0)
+			{
+				g.setFont(new Font("A", Font.BOLD, 12));
+				g.setColor(Color.BLACK);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				g.drawString(i/MIDISong.getMeasureLength()+"", (int)(sideBarWidth - 5 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
+			}
+			//*FIX
+			else if(i%(MIDISong.getMeasureLength()/4) == 0 && MIDIMain.getPreLength() > 10)
+			{
+				g.setFont(new Font("A", Font.PLAIN, 10));
+				g.setColor(Color.BLACK);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				g.drawString(((i%MIDISong.getMeasureLength())/4+1)+"", (int)(sideBarWidth - 2 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
+			}
+			else if(i%(MIDISong.getMeasureLength()/8) == 0 && MIDIMain.getPreLength() > 22)
+			{
+				g.setFont(new Font("A", Font.PLAIN, 10));
+				g.setColor(Color.GRAY);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				g.drawString((i%MIDISong.getMeasureLength())/2+"/"+8, (int)(sideBarWidth - 6 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
+			}
+			else if(i%(MIDISong.getMeasureLength()/16) == 0 && MIDIMain.getPreLength() > 40)
+			{
+				g.setFont(new Font("A", Font.PLAIN, 10));
+				g.setColor(Color.GRAY);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				g.drawString(i%MIDISong.getMeasureLength()+"/"+16, (int)(sideBarWidth - 10 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
+			}
+		}
+	}
+	
+	//drawSideGridLabel(Graphics2D g, short height) draws labels on the side of the grid
+	//short height = height of the grid (in tones)
+	public void drawSideGridLabel(Graphics2D g, short height)
+	{
+		//Box
+		g.setStroke(bold);
+		g.setColor(Color.WHITE);
+		g.fillRect(0, fullAddHeight, sideBarWidth, screenHeight - fullAddHeight);
+		g.setColor(Color.BLACK);
+		g.drawRect(0, fullAddHeight, sideBarWidth, screenHeight - fullAddHeight);
+		g.setStroke(basic);
+
+		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
+		{
+			//If scale > 15
+			if(MIDIMain.getPreHeight() > 15)
+			{
+				g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+				g.drawString(Notes.convertToNote((byte)(Notes.MAX_TONE - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight()/2 + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+			}
+			//If scale < 15
+			else if(i%2 == 0 && MIDIMain.getPreHeight() > 5)
+			{
+				g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+				g.drawString(Notes.convertToNote((byte)(Notes.MAX_TONE - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight() + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+			}
+			//If scale == 5
+			else
+			{
+				//g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+				if(i%4 == 0)
+				{
+					g.drawString(Notes.convertToNote((byte)(Notes.MAX_TONE - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight()*2 + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+					g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+				}
+			}
+		}
+	}
+	
+	//drawGridField(Graphics2D g, short height, short width) draws the lines of the grid
+	//short height = height of the grid (in tones)
+	//short width = width of the grid (in ticks)
+	public void drawGridField(Graphics2D g, short height, short width)
+	{
+		//Vertical Lines
+		g.setColor(Color.GRAY);
+		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width + 1); i++)
+		{
+			if(i%MIDISong.getMeasureLength() == 0)
+			{
+				g.setStroke(bold);
+				g.setColor(Color.BLUE);
+			}
+			else
+			{
+				g.setStroke(basic);
+				g.setColor(Color.GRAY);
+			}
+			
+			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%2 == 0) || (MIDIMain.getPreLength() > 10 && i%4 == 0) || i%8 == 0)
+				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), screenHeight);
+		}
+		
+		//Horizontal Lines
+		g.setColor(Color.LIGHT_GRAY);
+		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
+		{
+			if(MIDIMain.getPreHeight() > 15 || i%2 == 0)
+				g.drawLine(sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), screenWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
+		}
+	}
+	
+	//drawNotes(Graphics2D g) draws the notes in a track
+	public void drawNotes(Graphics2D g)
+	{
+		//Loops through every note and draws it as a rectangle
+		for(int i = 0; i < MIDISong.getNotes(MIDIMain.getTrackMenu()).length; i++)
+		{
+			//If note is on screen
+			if(isNoteVisible(i))
+			{
+				g.setColor(new Color(51,186,164));
+				g.fillRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+				
+				if(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].isSelected())
+					g.setColor(Color.GREEN);
+				else
+					g.setColor(Color.BLACK);
+				g.setStroke(bold);
+				g.drawRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+			}
+			g.setStroke(basic);
+		}
+	}
+	
+	//isNoteVisible(int note) returns true if note would be visible on the screen
+	//int note = note being checked
+	public static boolean isNoteVisible(int note)
+	{
+		if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() + MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getLength() >  MIDIMain.getXCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() < MIDIMain.getXCoordinate() + (screenWidth - sideBarWidth))
+		{
+			if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getY() + MIDIMain.getPreHeight() > MIDIMain.getYCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getY() < MIDIMain.getYCoordinate() + (screenHeight - fullAddHeight))
+				return true;
+		}
+		return false;
 	}
 }
