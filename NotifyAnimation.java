@@ -1,6 +1,6 @@
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 /** 
  * Date: October 24, 2016
@@ -27,7 +27,7 @@ public class NotifyAnimation
 	
 	//drawNoteWindow(Graphics g) draws the notification window
 	//Graphics g = component of the JPanel used to create visual elements
-	public static void drawNoteWindow(Graphics g){
+	public static void drawNoteWindow(Graphics2D g){
 		if(trigger == true)
 		{
 			//50 = 500 milliseconds
@@ -55,11 +55,16 @@ public class NotifyAnimation
 			
 			anmTimer++;
 			
+			//Text Box
+			g.setStroke(GUI.bold);
 			g.setColor(Color.WHITE);
 			g.fillRect(530, value, 180, 100);
 			g.setColor(Color.BLACK);
 			g.drawRect(530, value, 180, 100);
 			
+			g.setStroke(GUI.basic);
+			
+			//Message
 			g.setFont(new Font("AAA",Font.BOLD, 12));
 			g.drawString("- "+header+" -", 540, value + 20);
 			g.setFont(new Font("AAA",Font.ROMAN_BASELINE, 12));

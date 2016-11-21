@@ -16,16 +16,11 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	 * Note 1: This class contains required methods that CANNOT be removed
 	 */
 
-	//Records input of all mouse buttons (0 = left | 1 = middle | 2 = right)
-	private static byte click = 0;
-	//Used to determine which object is being moved
-	private static int object = 0;
-	//Records location of mouse on screen; [0] = x, [1] = y
-	private static short[] coordinates = {0, 0};
-	//The location of the mouse before dragging
-	private static short[] origin = {0, 0};
-	//The value assigned to the mouse scroll wheel
-	private static byte wheelScroll = 0;
+	private static byte click = 0;					//Records input of all mouse buttons (0 = left | 1 = middle | 2 = right)
+	private static int object = -1;					//Used to determine which object is being moved
+	private static short[] coordinates = {0, 0};	//Records location of mouse on screen; [0] = x, [1] = y
+	private static short[] origin = {0, 0};			//The location of the mouse before dragging
+	private static byte wheelScroll = 0;			//The value assigned to the mouse scroll wheel
 	
 	//mouseClicked(MouseEvent e) responds to any digital input on the mouse
 	//MouseEvent e = information of the mouse event
@@ -48,93 +43,62 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	//mousePressed(MouseEvent e) responds to any digital input on the mouse being held
 	//MouseEvent e = information of the mouse event
 	public void mousePressed(MouseEvent e) {
-		object = 0;
-		//Left-Click
-		if(e.getButton() == MouseEvent.BUTTON1)
+		if(MIDIMain.getMode() == 2)
 		{
-			click = 1;
-			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth, (short)(e.getY() - GUI.windowBarHeight + MIDIMain.getYCoordinate() - GUI.fullAddHeight));
-			//Object is being held
-			if(object >= 0)
+			object = -1;
+			coordinates[0] = (short) e.getX();
+			coordinates[1] = (short) e.getY();
+			//Left-Click
+			if(e.getButton() == MouseEvent.BUTTON1)
 			{
-				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
-				coordinates[1] = (short) (e.getY() - GUI.fullAddHeight);
+				click = 1;
+				object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY() + MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
+				if(object >= 0)
+				{
+					origin[0] = (short) ((coordinates[0] - GUI.mouseDisplacement - GUI.sideBarWidth) - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getX());
+				}
+				else
+				{
+					origin[0] = (short) (coordinates[0] + MIDIMain.getXCoordinate());
+					origin[1] = (short) (coordinates[1] + MIDIMain.getYCoordinate());
+				}
 			}
-			//No object is being held
-			else
+			//Middle-Click
+			else if(e.getButton() == MouseEvent.BUTTON2)
 			{
-				coordinates[0] = (short) e.getX();
-				coordinates[1] = (short) e.getY();
-				origin[0] = (short) (coordinates[0] + MIDIMain.getXCoordinate());
-				origin[1] = (short) (coordinates[1] + MIDIMain.getYCoordinate());
+				click = 2;
+				origin[0] = (short) (coordinates[0] + MIDIMain.getPreLength());
+				origin[1] = (short) (coordinates[1] + MIDIMain.getPreHeight());
 			}
-		}
-		//Middle-Click
-		else if(e.getButton() == MouseEvent.BUTTON2)
-		{
-			click = 2;
-			origin[0] = (short) (e.getX() + MIDIMain.getPreLength());
-			origin[1] = (short) (e.getY() + MIDIMain.getPreHeight());
-			coordinates[0] = (short) (e.getX());
-			coordinates[1] = (short) (e.getY());
-		}
-		//Right-Click
-		else if(e.getButton() == MouseEvent.BUTTON3)
-		{
-			click = 3;
-			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth, (short)(e.getY() - 55 + MIDIMain.getYCoordinate() - GUI.fullAddHeight));
-			//Object is being held
-			if(object >= 0)
+			//Right-Click
+			else if(e.getButton() == MouseEvent.BUTTON3)
 			{
-				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
+				click = 3;
+				object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY()+ MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
+				if(object < 0)
+				{
+					origin[0] = (short) coordinates[0];
+					origin[1] = (short) coordinates[1];
+				}
 			}
 		}
 	}
 
-	//mousePressed(MouseEvent e) responds to any inputs on the mouse being released
+	//mouseReleased(MouseEvent e) responds to any inputs on the mouse being released
 	//MouseEvent e = information of the mouse event
 	public void mouseReleased(MouseEvent e) {
 		if(e.getButton() == MouseEvent.BUTTON1 || e.getButton() == MouseEvent.BUTTON2 || e.getButton() == MouseEvent.BUTTON3)
 		{
 			click = 0;
-			object = 0;
+			object = -1;
 		}
 	}
 	
 	//mouseDragged(MouseEvent e) responds to any movement of the mouse while a button is held
 	//MouseEvent e = information of the mouse event
 	public void mouseDragged(MouseEvent e) {
-		//Left-Click
-		if(click == 1)
-		{
-			//Object is being held
-			if(object >= 0 && MIDISong.getNotes(MIDIMain.getTrackMenu()).length - 1 >= object)
-			{
-				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
-				coordinates[1] = (short) (e.getY() - GUI.fullAddHeight);
-			}
-			//Object is not being held
-			else
-			{
-				coordinates[0] = (short) (e.getX());
-				coordinates[1] = (short) (e.getY());
-			}
-		}
-		//Right-Middle
-		else if(click == 2)
-		{
-			coordinates[0] = (short) (e.getX());
-			coordinates[1] = (short) (e.getY());
-		}
-		//Right-Click
-		else if(click == 3)
-		{
-			//Object is being held
-			if(object >= 0)
-			{
-				coordinates[0] = (short) (e.getX() - GUI.sideBarWidth);
-			}
-		}
+		coordinates[0] = (short) (e.getX());
+		coordinates[1] = (short) (e.getY());
 	}
 
 	//mouseMoved(MouseEvent e) responds to any movement of the mouse (NOTE: while a button is not held)
@@ -163,6 +127,12 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 		return a;
 	}
 	
+	//Returns the origin location stored
+	public static short[] getOrigin()
+	{
+		return origin;
+	}
+	
 	//getObjectNumber() returns the value of the object being held
 	public static int getObjectNumber()
 	{
@@ -183,9 +153,9 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	
 	//getObjectNumber() sets the object number
 	//int obj = object number
-	public static int setObjectNumber(int obj)
+	public static void setObjectNumber(int obj)
 	{
-		return object;
+		object = obj;
 	}
 	
 	//setMouseWheel() sets the value of the mouse wheel

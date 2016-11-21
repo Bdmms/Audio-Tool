@@ -27,6 +27,7 @@ public class MIDISong
 		resetTracks();
 	}
 	
+	//resetTracks() changes the amount of tracks in the sequence
 	private static void resetTracks()
 	{
 		tracks = new Tracks[sequence.getTracks().length];
@@ -36,6 +37,7 @@ public class MIDISong
 		}
 	}
 	
+	//addTrack() adds a new track to the sequence
 	public static void addTrack()
 	{
 		if(tracks.length < 16)
@@ -73,6 +75,13 @@ public class MIDISong
 	public static void closeTrack(byte trackNum)
 	{
 		tracks[trackNum].closeTrack();
+	}
+	
+	//saveTrack(byte trackNum) saves the track so that notes are updated in the sequence
+	//byte teackNum = specified track in the array
+	public static void saveTrack(byte trackNum)
+	{
+		tracks[trackNum].saveTrack();
 	}
 	
 	//getNotes(byte trackNum) returns the array of notes in a designated track

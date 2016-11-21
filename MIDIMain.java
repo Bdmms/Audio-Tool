@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Rectangle;
 
 import javax.swing.*;
 import java.awt.event.*;
@@ -8,6 +9,9 @@ import java.awt.event.*;
 public class MIDIMain implements ActionListener
 {
 	/**
+	 * Audio Tool Project
+	 * 
+	 * By: Ethan Lee and Sean Rannie
 	 * Date: October 15, 2016
 	 * 
 	 * The Main class contains all of the components of the window and
@@ -15,7 +19,7 @@ public class MIDIMain implements ActionListener
 	 * it is connected to all other classes in the project. This class controls
 	 * most of the menu information (i.e. menu type, menu location, etc.)
 	 * 
-	 * Note 1: All comments in this project are displayed above the targeted line of code 
+	 * (Note #1: All comments in this project are displayed above the targeted line of code) 
 	 */
 	
 	private JFileChooser fileIn = new JFileChooser();		//The file directory that opens when choosing a file
@@ -31,23 +35,53 @@ public class MIDIMain implements ActionListener
 	private JButton[] tools = new JButton[18];				//Tool bar buttons
 	private JButton[] trackButtons = new JButton[0];		//Buttons for tracks
 	
+	private static byte selected = 0;						//The selection mode (0 = single | 1 = selecting notes | 2 = selected notes)
+	private static Rectangle selectBox;						//The rectangle that is used to select notes
+	
 	private static boolean play = false;					//Determines if the song is being played or not
 	private static byte mode = 0;							//Determines which menu the program displays
 	private static byte track = -1;							//Determines which track has been entered
-	private static long x = 0;								//The x value used in the note editor
-	private static short y = 0;								//The y value used in the note editor
 	private static short[] scale = {20, 20};				//The values that are used to space the grid layout (x, y)
 	private static short scrollY = 0;						//The value assigned to the scroll bar
+	private static short y = 0;								//The y value used in the note editor
+	private static long x = 0;								//The x value used in the note editor
 	
 	public static void main(String[] args) {
 		//Removes forced static methods and variables
 		new MIDIMain();
 	}
+	
+	//Constructor method
+		public MIDIMain()
+		{
+			//Initialization process
+			initialization();
+			mode();
+			
+			//Program starts
+			while(true)
+			{
+				//Inputs
+				mouseControl();
+				scrollBar();
+				
+				//Process
+				if(mode == 1)
+					trackLayout();
+				if(mode >= 2 && play)
+					x = scale[0]*player.getTickPosition();
+				
+				//Outputs
+				window.repaint();
+				
+				//Pause (Repeat)
+				pause(10);
+			}
+		}
 
 	//initialization() initializes basic graphical components
 	public void initialization(){
 		//scroll bar is initialized
-		
 		scroll.setBounds(680, 50, 20, 320);
 		scroll.setUnitIncrement(10);
 		
@@ -173,34 +207,6 @@ public class MIDIMain implements ActionListener
 		}
 	}
 	
-	//Initial method
-	public MIDIMain()
-	{
-		//Initialization process
-		initialization();
-		mode();
-		
-		//Program starts
-		while(true)
-		{
-			//Inputs
-			mouseControl();
-			scrollBar();
-			
-			//Process
-			if(mode == 1)
-				trackLayout();
-			if(mode == 2 && play)
-				x = scale[0]*player.getTickPosition();
-			
-			//Outputs
-			window.repaint();
-			
-			//Pause (Repeat)
-			pause(10);
-		}
-	}
-	
 	//Mode() sets the components correctly to represent the current menu type
 	public void mode()
 	{
@@ -257,7 +263,7 @@ public class MIDIMain implements ActionListener
 			window.getJMenuBar().getMenu(2).setEnabled(false);
 		}
 		//Note Editor
-		else if(mode == 2)
+		else if(mode >= 2)
 		{
 			tools[17].setVisible(true);
 			scroll.setVisible(false);
@@ -317,6 +323,7 @@ public class MIDIMain implements ActionListener
 			}
 			else
 			{
+				MIDISong.saveTrack(track);
 				play = true;
 				player.play(true);
 			}
@@ -333,6 +340,7 @@ public class MIDIMain implements ActionListener
 			}
 			else
 			{
+				MIDISong.saveTrack(track);
 				play = true;
 				player.setTickPosition(0);
 				player.play(true);
@@ -415,7 +423,7 @@ public class MIDIMain implements ActionListener
 		//Track buttons
 		for(byte i = 0; i < trackButtons.length; i++)
 		{
-			//If source is equall to one of the track buttons
+			//If source is equal to one of the track buttons
 			if(e.getSource() == trackButtons[i])
 			{
 				track = i;
@@ -430,44 +438,9 @@ public class MIDIMain implements ActionListener
 	public void mouseControl()
 	{
 		//Note Editor
-		if(mode == 2)
+		if(mode >= 2)
 		{
-			//Middle Click
-			if(CursorListener.getClick() == 2)
-			{
-				scale[0] = (short) (CursorListener.getLocationDif()[0]);
-				scale[1] = (short) (CursorListener.getLocationDif()[1]);
-			}
-			//Left Click while holding an object
-			if(CursorListener.getClick() == 1)
-			{
-				//Object is being held
-				if(CursorListener.getObjectNumber() >= 0)
-					MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] + x - scale[0]/2, (short)(CursorListener.getLocation()[1] + y - GUI.windowBarHeight - MIDIMain.getPreHeight()/2));
-				//Left Click while not holding an object
-				else
-				{
-					x = CursorListener.getLocationDif()[0];
-					y = CursorListener.getLocationDif()[1];
-				}
-			}
-			//Right Click on an object
-			if(CursorListener.getClick() == 3 && CursorListener.getObjectNumber() >= 0)
-			{
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x));
-			}
-			//When the Mouse Wheel is moving
-			if(CursorListener.getMouseWheel() != 0)
-			{
-				scale[0] -= CursorListener.getMouseWheel()*2;
-				scale[1] -= CursorListener.getMouseWheel()*2;
-				if(scale[0] > 0 && scale[1] > 0 && scale[0] < 100 && scale[1] < 100)
-				{
-					x += CursorListener.getMouseWheel()*(CursorListener.getLocation()[0])/scale[0];
-					y += CursorListener.getMouseWheel()*(CursorListener.getLocation()[1])/scale[1];
-				}
-				CursorListener.setMouseWheel((byte) 0);
-			}
+			gridControl();
 		}
 		//Track Editor
 		else if(mode == 1)
@@ -479,8 +452,138 @@ public class MIDIMain implements ActionListener
 				CursorListener.setMouseWheel((byte) 0);
 			}
 		}
+	}
+	
+	//singleSelectControls() processes the inputs for selecting a group of notes
+	public void singleSelectControls()
+	{
+		//Left Click
+		if(CursorListener.getClick() == 1)
+		{
+			//Object is being held
+			if(CursorListener.getObjectNumber() >= 0)
+			{
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0], (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
+			}
+			//Left Click while not holding an object
+			else
+			{
+				x = CursorListener.getLocationDif()[0];
+				y = CursorListener.getLocationDif()[1];
+			}
+		}
+		//Right Click
+		if(CursorListener.getClick() == 3)
+		{
+			//If on an object
+			if(CursorListener.getObjectNumber() >= 0)
+			{
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
+				selected = 0;
+			}
+			else
+			{
+				selected = 1;
+			}
+		}
+		else
+		{
+			//If objects have been selected
+			if(selected == 1)
+			{
+				Notes.selectContained(getSelectBox());
+				selected = 2;
+			}
+			else
+				selected = 0;
+		}
+	}
+	
+	//multiSelectControls() processes the inputs for selecting a group of notes
+	public void multiSelectControls()
+	{
+		//Left Click
+		if(CursorListener.getClick() == 1)
+		{
+			//Selected Object is being held
+			if(CursorListener.getObjectNumber() >= 0 && MIDISong.getNotes(track)[CursorListener.getObjectNumber()].isSelected())
+			{
+				for(int i = 0; i < Notes.getNumNotes(); i++)
+				{
+					if(MIDISong.getNotes(track)[i].isSelected() && i != CursorListener.getObjectNumber())
+					{
+						MIDISong.getNotes(track)[i].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0] + (MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[CursorListener.getObjectNumber()].getX()), 
+								(short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight + (MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() - MIDISong.getNotes(MIDIMain.getTrackMenu())[CursorListener.getObjectNumber()].getY())));
+					}
+				}
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0], (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
+			}
+			else
+			{
+				Notes.unSelectAll();
+				selected = 0;
+			}
+		}
+		//Right Click
+		if(CursorListener.getClick() == 3)
+		{
+			//Selected Object is being clicked
+			if(CursorListener.getObjectNumber() >= 0 && MIDISong.getNotes(track)[CursorListener.getObjectNumber()].isSelected())
+			{
+				for(int i = 0; i < Notes.getNumNotes(); i++)
+				{
+					if(MIDISong.getNotes(track)[i].isSelected() && i != CursorListener.getObjectNumber())
+					{
+						MIDISong.getNotes(track)[i].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth + (MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getEndX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[CursorListener.getObjectNumber()].getEndX())));
+					}
+				}
+				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
+			}
+			else
+			{
+				Notes.unSelectAll();
+				selected = 0;
+			}
+		}
+	}
+	
+	//gridControl() processes the inputs used in the note editor
+	public void gridControl()
+	{
+		//If selecting one objects
+		if(selected < 2)
+			singleSelectControls();
+		//If selecting multiple objects
+		else if(selected == 2)
+			multiSelectControls();
+
+		//Middle Click
+		if(CursorListener.getClick() == 2)
+		{
+			scale[0] = (short) (CursorListener.getLocationDif()[0]);
+			scale[1] = (short) (CursorListener.getLocationDif()[1]);
+		}
 		
-		//MOVE THIS:
+		//When the Mouse Wheel is moving
+		if(CursorListener.getMouseWheel() != 0)
+		{
+			scale[0] -= CursorListener.getMouseWheel()*2;
+			scale[1] -= CursorListener.getMouseWheel()*2;
+			//If scale is in limits
+			if(scale[0] > 0 && scale[1] > 0 && scale[0] < 100 && scale[1] < 100)
+			{
+				x += CursorListener.getMouseWheel()*(CursorListener.getLocation()[0])/scale[0];
+				y += CursorListener.getMouseWheel()*(CursorListener.getLocation()[1])/scale[1];
+			}
+			CursorListener.setMouseWheel((byte) 0);
+		}
+		
+		gridLimits();
+	}
+	
+	//gridLimits() limits the value that can be assigned to coordinate variables
+	public void gridLimits()
+	{
 		//Limits to the scale
 		if(scale[0] < 1)
 			scale[0] = 1;
@@ -491,7 +594,6 @@ public class MIDIMain implements ActionListener
 		if(scale[1] > 100)
 			scale[1] = 100;
 		
-		//MOVE THIS:
 		//Limits to the coordinates
 		if(x < 0)
 			x = 0;
@@ -516,34 +618,55 @@ public class MIDIMain implements ActionListener
 		return mode;
 	}
 	
-	//getCoordinates() returns the x and y values of the display
+	//getXCoordinate() returns the x value of the display
 	public static long getXCoordinate()
 	{
 		return x;
 	}
 	
+	//getYCoordinate() returns the y value of the display
 	public static short getYCoordinate()
 	{
 		return y;
 	}
 	
+	//getScrollValue() returns the value assigned to the scrollBar
 	public static short getScrollValue()
 	{
 		return scrollY;
 	}
 	
+	//getPreLength() returns the x scaling of the note editor grid
 	public static short getPreLength()
 	{
 		return scale[0];
 	}
 	
+	//getPreHeight() returns the y scaling of the note editor grid
 	public static short getPreHeight()
 	{
 		return scale[1];
 	}
 	
+	//getTrackMenu() returns the current track being viewed from number order
 	public static byte getTrackMenu()
 	{
 		return track;
+	}
+	
+	//getSelectBox() returns the highlighted box used to select notes
+	public static Rectangle getSelectBox()
+	{
+		selectBox = new Rectangle(CursorListener.getOrigin()[0] - GUI.mouseDisplacement, CursorListener.getLocation()[1] - GUI.fullAddHeight, CursorListener.getLocation()[0] - CursorListener.getOrigin()[0], CursorListener.getOrigin()[1] - CursorListener.getLocation()[1]);
+		return selectBox;
+	}
+	
+	//isSelecting() returns whether multiple notes are being selected
+	public static boolean isSelecting()
+	{
+		if(selected == 1)
+			return true;
+		else
+			return false;
 	}
 }

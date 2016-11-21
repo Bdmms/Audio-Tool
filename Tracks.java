@@ -1,5 +1,5 @@
 import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
@@ -193,7 +193,7 @@ public class Tracks
 	//drawTrack(Graphics g, short y) draws the track window for the track
 	//Graphics g = component of the JPanel used to create visual elements
 	//short y = y location of the window
-	public void drawTrack(Graphics g, short y)
+	public void drawTrack(Graphics2D g, short y)
 	{
 		//Background
 		g.setColor(Color.LIGHT_GRAY);
@@ -203,7 +203,6 @@ public class Tracks
 		g.setColor(Color.WHITE);
 		g.fillRect(201, 11+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
 		g.fillRect(201, 41+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
-		
 		//Borders
 		g.setColor(Color.BLACK);
 		g.drawRect(200, 10+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 100, 20);
