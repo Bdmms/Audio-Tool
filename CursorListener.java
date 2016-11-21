@@ -16,16 +16,11 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	 * Note 1: This class contains required methods that CANNOT be removed
 	 */
 
-	//Records input of all mouse buttons (0 = left | 1 = middle | 2 = right)
-	private static byte click = 0;
-	//Used to determine which object is being moved
-	private static int object = 0;
-	//Records location of mouse on screen; [0] = x, [1] = y
-	private static short[] coordinates = {0, 0};
-	//The location of the mouse before dragging
-	private static short[] origin = {0, 0};
-	//The value assigned to the mouse scroll wheel
-	private static byte wheelScroll = 0;
+	private static byte click = 0;					//Records input of all mouse buttons (0 = left | 1 = middle | 2 = right)
+	private static int object = -1;					//Used to determine which object is being moved
+	private static short[] coordinates = {0, 0};	//Records location of mouse on screen; [0] = x, [1] = y
+	private static short[] origin = {0, 0};			//The location of the mouse before dragging
+	private static byte wheelScroll = 0;			//The value assigned to the mouse scroll wheel
 	
 	//mouseClicked(MouseEvent e) responds to any digital input on the mouse
 	//MouseEvent e = information of the mouse event
@@ -50,7 +45,7 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	public void mousePressed(MouseEvent e) {
 		if(MIDIMain.getMode() == 2)
 		{
-			object = 0;
+			object = -1;
 			coordinates[0] = (short) e.getX();
 			coordinates[1] = (short) e.getY();
 			//Left-Click
@@ -80,17 +75,22 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 			{
 				click = 3;
 				object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY()+ MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
+				if(object < 0)
+				{
+					origin[0] = (short) coordinates[0];
+					origin[1] = (short) coordinates[1];
+				}
 			}
 		}
 	}
 
-	//mousePressed(MouseEvent e) responds to any inputs on the mouse being released
+	//mouseReleased(MouseEvent e) responds to any inputs on the mouse being released
 	//MouseEvent e = information of the mouse event
 	public void mouseReleased(MouseEvent e) {
 		if(e.getButton() == MouseEvent.BUTTON1 || e.getButton() == MouseEvent.BUTTON2 || e.getButton() == MouseEvent.BUTTON3)
 		{
 			click = 0;
-			object = 0;
+			object = -1;
 		}
 	}
 	
@@ -127,9 +127,10 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 		return a;
 	}
 	
-	public static short getOrigin()
+	//Returns the origin location stored
+	public static short[] getOrigin()
 	{
-		return origin[0];
+		return origin;
 	}
 	
 	//getObjectNumber() returns the value of the object being held
@@ -152,9 +153,9 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	
 	//getObjectNumber() sets the object number
 	//int obj = object number
-	public static int setObjectNumber(int obj)
+	public static void setObjectNumber(int obj)
 	{
-		return object;
+		object = obj;
 	}
 	
 	//setMouseWheel() sets the value of the mouse wheel
