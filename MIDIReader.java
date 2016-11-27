@@ -93,4 +93,35 @@ public class MIDIReader {
 		
 	}
 	
+	public static String[] getInstrumentList()
+	{
+		String[] s = new String[0];
+		BufferedReader read;
+		int lines = 0;
+		try {
+			read = new BufferedReader(new FileReader("Instrument_List.txt"));
+			
+			while (!read.readLine().equals("END"))
+			{
+				lines++;
+			}
+			
+			s = new String[lines];
+			read.close();
+			
+			read = new BufferedReader(new FileReader("Instrument_List.txt"));
+			
+			for(int i = 0; i < lines; i++)
+			{
+				s[i] = read.readLine();
+			}
+			
+			read.close();
+			
+		} catch (FileNotFoundException e) {NotifyAnimation.sendMessage("Error", "Instrument list could not be read.");
+		} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Instrument list could not be read.");}
+		
+		return s;
+	}
+	
 }
