@@ -5,7 +5,7 @@ import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
 
 /**
- * Date: October 31, 2016
+ * Date: November 1, 2016
  * 
  * This class stores all data in the song, including the sequence, 
  * length, and the tempo.
@@ -81,7 +81,8 @@ public class MIDISong
 	//byte teackNum = specified track in the array
 	public static void saveTrack(byte trackNum)
 	{
-		tracks[trackNum].saveTrack();
+		tracks[trackNum].closeTrack();
+		tracks[trackNum].openTrack();
 	}
 	
 	//getNotes(byte trackNum) returns the array of notes in a designated track

@@ -320,12 +320,39 @@ public class Notes
 			return c+"?";
 		}
 	}
+	
+	//isMessageStatus(byte status, byte comparison) returns true or false whether the status of the message is a variant of its type
+	//byte mesStatus = status message being observed
+	//byte statusType = status message being compared to
+	public static byte getMessageChannel(byte mesStatus, byte statusType)
+	{
+		if(isMessageStatus(mesStatus, statusType))
+		{
+			return (byte) (mesStatus - statusType);
+		}
+		return -1;
+	}
 
 	//isMessageStatus(byte status, byte comparison) returns true or false whether the status of the message is a variant of its type
+	//byte mesStatus = status message being observed
+	//byte statusType = status message being compared to
 	public static boolean isMessageStatus(byte mesStatus, byte statusType)
 	{
 		//If message is 1 of 16 variants
 		if(mesStatus >= statusType && mesStatus <= statusType+16)
+			return true;
+		else
+			return false;
+	}
+	
+	//isMessageChannel(byte status, byte comparison, byte channel) returns true or false whether the status of the message is the channel's variant type
+	//byte mesStatus = status message being observed
+	//byte statusType = status message being compared to
+	//byte channel = channel that is being used 
+	public static boolean isMessageChannel(byte mesStatus, byte statusType, byte channel)
+	{
+		//If message is 1 of 16 variants
+		if(mesStatus == statusType + channel)
 			return true;
 		else
 			return false;

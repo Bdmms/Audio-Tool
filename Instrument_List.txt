@@ -1,0 +1,8 @@
+0 - Acoustic Grand Piano   [Piano]
+1 - Bright Acoustic Piano
+2 - Electric Grand Piano
+3 - Honky-Tonk Piano
+4 - Rhodes Piano
+5 - Chorused Piano
+6 - Harpsichord
+END
