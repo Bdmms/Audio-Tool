@@ -7,13 +7,23 @@ import javax.sound.midi.*;
 
 public class MIDIPlayer implements MetaEventListener
 {
+	/**
+	 * Novemeber 2, 2016
+	 * 
+	 * This class contains all of the objects that are used to
+	 * play midi files and produce noises.
+	 */
+	
 	public static final int END_OF_TRACK_MESSAGE = 0x2F;	//the status message for the END_OF_TRACK_MESSAGE
 	
-	Synthesizer synth;						//The synthesizer of the player
-	Sequencer sequencer;					//The sequencer of the player
-	MidiChannel chan[];						//The channels the program has access too
-	private boolean loop;					//Determines whether a played song should loop
-	//private boolean paused;				//Determines if song is being paused
+	private Synthesizer synth;						//The synthesizer of the player
+	private Sequencer sequencer;					//The sequencer of the player
+	private MidiChannel chan[];						//The channels the program has access too
+	private boolean loop;							//Determines whether a played song should loop
+	//private boolean paused;							//Determines if song is being paused
+	
+	private boolean noteOn = false;					//if a note is playing in the synthesizer
+	private byte[] noteData = {0,0};				//The volume and tone of the note
 	
 	//initial method, sets the synthesizer and sequencer of the player
 	public MIDIPlayer()
@@ -45,6 +55,20 @@ public class MIDIPlayer implements MetaEventListener
 		}
 	}
 	
+	//setInstrument(byte instr, byte chan) sets the program of the channel to a specified instrument
+	//byte instr = instrument
+	//byte chan = channel being changed
+	public void setInstrument(byte instr, byte channel)
+	{
+		chan[channel].programChange(instr);
+	}
+	
+	//setTickPosition() sets the tick position of the song being played
+	public void setTickPosition(long t)
+	{
+		sequencer.setTickPosition(t);
+	}
+	
 	//getSequence(File file) returns the sequence from file
 	//File file = file that contains sequence *temporally
 	public Sequence getSequence(File file)
@@ -68,17 +92,30 @@ public class MIDIPlayer implements MetaEventListener
 		}
 	}
 	
-	
-	//setTickPosition() sets the tick position of the song being played
-	public void setTickPosition(long t)
-	{
-		sequencer.setTickPosition(t);
-	}
-	
 	//getTickPosition() returns the tick position of the song being played
 	public long getTickPosition()
 	{
 		return sequencer.getTickPosition();
+	}
+	
+	public void NoteOn(byte tone, byte volume)
+	{
+		if(noteOn == false)
+		{
+			noteData[0] = tone;
+			noteData[1] = volume;
+			noteOn = true;
+			chan[MIDIMain.getTrackMenu()].noteOn(noteData[0], noteData[1]);
+		}
+	}
+	
+	public void NoteOff()
+	{
+		if(noteOn == true)
+		{
+			noteOn = false;
+			chan[MIDIMain.getTrackMenu()].noteOff(noteData[0], noteData[1]);
+		}
 	}
 	
 	//play(Sequence seq, boolean loop) plays the the song
@@ -88,8 +125,7 @@ public class MIDIPlayer implements MetaEventListener
 		if(sequencer != null && MIDISong.getSequence() != null && sequencer.isOpen())
 		{
 			try{
-				if(sequencer.getSequence() == null)
-					sequencer.setSequence(MIDISong.getSequence());
+				sequencer.setSequence(MIDISong.getSequence());
 				sequencer.start();
 				this.loop = loop;
 			}catch (Exception ex){ex.printStackTrace();}
@@ -116,10 +152,5 @@ public class MIDIPlayer implements MetaEventListener
 				sequencer.start();
 			}
 		}
-	}
-	
-	public void scaleTempo(float multiply)
-	{
-		sequencer.setTempoFactor(1 * multiply);
 	}
 }	
