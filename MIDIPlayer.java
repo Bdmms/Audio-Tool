@@ -13,7 +13,7 @@ public class MIDIPlayer implements MetaEventListener
 	Sequencer sequencer;					//The sequencer of the player
 	MidiChannel chan[];						//The channels the program has access too
 	private boolean loop;					//Determines whether a played song should loop
-	//private boolean paused;					//Determines if song is being paused
+	//private boolean paused;				//Determines if song is being paused
 	
 	//initial method, sets the synthesizer and sequencer of the player
 	public MIDIPlayer()
@@ -116,5 +116,10 @@ public class MIDIPlayer implements MetaEventListener
 				sequencer.start();
 			}
 		}
+	}
+	
+	public void scaleTempo(float multiply)
+	{
+		sequencer.setTempoFactor(1 * multiply);
 	}
 }	
