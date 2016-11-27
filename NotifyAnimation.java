@@ -1,5 +1,4 @@
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
 
 /** 
@@ -65,9 +64,9 @@ public class NotifyAnimation
 			g.setStroke(GUI.basic);
 			
 			//Message
-			g.setFont(new Font("AAA",Font.BOLD, 12));
+			g.setFont(GUI.defaultFont);
 			g.drawString("- "+header+" -", 540, value + 20);
-			g.setFont(new Font("AAA",Font.ROMAN_BASELINE, 12));
+			g.setFont(GUI.romanBaseline);
 			for(byte i = 0; i < message.length; i++)
 			{
 				g.drawString(message[i], 535, value + 40 + i*20);
