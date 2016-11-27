@@ -4,7 +4,10 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 
 public class GUI extends JPanel
 {
@@ -21,10 +24,10 @@ public class GUI extends JPanel
 	 */
 	
 	//GUI Size = 720 x 480
-	private static final long serialVersionUID = 1L;						//Default serial ID
+	private static final long serialVersionUID = 1L;						
 	public final static byte toolBarHeight = 40;							//Height of toolBar
 	public final static byte topBarHeight = 20;								//Height of top label
-	public final static byte fullAddHeight = toolBarHeight + topBarHeight ; //Combined height
+	public final static byte fullAddHeight = toolBarHeight + topBarHeight ;//Combined height
 	public final static short sideBarWidth = 100;							//Side label width
 	public final static short screenHeight = 480;							//Screen height
 	public final static short screenWidth = 720;							//Screen width
@@ -32,11 +35,48 @@ public class GUI extends JPanel
 	public final static byte windowBarHeight = 54;							//Height of window label bar (It's very annoying to deal with)
 	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
 	
-	public final static BasicStroke basic = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);	//Default thin border
-	public final static BasicStroke bold = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);		//Thick border
+	public final static BasicStroke basic = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);
+	public final static BasicStroke bold = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);
+	public final static Font defaultFont = new Font("default", Font.PLAIN,12);
+	
+	private JButton[] tools = MIDIMain.getTools();							//Tool bar buttons
+	private static InfoBar info = new InfoBar();							//The song information bar
+	private static JScrollBar scroll = new JScrollBar();					//The scroll bar used in the track editor
+	private static ToolBar toolBar = new ToolBar();
+	
+	public GUI()
+	{
+		//initialize info bar
+		info.setBounds(15, GUI.screenHeight - 80, (GUI.screenWidth / 2) -15, 60);
+		info.setLayout(null);
+		info.setVisible(true);
+		add(info);
+		
+		//initialize scroll bar
+		scroll.setBounds(680, 50, 20, 320);
+		scroll.setUnitIncrement(10);
+		add(scroll);
+		
+		//initialize tool bar
+		toolBar.setSize(720,41);
+		toolBar.setLayout(null);
+		toolBar.setBackground(Color.LIGHT_GRAY);
+		toolBar.setVisible(true);
+		add(toolBar);
+			
+		for(byte i = 0; i < tools.length; i++)
+		{
+			tools[i] = new JButton(new ImageIcon("Images/ButtonIcon.png"));
+			tools[i].setSelectedIcon(new ImageIcon("Images/ButtonSelectedIcon.png"));
+			tools[i].setBounds(5+40*i,5,30,30);
+			tools[i].setBackground(Color.LIGHT_GRAY);
+			tools[i].setBorderPainted(false);
+			toolBar.add(tools[i]);
+		}
+	}
 	
 	//paintComponent(Graphics g) responds to the .repaint() method when used
-	//Graphics g = component of the JPanel used to create visual elements
+	//Graphics g = component of the JPanel used to create visual elements	
 	public void paintComponent(Graphics g) 
 	{
 		Graphics2D g2D = (Graphics2D) g;	//Graphics2D allows access more methods
@@ -45,16 +85,20 @@ public class GUI extends JPanel
 		g2D.setStroke(basic);
     
 		//Welcome Screen
-		if(MIDIMain.getMode() == 0){drawStartScreen(g2D);}
-		//Track Editor
-		else if(MIDIMain.getMode() == 1){drawTrackEditor(g2D);}
-		//Note Editor
-		else if(MIDIMain.getMode() >= 2){drawNoteEditor(g2D);}
-		
-		if(MIDIMain.isSelecting() == true)
+		if(MIDIMain.getMode() == 0)
 		{
-			g2D.setColor(new Color(0, 0, 255, 100));
-			g2D.fill(MIDIMain.getSelectBox());
+			drawStartScreen(g2D);
+		}
+		//Track Editor
+		else if(MIDIMain.getMode() == 1)
+		{
+			drawTrackEditor(g2D);
+			
+		}
+		//Note Editor
+		else if(MIDIMain.getMode() == 2)
+		{
+			drawNoteEditor(g2D);
 		}
 		
 		NotifyAnimation.drawNoteWindow(g2D);
@@ -67,14 +111,32 @@ public class GUI extends JPanel
 		*/
 	}
 	
-	//drawStartScreen(Graphics2D g) draws the welcome screen (menu = 0)
+	public static InfoBar getInfoBar()
+	{
+		return info;
+	}
+	
+	public static ToolBar getToolBar()
+	{
+		return toolBar;
+	}
+	
+	public static JScrollBar getScrollBar()
+	{
+		return scroll;
+	}
+	
+	
+	//drawStartScreen(Graphics2D g) draws the welcome screen (mode = 0)
 	public void drawStartScreen(Graphics2D g)
 	{
 		g.setFont(new Font("FONT", Font.BOLD, 50));
 		g.drawString("WELCOME", 230, 240);
+		g.setFont(new Font("FONT", Font.BOLD, 20));
+		g.drawString("(Except for YU Chris...)", 245, 270);
 	}
 	
-	//drawTrackEditor(Graphics2D g) draws the track editor (menu = 1)
+	//drawTrackEditor(Graphics2D g) draws the track editor (mode = 1)
 	public void drawTrackEditor(Graphics2D g)
 	{
 		for(byte i = 0; i < MIDISong.getTracksLength(); i++)
@@ -91,7 +153,7 @@ public class GUI extends JPanel
 		 */
 	}
 	
-	//drawNoteEditor(Graphics2D g) draws the note editor (menu = 2)
+	//drawNoteEditor(Graphics2D g) draws the note editor (mode = 2)
 	public void drawNoteEditor(Graphics2D g)
 	{
 		g.setFont(new Font("FONT", Font.ROMAN_BASELINE, 12));
@@ -100,9 +162,11 @@ public class GUI extends JPanel
 		drawGridLabels(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
 	}
 	
-	//drawGridLabels(Graphics2D g, short height, short width) draws the labels on the sides of the grid
-	//short height = height of the grid (in tones)
-	//short width = width of the grid (in ticks)
+	/*
+	 * drawGridLabels(Graphics2D g, short height, short width) draws the labels on the sides of the grid
+	 * short height = height of the grid (in tones)
+	 * short width = width of the grid (in ticks)
+	 */
 	public void drawGridLabels(Graphics2D g, short height, short width)
 	{
 		drawSideGridLabel(g, (short) height);
@@ -219,17 +283,6 @@ public class GUI extends JPanel
 		g.setColor(Color.GRAY);
 		for(int i = (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength()); i < (int) (MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + width + 1); i++)
 		{
-			if(i%MIDISong.getMeasureLength() == 0)
-			{
-				g.setStroke(bold);
-				g.setColor(Color.BLUE);
-			}
-			else
-			{
-				g.setStroke(basic);
-				g.setColor(Color.GRAY);
-			}
-			
 			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%2 == 0) || (MIDIMain.getPreLength() > 10 && i%4 == 0) || i%8 == 0)
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), screenHeight);
 		}
@@ -254,11 +307,7 @@ public class GUI extends JPanel
 			{
 				g.setColor(new Color(51,186,164));
 				g.fillRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
-				
-				if(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].isSelected())
-					g.setColor(Color.GREEN);
-				else
-					g.setColor(Color.BLACK);
+				g.setColor(Color.BLACK);
 				g.setStroke(bold);
 				g.drawRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
 			}
