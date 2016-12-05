@@ -10,7 +10,7 @@ import javax.sound.midi.*;
 public class MIDIReader {
 
 	//variables
-	String fileName = null;
+	private String fileName = null;
 	
 	/*
 	 * readFile(String fileName) returns sequence of the opened file
@@ -18,23 +18,26 @@ public class MIDIReader {
 	 */
 	public Sequence readFile(File file){
 	
+		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid))
+		{
 		fileName = file.getName();
 				
-		try
-		{
-			InputStream is = new FileInputStream(file);
-			
-			//if the file type is supported then create a buffered input stream for is
-			if(!is.markSupported())
+			try
 			{
-				is = new BufferedInputStream(is);
+				InputStream is = new FileInputStream(file);
+				
+				//if the file type is supported then create a buffered input stream for is
+				if(!is.markSupported())
+				{
+					is = new BufferedInputStream(is);
+				}
+				Sequence s = MidiSystem.getSequence(is);
+				is.close();
+				
+				return s;
 			}
-			Sequence s = MidiSystem.getSequence(is);
-			is.close();
-			
-			return s;
+			catch (Exception ex){NotifyAnimation.sendMessage("Error", "File could not be read.");;}
 		}
-		catch (Exception ex){ex.printStackTrace();}
 		
 		return null;
 	}
@@ -63,8 +66,8 @@ public class MIDIReader {
 			s.getTracks()[0].add(new MidiEvent(new SysexMessage(b,8), 0));
 
 			//SET TEMPO
-			//{81,0,0}
-			byte[] c = {0x51, 0x0, 0x0};
+			//{32,0,0} (0x200000)
+			byte[] c = {0x20, 0x0, 0x0};
 			//{81,c,3}
 			s.getTracks()[0].add(new MidiEvent(new MetaMessage(0x51, c, 3), 0));
 			
@@ -83,14 +86,25 @@ public class MIDIReader {
 	 * public void saveFile saves the MIDI file
 	 * Sequence s = the sequence that is being saved
 	 */
-	public void saveFile(Sequence s)
+	public void saveFile(Sequence s, String file)
 	{
+		if(!file.endsWith(".mid"))
+			file += ".mid";
 		try
 		{
-			MidiSystem.write(s, 0, new File (fileName));
+			MidiSystem.write(s, 1, new File(file));
 		}
 		catch(IOException ex){ex.printStackTrace();}
 		
+	}
+	
+	public Soundbank getSoundbank(File file)
+	{
+		Soundbank sound = null;
+		try {
+			sound = MidiSystem.getSoundbank(file);
+		} catch (Exception ex) {NotifyAnimation.sendMessage("Error", "Soundbank could not be opened.");}
+		return sound;
 	}
 	
 	public static String[] getInstrumentList()
