@@ -210,6 +210,12 @@ public class MIDISong
 		return((double) 60000000 / tempo) ;
 	}
 	
+	//getTempo() returns the tempo of the song
+	public static long getTempo()
+	{
+		return tempo;
+	}
+	
 	//getMeasureLength() returns the length of each measure in ticks
 	public static long getMeasureLength()
 	{
