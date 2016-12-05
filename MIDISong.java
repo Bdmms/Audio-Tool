@@ -16,10 +16,10 @@ public class MIDISong
 {
 	private static Sequence sequence;			//The sequence for the song
 	private static long length = 100;			//The length of the song in ticks
-	private static long tempo = 5000000;		//The tempo of the song (in microseconds per beat)
 	private static short measureLength = 16;	//The length of each measure in ticks
 	private static Tracks[] tracks;				//The tracks contained in the song
-	private static MidiEvent tempoChange;		//The tempo change message
+	private static long tempo = 5000000;		//The tempo of the song in mpb
+	private static MidiEvent tempoChange;		//The message for tempo change
 	
 	//setSong(Sequence seq) sets the sequence for the song and other information
 	//Sequence seq = sequence the song reads
@@ -27,6 +27,8 @@ public class MIDISong
 	{
 		sequence = seq;
 		length = sequence.getTickLength();
+		resetTracks();
+		
 		for(byte t = 0; t < seq.getTracks().length; t++)
 		{
 			for(int m = 0; m < seq.getTracks()[t].size(); m++)
@@ -38,13 +40,13 @@ public class MIDISong
 					{
 						tempo += seq.getTracks()[t].get(m).getMessage().getMessage()[d] * Math.pow(2, (seq.getTracks()[t].get(m).getMessage().getMessage().length - d - 1)*8);
 					}
-					//System.out.println("Tempo: "+tempo);
+					System.out.println("Tempo: " + tempo);
 					tempoChange = seq.getTracks()[t].get(m);
 					break;
 				}
 			}
 		}
-		resetTracks();
+
 	}
 	
 	//resetTracks() changes the amount of tracks in the sequence
@@ -70,7 +72,6 @@ public class MIDISong
 			NotifyAnimation.sendMessage("Notification", "Track limit has been reached. (Only 16 tracks can exist in one song)");
 		}
 	}
-	
 	//addNote(byte trackNum) adds a note to the track in a sequence
 	//byte trackNum = track containing notes
 	//long tick = tick of the new note
@@ -203,10 +204,10 @@ public class MIDISong
 		return length;
 	}
 	
-	//getTempo() returns the tempo of the song
-	public static long getTempo()
+	//returns the tempo of song
+	public static double getTempoBpm()
 	{
-		return tempo;
+		return((double) 60000000 / tempo) ;
 	}
 	
 	//getMeasureLength() returns the length of each measure in ticks
