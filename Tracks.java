@@ -19,7 +19,7 @@ import javax.swing.JComboBox;
  * may not always be equal to each other.
  */
 
-public class Tracks 
+public class Tracks
 {	
 	public static final short trackSpace = 10;										//Spacing between track menus
 	public static final short trackHeight = 70;										//The height of the track menus
