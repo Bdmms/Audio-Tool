@@ -19,7 +19,7 @@ import javax.swing.JComboBox;
  * may not always be equal to each other.
  */
 
-public class Tracks 
+public class Tracks
 {	
 	public static final short trackSpace = 10;										//Spacing between track menus
 	public static final short trackHeight = 70;										//The height of the track menus
@@ -28,27 +28,36 @@ public class Tracks
 	private static ArrayList<JButton> trackButtons = new ArrayList<JButton>();							//Buttons for tracks
 	private static ArrayList<JComboBox<String>> instrumentList = new ArrayList<JComboBox<String>>();	//Instrument indicator for tracks
 	
-	private int numNotes = 0;					//The number of notes in a track
-	private byte instrument = 0;				//The instrument used for the track
-	//private byte volume = 100;				//The master volume of every note in a track
-	private byte channel = 0;					//The channel that corresponds with track
-	private Notes[] notes;						//The array of note contained in the track
+	private int numNotes = 0;									//The number of notes in a track
+	private byte instrument = 0;								//The instrument used for the track
+	//private byte volume = 100;									//The master volume of every note in a track
+	private byte channel = 0;									//The channel that corresponds with track
+	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
 	
 	//Constructor method
 	//byte chan = channel of track
 	public Tracks(byte chan)
 	{
+		//DEBUG
+		System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
+		for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); i++)
+		{
+			System.out.print("\n"+i+": "+String.format("%4d",MIDISong.getEvent(channel, i).getTick())+" ticks |");
+			for(int m = 0; m < MIDISong.getMessage(channel, i).getLength(); m++)
+			{
+				System.out.print(String.format("%4d",MIDISong.getMessage(channel, i).getMessage()[m])+"|");
+			}
+		}
+		
 		channel = chan;
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
-
-		//DEBUG
-		/*
-		System.out.println("Track "+channel+1+" ----------------------------------------");
-		for(int i = 0; i < MIDISong.getSequence().getTracks()[chan].size(); i++)
+		
+		int v = readFor(channel, (byte)ShortMessage.PROGRAM_CHANGE, 0);
+		if(v >= 0)
 		{
-			System.out.println(MIDISong.getSequence().getTracks()[chan].get(i).getMessage().getStatus()+" - "+Integer.toHexString(MIDISong.getSequence().getTracks()[chan].get(i).getMessage().getStatus()));
+			setInstrument((byte)MIDISong.getMessage(channel, v).getMessage()[Notes.DATA_TONE]);
+			MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getSequence().getTracks()[channel].get(v));
 		}
-		*/
 	}
 	
 	//openTrack(byte trackNum) opens the data in a track for use in the note editor
@@ -59,10 +68,7 @@ public class Tracks
 		//If their are a real amount of notes
 		if(numNotes >= 0)
 		{
-			notes = new Notes[numNotes];
 			Notes.setTrack(channel);
-			//int n counts the current number of notes that have been set
-			int n = 0;
 			
 			for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); )
 			{
@@ -74,8 +80,7 @@ public class Tracks
 					//If an end of note can be identified
 					if(a >= 0)
 					{
-						notes[n] = new Notes(i, a);
-						n++;
+						notes.add(new Notes(MIDISong.getEvent(channel, i), MIDISong.getEvent(channel, a)));
 					}
 					else
 					{
@@ -97,39 +102,65 @@ public class Tracks
 	public void closeTrack()
 	{
 		saveTrack();
-		notes = new Notes[0];
+		notes.clear();
 		Notes.resetNotes();
+		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 	}
 	
 	//saveTrack() updates the values of the notes to the sequence
 	public void saveTrack()
 	{
-		//int i = message in sequence
-		int i = 0;
 		//int n = note in the sequence
 		int n = 0;
-		MidiEvent[] eve = new MidiEvent[Notes.getNumNotes()];
-		MidiEvent[] eve2 = new MidiEvent[Notes.getNumNotes()];
 		try {
 			for(; n < Notes.getNumNotes(); n++)
 			{
-				eve[n]  = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, channel, notes[n].getTone(), MIDISong.getMessage(channel, notes[n].getBeginning()).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(channel, notes[n].getBeginning()).getTick());
-				eve2[n] = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, channel, notes[n].getTone(), MIDISong.getMessage(channel, notes[n].getEnd()).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(channel, notes[n].getEnd()).getTick());
+				MIDISong.getSequence().getTracks()[channel].remove(notes.get(n).getStartMessage());
+				MIDISong.getSequence().getTracks()[channel].remove(notes.get(n).getEndMessage());
 			}
-			for(; i < MIDISong.getSequence().getTracks()[channel].size();)
+			for(n = 0; n < Notes.getNumNotes(); n++)
 			{
-				if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_ON) || Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_OFF))
-					MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, i));
-				else
-					i++;
+				notes.get(n).setMidiEvent(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON + channel, channel, MIDISong.getNotes(channel, n).getTone(), MIDISong.getNotes(channel, n).getVolume()), MIDISong.getNotes(channel, n).getTick()), new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF + channel, channel, MIDISong.getNotes(channel, n).getTone(), MIDISong.getNotes(channel, n).getVolume()), MIDISong.getNotes(channel, n).getEndTick()));
+				MIDISong.getSequence().getTracks()[channel].add(notes.get(n).getStartMessage());
+				MIDISong.getSequence().getTracks()[channel].add(notes.get(n).getEndMessage());
 			}
-			for(n = 0; n < eve.length; n++)
-			{
-				MIDISong.getSequence().getTracks()[channel].add(eve[n]);
-				MIDISong.getSequence().getTracks()[channel].add(eve2[n]);
-			}
-		} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array index out of bound! ("+i+", "+n+")");
+		} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array index out of bound! ("+n+")");
 		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "The current track has been deleted or corrupted!");}
+	}
+	
+	//addNote(int s, int e) creates a new Notes object using the parameters and adds it to the note array
+	//int s = location of start of note
+	//int e = location of end of notes
+	public void addNote(MidiEvent s, MidiEvent e)
+	{
+		notes.add(new Notes(s, e));
+	}
+	
+	//addNote(int s, int e) creates a new Notes object using the parameters and adds it to the note array
+	//long tick = location of note
+	//long endTick = location of note's end
+	//byte t = tone of note
+	//byte v = volume of note
+	public void addNote(long tick, long endTick, byte t, byte v)
+	{
+		MidiEvent eveStart = null;
+		MidiEvent eveEnd = null;
+		try {
+			eveStart = new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, channel, t, v), tick);
+			eveEnd = new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, channel, t, v), endTick);
+		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Note could not be created.");}
+		MIDISong.getSequence().getTracks()[channel].add(eveStart);
+		MIDISong.getSequence().getTracks()[channel].add(eveEnd);
+		notes.add(new Notes(eveStart, eveEnd));
+	}
+	
+	//removeNote(Notes note) removes the note from the track
+	//int note = note being removed
+	public void removeNote(int note)
+	{
+		notes.remove(note);
+		Notes.removeNote();
+		numNotes--;
 	}
 	
 	//countMessage(byte trackNum, byte message) counts the number of notes in the class and returns it
@@ -175,12 +206,33 @@ public class Tracks
 			//If note has no end before the start of the next note
 			else if(Notes.isMessageChannel((byte)MIDISong.getMessage(trackNum, i).getStatus(), (byte)ShortMessage.NOTE_ON, chan) && MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_TONE] == tone && add == false)
 			{
+				int c = i;
+				while(MIDISong.getEvent(trackNum, c).getTick() == MIDISong.getEvent(trackNum, i).getTick() && c < MIDISong.getSequence().getTracks()[trackNum].size())
+				{
+					if(Notes.isMessageChannel((byte)MIDISong.getMessage(trackNum, c).getStatus(), (byte)ShortMessage.NOTE_OFF, chan))
+					{
+						return c;
+					}
+					c++;
+				}
 				try {
 					MIDISong.getSequence().getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, tone, MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(trackNum, i).getTick()));
 					i = eventFrom + 1;	//Start from beginning
 					add = true;
 				} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array Index Out of Bound! (No Value Assigned)");
 				} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Invalid midi data!");}
+			}
+		}
+		return eventFrom + 1;
+	}
+	
+	public static int readFor(byte trackNum, byte message, int eventFrom)
+	{
+		for(int i = eventFrom; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
+		{
+			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), message))
+			{
+				return i;
 			}
 		}
 		return -1;
@@ -200,9 +252,10 @@ public class Tracks
 	}
 	
 	//getNotes() returns the array of notes in the track
-	public Notes[] getNotes()
+	//int note = index of note in array
+	public Notes getNotes(int note)
 	{
-		return notes;
+		return notes.get(note);
 	}
 	
 	//getChannel() returns the channel the track is assigned to
@@ -263,6 +316,7 @@ public class Tracks
 			instrumentList.get(instrumentList.size() - 1).setSize(230, 20);
 			instrumentList.get(instrumentList.size() - 1).setBackground(Color.WHITE);
 			instrumentList.get(instrumentList.size() - 1).setVisible(true);
+			instrumentList.get(instrumentList.size() - 1).setSelectedIndex(MIDISong.getTracks((byte)(instrumentList.size() - 1)).getInstrument());
 			
 			trackButtons.add(new JButton("Track "+(trackButtons.size()+1)));
 			trackButtons.get(trackButtons.size() - 1).setFont(GUI.boldFont);
@@ -272,9 +326,9 @@ public class Tracks
 		}
 	}
 	
-	public static void removeAllButtons()
+	public static void resetAllButtons()
 	{
-		for(byte i = 0; i < trackButtons.size(); i++)
+		for(byte i = (byte) (trackButtons.size() - 1); i >= 0; i--)
 		{
 			trackButtons.remove(i);
 			instrumentList.remove(i);
