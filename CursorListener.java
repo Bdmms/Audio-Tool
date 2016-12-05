@@ -55,7 +55,7 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 				object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY() + MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
 				if(object >= 0)
 				{
-					origin[0] = (short) ((coordinates[0] - GUI.mouseDisplacement - GUI.sideBarWidth) - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getX());
+					origin[0] = (short) ((coordinates[0] - GUI.mouseDisplacement - GUI.sideBarWidth) - MIDISong.getNotes(MIDIMain.getTrackMenu(), object).getX());
 				}
 				else
 				{
