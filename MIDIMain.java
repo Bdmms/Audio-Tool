@@ -59,6 +59,7 @@ public class MIDIMain implements ActionListener
 		{
 			//Inputs
 			mouseControl();
+			keyControl();
 			if(scroll.getValue() != scrollY)
 				scrollY = visual.setComponentsOfScrollBar();
 			
@@ -92,10 +93,10 @@ public class MIDIMain implements ActionListener
         window.add(visual);
         window.setJMenuBar(setMenuBar());	//Special method for setting the menu bar
         window.pack();
-        window.addKeyListener(key);
         window.addMouseListener(mouse);
         window.addMouseMotionListener(mouse);
         window.addMouseWheelListener(mouse);
+        window.addKeyListener(key);
         window.setVisible(true);
         
         setFileChooser();
@@ -168,12 +169,12 @@ public class MIDIMain implements ActionListener
 	//byte length = number of tracks in the song
 	public void setTrackButtons(byte length)
 	{
-		for(byte i = 0; i < Tracks.getButtonLength(); )
+		for(byte i = 0; i < Tracks.getButtonLength(); i++)
 		{
 			visual.remove(Tracks.getTrackEntryButton(i));
 			visual.remove(Tracks.getInstrumentListButton(i));
 		}
-		Tracks.removeAllButtons();
+		Tracks.resetAllButtons();
 			
 		for(byte i = 0; i < length; i++)
 		{
@@ -320,9 +321,9 @@ public class MIDIMain implements ActionListener
 			if(play == true)
 			{
 				play = false;
+				player.stop();
 				player.setTickPosition(0);
 				x = 0;
-				player.stop();
 			}
 			else
 			{
@@ -351,7 +352,18 @@ public class MIDIMain implements ActionListener
 			//note editor
 			else if(mode == 2)
 			{
-				MIDISong.addNote(track);
+				MIDISong.addNote(track, x/scale[0], (byte)(Notes.MAX_TONE - (y + (GUI.screenHeight - GUI.fullAddHeight)/2)/scale[1]), (byte)78, x/scale[0]+8);
+			}
+		}
+		//Tool #4 REMOVE / DELETE
+		if(e.getSource() == toolBar.getTools(3))
+		{
+			for(int i = Notes.getNumNotes()-1; i >= 0; i--)
+			{
+				if(MIDISong.getNotes(track, i).isSelected())
+				{
+					MIDISong.removeNote(track, i);
+				}
 			}
 		}
 		//Tool #18: GO BACK
@@ -379,10 +391,11 @@ public class MIDIMain implements ActionListener
 			//If file is usable
 			if (v == JFileChooser.APPROVE_OPTION) {
 	            MIDISong.setSong(reader.readFile(fileIn.getSelectedFile()));
-	            NotifyAnimation.sendMessage("Notification","Opening: "+reader.getFileName());
+	            player.setAllInstruments();
 				setTrackButtons(MIDISong.getTracksLength());
 	            mode = 1;
 				mode();
+				NotifyAnimation.sendMessage("Notification","Opening: "+reader.getFileName());
 	        } else {
 	        	NotifyAnimation.sendMessage("Notification","File was not be opened.");
 	        }
@@ -390,12 +403,15 @@ public class MIDIMain implements ActionListener
 		//MenuBar -> File -> Save
 		if(e.getActionCommand().equals("Save"))
 		{
-			NotifyAnimation.sendMessage("Notification","File saved...");
+			NotifyAnimation.sendMessage("Notification","File saved... (Not really)");
 		}
 		//MenuBar -> File -> Save As
 		if(e.getActionCommand().equals("Save As"))
 		{
-			NotifyAnimation.sendMessage("Notification","Save as what!?");
+			if(mode == 2)
+				MIDISong.saveTrack(track);
+			reader.saveFile(MIDISong.saveSequence(), JOptionPane.showInputDialog("What will you save the file as?", reader.getFileName()));
+			NotifyAnimation.sendMessage("Notification","File saved...");
 		}
 		//MenuBar -> File -> Delete File
 		if(e.getActionCommand().equals("Delete File"))
@@ -406,6 +422,53 @@ public class MIDIMain implements ActionListener
 		if(e.getActionCommand().equals("Quit"))
 		{
 			System.exit(1);
+		}
+		//MenuBar -> Edit -> Undo
+		if(e.getActionCommand().equals("Undo"))
+		{
+			long n = Long.parseLong(JOptionPane.showInputDialog("What will be the new tempo?", MIDISong.getTempo()));
+			MIDISong.setTempo(n);
+			//player.setTempo((float)n);
+		}
+		//MenuBar -> Edit -> Copy
+		if(e.getActionCommand().equals("Copy"))
+		{
+			Notes.copyNotes();
+		}
+		//MenuBar -> Edit -> Paste
+		if(e.getActionCommand().equals("Paste"))
+		{
+			Notes.pasteNotes(x/scale[0], (byte)0);
+		}
+		//MenuBar -> Edit -> Delete
+		if(e.getActionCommand().equals("Delete"))
+		{
+			for(int i = 0; i < Notes.getNumNotes(); i++)
+			{
+				if(MIDISong.getNotes(track, i).isSelected())
+				{
+					MIDISong.removeNote(track, i);
+				}
+			}
+		}
+		//MenuBar -> Soundbank -> Load Soundbank
+		if(e.getActionCommand().equals("Load Soundbank"))
+		{
+			filter.setFilterMIDI(false);
+			int v = fileIn.showOpenDialog(window);
+			//If file is usable
+			if (v == JFileChooser.APPROVE_OPTION) {
+	            player.setSoundBank(reader.getSoundbank(fileIn.getSelectedFile()));
+	            NotifyAnimation.sendMessage("Notification","Opening: "+fileIn.getSelectedFile());
+	        } else {
+	        	NotifyAnimation.sendMessage("Notification","File was not be opened.");
+	        }
+		}
+		//MenuBar -> Soundbank -> Load Soundbank
+		if(e.getActionCommand().equals("Set to Default"))
+		{
+			player.setSoundBankDefault();
+			NotifyAnimation.sendMessage("Notification","Opening: Default Soundbank");
 		}
 		
 		//Track buttons
@@ -425,6 +488,32 @@ public class MIDIMain implements ActionListener
 				player.setInstrument((byte)Tracks.getInstrumentListButton(i).getSelectedIndex(), i);
 				MIDISong.getTracks(i).setInstrument((byte)Tracks.getInstrumentListButton(i).getSelectedIndex());
 			}
+		}
+	}
+	
+	public void keyControl()
+	{
+		//C
+		if(key.getControl() && key.getLetters()[2])
+		{
+			Notes.copyNotes();
+			key.setLetter(false, (byte) 2);
+			key.setControl(false);
+		}
+		//V
+		if(key.getControl() && key.getLetters()[21])
+		{
+			Notes.pasteNotes(x/scale[0], (byte)0);		
+			key.setLetter(false, (byte) 21);
+			key.setControl(false);
+		}
+		//T
+		if(key.getLetters()[19] == true)
+		{
+			long n = Long.parseLong(JOptionPane.showInputDialog("What will be the new tempo?", MIDISong.getTempo()));
+			MIDISong.setTempo(n);
+			
+			key.setLetter(false, (byte)19);
 		}
 	}
 	
@@ -457,14 +546,16 @@ public class MIDIMain implements ActionListener
 			//Object is being held
 			if(CursorListener.getObjectNumber() >= 0)
 			{
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0], (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
+				MIDISong.getNotes(track, CursorListener.getObjectNumber()).selection(true);
+				MIDISong.getNotes(track, CursorListener.getObjectNumber()).setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0], (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
 			}
 			//Left Click while not holding an object
 			else
 			{
-				if(CursorListener.getLocation()[0] - GUI.mouseDisplacement < GUI.sideBarWidth && CursorListener.getLocation()[1] > GUI.fullAddHeight)
+				Notes.unSelectAll();
+				if(CursorListener.getLocation()[0] - GUI.mouseDisplacement < GUI.sideBarWidth && CursorListener.getLocation()[1] > GUI.fullAddHeight + GUI.windowBarHeight)
 				{
-					player.NoteOn((byte)(Notes.MAX_TONE - (CursorListener.getLocation()[1] - GUI.windowBarHeight - GUI.fullAddHeight + y)/scale[0]), (byte) 78);
+					player.NoteOn((byte)(Notes.MAX_TONE - (CursorListener.getLocation()[1] - GUI.windowBarHeight - GUI.fullAddHeight + y)/scale[1]), (byte) 78);
 				}
 				else
 				{
@@ -483,7 +574,7 @@ public class MIDIMain implements ActionListener
 			//If on an object
 			if(CursorListener.getObjectNumber() >= 0)
 			{
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
+				MIDISong.getNotes(track, CursorListener.getObjectNumber()).setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
 				selected = 0;
 			}
 			else
@@ -511,17 +602,17 @@ public class MIDIMain implements ActionListener
 		if(CursorListener.getClick() == 1)
 		{
 			//Selected Object is being held
-			if(CursorListener.getObjectNumber() >= 0 && MIDISong.getNotes(track)[CursorListener.getObjectNumber()].isSelected())
+			if(CursorListener.getObjectNumber() >= 0 && MIDISong.getNotes(track, CursorListener.getObjectNumber()).isSelected())
 			{
 				for(int i = 0; i < Notes.getNumNotes(); i++)
 				{
-					if(MIDISong.getNotes(track)[i].isSelected() && i != CursorListener.getObjectNumber())
+					if(MIDISong.getNotes(track, i).isSelected() && i != CursorListener.getObjectNumber())
 					{
-						MIDISong.getNotes(track)[i].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0] + (MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[CursorListener.getObjectNumber()].getX()), 
-								(short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight + (MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() - MIDISong.getNotes(MIDIMain.getTrackMenu())[CursorListener.getObjectNumber()].getY())));
+						MIDISong.getNotes(track, i).setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0] + (MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDISong.getNotes(MIDIMain.getTrackMenu(), CursorListener.getObjectNumber()).getX()), 
+								(short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight + (MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() - MIDISong.getNotes(MIDIMain.getTrackMenu(), CursorListener.getObjectNumber()).getY())));
 					}
 				}
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0], (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
+				MIDISong.getNotes(track, CursorListener.getObjectNumber()).setLocation(CursorListener.getLocation()[0] - GUI.mouseDisplacement - GUI.sideBarWidth - CursorListener.getOrigin()[0], (short)(y + CursorListener.getLocation()[1] - GUI.fullAddHeight - GUI.windowBarHeight));
 			}
 			else
 			{
@@ -533,16 +624,16 @@ public class MIDIMain implements ActionListener
 		if(CursorListener.getClick() == 3)
 		{
 			//Selected Object is being clicked
-			if(CursorListener.getObjectNumber() >= 0 && MIDISong.getNotes(track)[CursorListener.getObjectNumber()].isSelected())
+			if(CursorListener.getObjectNumber() >= 0 && MIDISong.getNotes(track, CursorListener.getObjectNumber()).isSelected())
 			{
 				for(int i = 0; i < Notes.getNumNotes(); i++)
 				{
-					if(MIDISong.getNotes(track)[i].isSelected() && i != CursorListener.getObjectNumber())
+					if(MIDISong.getNotes(track, i).isSelected() && i != CursorListener.getObjectNumber())
 					{
-						MIDISong.getNotes(track)[i].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth + (MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getEndX() - MIDISong.getNotes(MIDIMain.getTrackMenu())[CursorListener.getObjectNumber()].getEndX())));
+						MIDISong.getNotes(track, i).setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth + (MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getEndTick()*scale[0] - MIDISong.getNotes(MIDIMain.getTrackMenu(), CursorListener.getObjectNumber()).getEndTick()*scale[0])));
 					}
 				}
-				MIDISong.getNotes(track)[CursorListener.getObjectNumber()].setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
+				MIDISong.getNotes(track, CursorListener.getObjectNumber()).setEnd((CursorListener.getLocation()[0] + x - GUI.sideBarWidth));
 			}
 			else
 			{
