@@ -113,7 +113,6 @@ public class KeyboardListener implements KeyListener
 	 * 
 	 */
 	public void keyPressed(KeyEvent e) {
-				
 		for(byte c = 0; c<=25; c++)
 		{
 			//determines if control and the 'c' key are being pressed simultaneously 
