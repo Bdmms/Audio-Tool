@@ -16,14 +16,15 @@ public class MIDIPlayer implements MetaEventListener
 	
 	public static final int END_OF_TRACK_MESSAGE = 0x2F;	//the status message for the END_OF_TRACK_MESSAGE
 	
-	private Synthesizer synth;						//The synthesizer of the player
-	private Sequencer sequencer;					//The sequencer of the player
-	private MidiChannel chan[];						//The channels the program has access too
-	private boolean loop;							//Determines whether a played song should loop
-	//private boolean paused;							//Determines if song is being paused
-	
-	private boolean noteOn = false;					//if a note is playing in the synthesizer
-	private byte[] noteData = {0,0};				//The volume and tone of the note
+	private Synthesizer synth;								//The synthesizer of the player
+	private Sequencer sequencer;							//The sequencer of the player
+	private MidiChannel chan[];								//The channels the program has access too
+	//private Soundbank sound;								//The soundbank for the instruments
+	private boolean loop;									//Determines whether a played song should loop
+	//private boolean paused;								//Determines if song is being paused
+
+	private boolean noteOn = false;							//if a note is playing in the synthesizer
+	private byte[] noteData = {0,0};						//The volume and tone of the note
 	
 	//initial method, sets the synthesizer and sequencer of the player
 	public MIDIPlayer()
@@ -38,21 +39,27 @@ public class MIDIPlayer implements MetaEventListener
 			sequencer.addMetaEventListener(this);
 		} catch (Exception e1) {e1.printStackTrace();}
 		chan = synth.getChannels();
+		//sound = synth.getDefaultSoundbank();
 	}
 	
 	//setSoundBank(File soundbank) sets the soundbank for the song
 	//File soundbank = file that stores the soundbank
-	public void setSoundBank(File soundbank)
+	public void setSoundBank(Soundbank soundbank)
 	{
 		try {
-			Soundbank sound = MidiSystem.getSoundbank(soundbank);
-			synth.loadAllInstruments(sound);
+			synth.loadAllInstruments(soundbank);
 			chan = synth.getChannels();
 		} catch (Exception ex) {
 			synth.loadAllInstruments(synth.getDefaultSoundbank());
 			chan = synth.getChannels();
-			ex.printStackTrace();
 		}
+	}
+	
+	//setSoundBankDefault() sets the soundbank for the song to the default soundbank of the computer
+	public void setSoundBankDefault()
+	{
+		synth.loadAllInstruments(synth.getDefaultSoundbank());
+		chan = synth.getChannels();
 	}
 	
 	//setInstrument(byte instr, byte chan) sets the program of the channel to a specified instrument
@@ -61,6 +68,14 @@ public class MIDIPlayer implements MetaEventListener
 	public void setInstrument(byte instr, byte channel)
 	{
 		chan[channel].programChange(instr);
+	}
+	
+	public void setAllInstruments()
+	{
+		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+		{
+			chan[t].programChange(MIDISong.getTracks(t).getInstrument());
+		}
 	}
 	
 	//setTickPosition() sets the tick position of the song being played
