@@ -1,4 +1,7 @@
 import java.awt.Rectangle;
+import java.util.ArrayList;
+
+import javax.sound.midi.MidiEvent;
 
 /**
  * Date: October 26, 2016
@@ -16,25 +19,28 @@ public class Notes
 	public final static byte DATA_TONE = 1;			//value assigned to the tone of the note
 	public final static byte DATA_VELOCITY = 2;		//value assigned to the volume of the note
 	
+	private static ArrayList<long[]> copiedNotes = new ArrayList<long[]>();//An array of notes that get copied
+	//private static ArrayList<long[]> copyLocations = new ArrayList<long[]>();
+	
 	private static int numNotes = 0;				//Number of notes processed
 	private static byte track = 0;					//Track being accessed
 	private static boolean allUnselected = true;	//true if all notes are not selected
 	
-	private int begin = 0;				//start of note in sequence
-	private int end = 0;				//end of note in sequence
+	private MidiEvent start;				//start of note in sequence
+	private MidiEvent end;				//end of note in sequence
 	private byte tone = 60;				//tone of the note
 	private byte volume = 0;			//volume of the note
 	private boolean selected = false;	//whether the note is selected
 	
 	//Constructor method
-	//int s = start of note (in array)
-	//int e = end of note (in array)
-	public Notes(int s, int e)
+	//MidiEvent s = start of note (event)
+	//MidiEvent e = end of note (event)
+	public Notes(MidiEvent s, MidiEvent e)
 	{
-		begin = s;
+		start = s;
 		end = e;
-		tone = MIDISong.getMessage(MIDIMain.getTrackMenu(), s).getMessage()[DATA_TONE];
-		volume =  MIDISong.getMessage(MIDIMain.getTrackMenu(), s).getMessage()[DATA_VELOCITY];
+		tone = start.getMessage().getMessage()[DATA_TONE];
+		volume =  start.getMessage().getMessage()[DATA_VELOCITY];
 		numNotes++;
 	}
 	
@@ -67,7 +73,7 @@ public class Notes
 			if(GUI.isNoteVisible(i))
 			{
 				//If note contains coordinates
-				if(MIDISong.getNotes(track)[i].contains(x, y))
+				if(MIDISong.getNotes(track, i).contains(x, y))
 				{
 					return i;
 				}
@@ -86,10 +92,10 @@ public class Notes
 			if(GUI.isNoteVisible(i))
 			{
 				//If any part of the note is inside the box
-				if(select.getX() < MIDISong.getNotes(track)[i].getX() + MIDISong.getNotes(track)[i].getLength() - MIDIMain.getXCoordinate() + GUI.sideBarWidth && select.getX() + select.getWidth() > MIDISong.getNotes(track)[i].getX() - MIDIMain.getXCoordinate() + GUI.sideBarWidth &&
-						select.getY() < MIDISong.getNotes(track)[i].getY() + MIDIMain.getPreHeight() - MIDIMain.getYCoordinate() + GUI.fullAddHeight && select.getY() + select.getHeight() > MIDISong.getNotes(track)[i].getY() - MIDIMain.getYCoordinate() + GUI.fullAddHeight)
+				if(select.getX() < MIDISong.getNotes(track, i).getX() + MIDISong.getNotes(track, i).getLength() - MIDIMain.getXCoordinate() + GUI.sideBarWidth && select.getX() + select.getWidth() > MIDISong.getNotes(track, i).getX() - MIDIMain.getXCoordinate() + GUI.sideBarWidth &&
+						select.getY() < MIDISong.getNotes(track, i).getY() + MIDIMain.getPreHeight() - MIDIMain.getYCoordinate() + GUI.fullAddHeight && select.getY() + select.getHeight() > MIDISong.getNotes(track, i).getY() - MIDIMain.getYCoordinate() + GUI.fullAddHeight)
 				{
-					MIDISong.getNotes(track)[i].selection(true);
+					MIDISong.getNotes(track, i).selection(true);
 				}
 			}
 		}
@@ -103,10 +109,58 @@ public class Notes
 		{
 			for(int i = 0; i < numNotes; i++)
 			{
-				MIDISong.getNotes(track)[i].selection(false);
+				MIDISong.getNotes(track, i).selection(false);
 			}
 			allUnselected = true;
 		}
+	}
+	
+	//copyNotes() clears every note that has been copied (to avoid pasting between tracks)
+	public static void diposeCopiedNotes()
+	{
+		copiedNotes.clear();
+	}
+	
+	//copyNotes() copies all of the notes selected
+	public static void copyNotes()
+	{
+		diposeCopiedNotes();
+		
+		long start = 0;
+		
+		for(int n = 0; n < numNotes; n++)
+		{
+			if((start == 0 || start > MIDISong.getNotes(track, n).getTick()) && MIDISong.getNotes(track, n).isSelected())
+			{
+				start = MIDISong.getNotes(track, n).getTick();
+			}
+		}
+		
+		for(int i = 0; i < numNotes; i++)
+		{
+			if(MIDISong.getNotes(track, i).isSelected())
+			{
+				long[] noteInfo = {MIDISong.getNotes(track, i).getTick() - start, MIDISong.getNotes(track, i).getEndTick() - start, MIDISong.getNotes(track, i).getTone(), MIDISong.getNotes(track, i).getVolume()};
+				copiedNotes.add(noteInfo);
+			}
+		}
+	}
+	
+	//pasteNotes(long tick, byte tone) pastes selected note at a x and y coordinate
+	//long tick = location in the song
+	//byte tone = the pitch/tone of the notes (relative to there original position
+	public static void pasteNotes(long tick, byte tone)
+	{
+		for(int i = 0; i < copiedNotes.size(); i++)
+		{
+			MIDISong.addNote(track, MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + copiedNotes.get(i)[0], (byte)copiedNotes.get(i)[2], (byte)copiedNotes.get(i)[3], MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + copiedNotes.get(i)[1]);
+		}
+	}
+	
+	//removeNote() decrements the number of notes to acount for a removed note
+	public static void removeNote()
+	{
+		numNotes--;
 	}
 	
 	//selection(boolean state) sets the selected value of the note
@@ -118,6 +172,15 @@ public class Notes
 			allUnselected = false;
 		
 		selected = state;
+	}
+	
+	//setMidiEvent(MidiEvent s, MidiEvent e) sets the event the note is tied to
+	//MidiEvent s = start of note (event)
+	//MidiEvent e = end of note (event)
+	public void setMidiEvent(MidiEvent s, MidiEvent e)
+	{
+		start = s;
+		end = e;
 	}
 	
 	//setTone(byte t) sets the tone value of the note
@@ -136,7 +199,7 @@ public class Notes
 		if(x <= 0 || x <= getTick())
 			x = getTick() + 1;
 		
-		MIDISong.getEvent(track, end).setTick(x);
+		end.setTick(x);;
 	}
 	
 	//setLocation(byte t) sets the location of the note
@@ -152,8 +215,8 @@ public class Notes
 			y = 0;
 		if(y > 120)
 			y = 120;
-		MIDISong.getEvent(track, end).setTick(x + getLength()/MIDIMain.getPreLength());
-		MIDISong.getEvent(track, begin).setTick(x);
+		end.setTick(x + (end.getTick() - start.getTick()));
+		start.setTick(x);
 		setTone((byte) y);
 	}
 	
@@ -164,28 +227,26 @@ public class Notes
 		track = trackNum;
 	}
 	
-	//getBeginning()() returns the point of the star message in the array of messages
-	public int getBeginning()
-	{
-		return begin;
-	}
-	
-	//getEnd() returns the point of the end message in the array of messages
-	public int getEnd()
-	{
-		return end;
-	}
-	
 	//getTick() returns the tick of the note
 	public long getTick()
 	{
-		return MIDISong.getEvent(track, begin).getTick();
+		return start.getTick();
+	}
+	
+	public MidiEvent getStartMessage()
+	{
+		return start;
+	}
+	
+	public MidiEvent getEndMessage()
+	{
+		return end;
 	}
 	
 	//getX() returns the x location of the note
 	public long getX()
 	{
-		return MIDISong.getEvent(track, begin).getTick() * MIDIMain.getPreLength();
+		return start.getTick() * MIDIMain.getPreLength();
 	}
 	
 	//getY() returns the y location of the note
@@ -196,9 +257,9 @@ public class Notes
 	}
 	
 	//getX() returns the x location of the note's end
-	public long getEndX()
+	public long getEndTick()
 	{
-		return getX() + getLength();
+		return end.getTick();
 	}
 	
 	//getTone() retuns the tone of the note
@@ -208,9 +269,9 @@ public class Notes
 	}
 	
 	//getLength() returns the exact length of the note
-	public int getLength()
+	public long getLength()
 	{
-		return (int)(MIDISong.getEvent(track, end).getTick() - MIDISong.getEvent(track, begin).getTick()) * MIDIMain.getPreLength();
+		return (end.getTick() - start.getTick()) * MIDIMain.getPreLength();
 	}
 	
 	//getVolume() returns the volume of the note
