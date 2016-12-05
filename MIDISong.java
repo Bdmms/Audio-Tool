@@ -1,4 +1,5 @@
 import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
@@ -15,8 +16,10 @@ public class MIDISong
 {
 	private static Sequence sequence;			//The sequence for the song
 	private static long length = 100;			//The length of the song in ticks
+	private static long tempo = 5000000;		//The tempo of the song (in microseconds per beat)
 	private static short measureLength = 16;	//The length of each measure in ticks
 	private static Tracks[] tracks;				//The tracks contained in the song
+	private static MidiEvent tempoChange;		//The tempo change message
 	
 	//setSong(Sequence seq) sets the sequence for the song and other information
 	//Sequence seq = sequence the song reads
@@ -24,6 +27,23 @@ public class MIDISong
 	{
 		sequence = seq;
 		length = sequence.getTickLength();
+		for(byte t = 0; t < seq.getTracks().length; t++)
+		{
+			for(int m = 0; m < seq.getTracks()[t].size(); m++)
+			{
+				if(seq.getTracks()[t].get(m).getMessage().getMessage()[1] == 0x51)
+				{
+					tempo = 0;
+					for(int d = 3; d < seq.getTracks()[t].get(m).getMessage().getMessage().length; d++)
+					{
+						tempo += seq.getTracks()[t].get(m).getMessage().getMessage()[d] * Math.pow(2, (seq.getTracks()[t].get(m).getMessage().getMessage().length - d - 1)*8);
+					}
+					//System.out.println("Tempo: "+tempo);
+					tempoChange = seq.getTracks()[t].get(m);
+					break;
+				}
+			}
+		}
 		resetTracks();
 	}
 	
@@ -52,15 +72,23 @@ public class MIDISong
 	}
 	
 	//addNote(byte trackNum) adds a note to the track in a sequence
-	//byte trackNum
-	public static void addNote(byte trackNum)
+	//byte trackNum = track containing notes
+	//long tick = tick of the new note
+	//byte volume = volume of the note
+	//long endTick = location of the end of the note
+	public static void addNote(byte trackNum, long tick, byte tone, byte volume, long endTick)
 	{
-		tracks[trackNum].closeTrack();
-		try {
-			sequence.getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON, trackNum, 60, 70), 0));
-			sequence.getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, 60, 70), 8));
-		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "note could note be added to track because it may have been deleted or corrupted");}
-		tracks[trackNum].openTrack();
+		tracks[trackNum].addNote(tick, endTick, tone, volume);
+	}
+	
+	//addNote(byte trackNum) adds a note to the track in a sequence
+	//byte trackNum = track containing notes
+	//MidiEvent note = note being removed
+	public static void removeNote(byte trackNum, int note)
+	{
+		sequence.getTracks()[trackNum].remove(MIDISong.getNotes(trackNum, note).getStartMessage());
+		sequence.getTracks()[trackNum].remove(MIDISong.getNotes(trackNum, note).getEndMessage());
+		tracks[trackNum].removeNote(note);
 	}
 	
 	//openTrack(byte trackNum) opens the designated track to be used in the note editor
@@ -81,15 +109,57 @@ public class MIDISong
 	//byte teackNum = specified track in the array
 	public static void saveTrack(byte trackNum)
 	{
-		tracks[trackNum].closeTrack();
-		tracks[trackNum].openTrack();
+		tracks[trackNum].saveTrack();
+	}
+	
+	public static Sequence saveSequence()
+	{
+		try {
+			for(byte i = 0; i < tracks.length; i++)
+			{
+				sequence.getTracks()[i].add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + i, tracks[i].getInstrument(), i), 0));
+			}
+			
+			setTempo(tempo);
+			
+			//END OF TRACK
+			byte[] b = {};
+			sequence.getTracks()[0].add(new MidiEvent(new MetaMessage(0x2F, b, 0), sequence.getTickLength()));
+
+			return sequence;
+		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "File could not be saved");}
+		return null;
+	}
+	
+	//setLength(long l) sets the length of the song in ticks
+	public static void setLength(long l)
+	{
+		length = l;
+	}
+	
+	//setTempo(long l) sets the tempo of the song (in microseconds per beat)
+	//long t = new tempo (in microseconds per beat)
+	public static void setTempo(long t)
+	{
+		tempo = t;
+		//Set Tempo
+		byte[] a = {(byte)((tempo%Math.pow(2, 32))/Math.pow(2, 16)),(byte)(tempo%Math.pow(2, 16)/Math.pow(2, 8)), (byte)(tempo%Math.pow(2, 8))};
+		try {
+			sequence.getTracks()[0].remove(tempoChange);
+			tempoChange = new MidiEvent(new MetaMessage(0x51, a, a.length), 0);
+			sequence.getTracks()[0].add(tempoChange);
+		} catch (InvalidMidiDataException e) {
+			NotifyAnimation.sendMessage("Error", "Tempo cannot be changed.");
+			System.out.println("Original: "+tempoChange.getMessage().getMessage()[3]+" "+tempoChange.getMessage().getMessage()[4]+" "+tempoChange.getMessage().getMessage()[5]);
+			System.out.println("New: "+a[0]+" "+a[1]+" "+a[2]);}
 	}
 	
 	//getNotes(byte trackNum) returns the array of notes in a designated track
 	//byte teackNum = specified track in the array
-	public static Notes[] getNotes(byte trackNum)
+	//int note = index of note in array
+	public static Notes getNotes(byte trackNum, int note)
 	{
-		return tracks[trackNum].getNotes();
+		return tracks[trackNum].getNotes(note);
 	}
 	
 	//getTracks() returns the designated track in the song
@@ -133,10 +203,10 @@ public class MIDISong
 		return length;
 	}
 	
-	//setLength(long l) sets the length of the song in ticks
-	public void setLength(long l)
+	//getTempo() returns the tempo of the song
+	public static long getTempo()
 	{
-		length = l;
+		return tempo;
 	}
 	
 	//getMeasureLength() returns the length of each measure in ticks
