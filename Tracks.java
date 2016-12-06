@@ -38,8 +38,11 @@ public class Tracks
 	//byte chan = channel of track
 	public Tracks(byte chan)
 	{
+		channel = chan;
+		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		
 		//DEBUG
-		System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
+		/*System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
 		for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); i++)
 		{
 			System.out.print("\n"+i+": "+String.format("%4d",MIDISong.getEvent(channel, i).getTick())+" ticks |");
@@ -47,10 +50,7 @@ public class Tracks
 			{
 				System.out.print(String.format("%4d",MIDISong.getMessage(channel, i).getMessage()[m])+"|");
 			}
-		}
-		
-		channel = chan;
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		}*/
 		
 		int v = readFor(channel, (byte)ShortMessage.PROGRAM_CHANGE, 0);
 		if(v >= 0)
@@ -231,6 +231,18 @@ public class Tracks
 		for(int i = eventFrom; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
 		{
 			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), message))
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	public static int readForMeta(byte trackNum, byte message)
+	{
+		for(int i = 0; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
+		{
+			if((byte)MIDISong.getMessage(trackNum, i).getMessage()[1] == message)
 			{
 				return i;
 			}
