@@ -284,6 +284,15 @@ public class Tracks
 		//Background
 		g.setColor(Color.LIGHT_GRAY);
 		g.fillRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+		
+		if(isSelected())
+		{
+			g.setStroke(GUI.bold);
+			g.setColor(Color.GREEN);
+			g.drawRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+			g.setStroke(GUI.basic);
+		}
+		
 		//Text Boxes
 		g.setColor(Color.WHITE);
 		g.fillRect(201, 11+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
