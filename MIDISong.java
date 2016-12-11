@@ -18,7 +18,7 @@ public class MIDISong
 	private static long length = 100;			//The length of the song in ticks
 	private static short measureLength = 16;	//The length of each measure in ticks
 	private static Tracks[] tracks;				//The tracks contained in the song
-	private static long tempo = 0;		//The tempo of the song in mpb
+	private static long tempo = 0;				//The tempo of the song in mpb
 	private static MidiEvent tempoChange;		//The message for tempo change
 	
 	//setSong(Sequence seq) sets the sequence for the song and other information
@@ -42,7 +42,8 @@ public class MIDISong
 					s += (char) getMessage(t,v).getMessage()[d];
 				}
 				
-				System.out.println(s);
+				System.out.println("\n"+s);
+				System.out.println(v + ", " + t);
 			}
 		}
 		
@@ -63,6 +64,7 @@ public class MIDISong
 			}
 		}
 
+		
 	}
 	
 	//resetTracks() changes the amount of tracks in the sequence
