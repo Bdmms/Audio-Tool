@@ -30,7 +30,7 @@ public class Tracks
 	
 	private int numNotes = 0;									//The number of notes in a track
 	private byte instrument = 0;								//The instrument used for the track
-	//private byte volume = 100;									//The master volume of every note in a track
+	//private byte volume = 100;								//The master volume of every note in a track
 	private byte channel = 0;									//The channel that corresponds with track
 	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
 	
@@ -42,7 +42,7 @@ public class Tracks
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 		
 		//DEBUG
-		/*System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
+		System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
 		for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); i++)
 		{
 			System.out.print("\n"+i+": "+String.format("%4d",MIDISong.getEvent(channel, i).getTick())+" ticks |");
@@ -50,7 +50,7 @@ public class Tracks
 			{
 				System.out.print(String.format("%4d",MIDISong.getMessage(channel, i).getMessage()[m])+"|");
 			}
-		}*/
+		}
 		
 		int v = readFor(channel, (byte)ShortMessage.PROGRAM_CHANGE, 0);
 		if(v >= 0)
@@ -284,15 +284,6 @@ public class Tracks
 		//Background
 		g.setColor(Color.LIGHT_GRAY);
 		g.fillRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
-		
-		if(isSelected())
-		{
-			g.setStroke(GUI.bold);
-			g.setColor(Color.GREEN);
-			g.drawRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
-			g.setStroke(GUI.basic);
-		}
-		
 		//Text Boxes
 		g.setColor(Color.WHITE);
 		g.fillRect(201, 11+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
