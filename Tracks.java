@@ -19,18 +19,21 @@ import javax.swing.JComboBox;
  * may not always be equal to each other.
  */
 
-public class Tracks
+public class Tracks extends SelectableObject
 {	
+	public static byte tracksVisible = 4;										//The number of tracks that can visible at one time
 	public static final short trackSpace = 10;										//Spacing between track menus
 	public static final short trackHeight = 70;										//The height of the track menus
 	public static final String[] INSTRUMENT_LIST = MIDIReader.getInstrumentList(); 	//The instrument list for the tracks
 	
 	private static ArrayList<JButton> trackButtons = new ArrayList<JButton>();							//Buttons for tracks
 	private static ArrayList<JComboBox<String>> instrumentList = new ArrayList<JComboBox<String>>();	//Instrument indicator for tracks
+	private VolumeSlider slider = new VolumeSlider((short)0,(short)0, true);
 	
+	private Color colour = Color.LIGHT_GRAY;
 	private int numNotes = 0;									//The number of notes in a track
 	private byte instrument = 0;								//The instrument used for the track
-	//private byte volume = 100;								//The master volume of every note in a track
+	private byte volume = 100;									//The master volume of every note in a track
 	private byte channel = 0;									//The channel that corresponds with track
 	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
 	
@@ -42,34 +45,49 @@ public class Tracks
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 		
 		//DEBUG
-		System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
-		for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); i++)
+		/*
+		if(channel >= 0)
 		{
-			System.out.print("\n"+i+": "+String.format("%4d",MIDISong.getEvent(channel, i).getTick())+" ticks |");
-			for(int m = 0; m < MIDISong.getMessage(channel, i).getLength(); m++)
+			System.out.println("\nTrack "+(channel+1)+" ----------------------------------------");
+			for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); i++)
 			{
-				System.out.print(String.format("%4d",MIDISong.getMessage(channel, i).getMessage()[m])+"|");
+				System.out.print("\n"+i+": "+String.format("%4d",MIDISong.getEvent(channel, i).getTick())+" ticks |");
+				for(int m = 0; m < MIDISong.getMessage(channel, i).getLength(); m++)
+				{
+					System.out.print(String.format("%4d",MIDISong.getMessage(channel, i).getMessage()[m])+"|");
+				}
 			}
 		}
+		*/
 		
 		int v = readFor(channel, (byte)ShortMessage.PROGRAM_CHANGE, 0);
 		if(v >= 0)
 		{
-			setInstrument((byte)MIDISong.getMessage(channel, v).getMessage()[Notes.DATA_TONE]);
+			//System.out.println(v);
+			setInstrument((byte)MIDISong.getMessage(channel, v).getMessage()[1]);
 			MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getSequence().getTracks()[channel].get(v));
 		}
+	}
+	
+	//changeChannel(byte chan) changes the channel that the track is assigned to
+	//byte chan = channel being assigned
+	public void changeChannel(byte chan)
+	{
+		channel = chan;
+		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		//Set messages to correct channel
+		saveTrack();
 	}
 	
 	//openTrack(byte trackNum) opens the data in a track for use in the note editor
 	//byte trackNum = the track being opened in the sequence
 	public void openTrack()
 	{
+		Notes.setTrack(channel);
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 		//If their are a real amount of notes
 		if(numNotes >= 0)
 		{
-			Notes.setTrack(channel);
-			
 			for(int i = 0; i < MIDISong.getSequence().getTracks()[channel].size(); )
 			{
 				//If start of a note is found
@@ -226,6 +244,10 @@ public class Tracks
 		return eventFrom + 1;
 	}
 	
+	//readFor(byte trackNum, byte message, int eventFrom) searches for a variant message in the track
+	//byte trackNum = track being searched
+	//byte message = message being searched for
+	//int eventFrom = location to start search from
 	public static int readFor(byte trackNum, byte message, int eventFrom)
 	{
 		for(int i = eventFrom; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
@@ -238,9 +260,13 @@ public class Tracks
 		return -1;
 	}
 	
-	public static int readForMeta(byte trackNum, byte message)
+	//readFor(byte trackNum, byte message, int eventFrom) searches for a specific meta message in the track
+	//byte trackNum = track being searched
+	//byte message = message being searched for
+	//int eventFrom = location to start search from
+	public static int readForMeta(byte trackNum, byte message, int eventFrom)
 	{
-		for(int i = 0; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
+		for(int i = eventFrom; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
 		{
 			if((byte)MIDISong.getMessage(trackNum, i).getMessage()[1] == message)
 			{
@@ -250,11 +276,24 @@ public class Tracks
 		return -1;
 	}
 	
+	//setColour(int c) sets the instrument of the track
+	//int c = colour being set (in hexadecimal)
+	public void setColour(Color c)
+	{
+		colour = c;
+	}
+	
 	//setInstrument(byte inst) sets the instrument of the track
 	//byte inst = instrument value to set
 	public void setInstrument(byte inst)
 	{
 		instrument = inst;
+	}
+	
+	//setInstrument(byte inst) returns the colour of the track
+	public Color getColour()
+	{
+		return colour;
 	}
 	
 	//getInstrument() returns the instrument of the track
@@ -276,22 +315,61 @@ public class Tracks
 		return channel;
 	}
 	
+	//getVolume() returns the volume of the track
+	public byte getVolume()
+	{
+		return volume;
+	}
+	
+	//VolumeSlider getSlider() returns the volume slider that sets the volume of the track
+	public VolumeSlider getSlider()
+	{
+		return slider;
+	}
+	
 	//drawTrack(Graphics g, short y) draws the track window for the track
 	//Graphics g = component of the JPanel used to create visual elements
 	//short y = y location of the window
 	public void drawTrack(Graphics2D g, short y)
 	{
 		//Background
-		g.setColor(Color.LIGHT_GRAY);
+		g.setColor(colour);
 		g.fillRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+		
+		//Volume Slider
+		slider.setBounds((short)(GUI.screenWidth/2 + 25), (short)(GUI.fullAddHeight + (trackHeight + 5)*y + trackSpace - MIDIMain.getScrollValue()), (short)(GUI.screenWidth*3/4 - GUI.screenWidth/2), (short)30);
+		slider.drawVolumeSlider(g);
+		volume = slider.getPercent();
+		
+		if(isSelected())
+		{
+			g.setStroke(GUI.bold);
+			g.setColor(Color.GREEN);
+			g.drawRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+			g.setStroke(GUI.basic);
+		}
+		else
+		{
+			g.setColor(Color.BLACK);
+			g.drawRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
+		}
+		
 		//Text Boxes
 		g.setColor(Color.WHITE);
 		g.fillRect(201, 11+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
+		g.fillRect(GUI.screenWidth*3/4 + 41, 16+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 68, 18);
+		g.fillRect(GUI.screenWidth*3/4 + 41, 36+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 68, 18);
 		//Borders
 		g.setColor(Color.BLACK);
 		g.drawRect(200, 10+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 100, 20);
+		g.drawRect(GUI.screenWidth*3/4 + 40, 15+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 70, 20);
+		g.drawRect(GUI.screenWidth*3/4 + 40, 35+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 70, 20);
 		//Text
+		g.setFont(GUI.defaultFont);
 		g.drawString(numNotes+" notes", 210, 25+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue());
+		g.drawString(volume+"%", GUI.screenWidth*3/4 + 50, 50+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue());
+		g.setFont(GUI.boldFont);
+		g.drawString("VOLUME", GUI.screenWidth*3/4 + 50, 30+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue());
 		//Divider
 		g.drawLine(GUI.screenWidth/2, 5+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth/2, trackHeight+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue()-5);
 	}
@@ -304,15 +382,27 @@ public class Tracks
 			//Checks if button is behind components
 			for(byte i = 0; i < trackButtons.size(); i++)
 			{
-				if(trackButtons.get(i).getLocation().getY() < GUI.toolBarHeight)
+				if(trackButtons.get(i).getLocation().getY() < GUI.toolBarHeight || trackButtons.get(i).getLocation().getY() + trackButtons.get(i).getHeight() > GUI.screenHeight - 140)
+				{
 					trackButtons.get(i).setEnabled(false);
+					trackButtons.get(i).setOpaque(false);
+				}
 				else
+				{
 					trackButtons.get(i).setEnabled(true);
+					trackButtons.get(i).setOpaque(true);
+				}
 				
-				if(instrumentList.get(i).getLocation().getY() < GUI.toolBarHeight)
+				if(instrumentList.get(i).getLocation().getY() < GUI.toolBarHeight || instrumentList.get(i).getLocation().getY() + instrumentList.get(i).getHeight() > GUI.screenHeight - 140)
+				{
 					instrumentList.get(i).setEnabled(false);
+					instrumentList.get(i).setOpaque(false);
+				}
 				else
+				{
 					instrumentList.get(i).setEnabled(true);
+					instrumentList.get(i).setOpaque(true);
+				}
 			}
 		}
 		catch(Exception ex){}//Program is actually more likely to trigger and exception
@@ -325,7 +415,7 @@ public class Tracks
 		{
 			instrumentList.add(new JComboBox<String>(INSTRUMENT_LIST));
 			instrumentList.get(instrumentList.size() - 1).setFont(GUI.smallFont);
-			instrumentList.get(instrumentList.size() - 1).setSize(230, 20);
+			instrumentList.get(instrumentList.size() - 1).setSize(GUI.screenWidth/3, 20);
 			instrumentList.get(instrumentList.size() - 1).setBackground(Color.WHITE);
 			instrumentList.get(instrumentList.size() - 1).setVisible(true);
 			instrumentList.get(instrumentList.size() - 1).setSelectedIndex(MIDISong.getTracks((byte)(instrumentList.size() - 1)).getInstrument());
@@ -335,6 +425,14 @@ public class Tracks
 			trackButtons.get(trackButtons.size() - 1).setSize(100, 20);
 			trackButtons.get(trackButtons.size() - 1).setBackground(Color.WHITE);
 			trackButtons.get(trackButtons.size() - 1).setVisible(true);
+		}
+	}
+	
+	public static void resizeButtons()
+	{
+		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+		{
+			Tracks.getInstrumentListButton(t).setSize(GUI.screenWidth/3, 20);
 		}
 	}
 	
