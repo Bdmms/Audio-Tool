@@ -1,6 +1,10 @@
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -15,19 +19,28 @@ public class ToolBar extends JPanel
 	 */
 	
 	private static final long serialVersionUID = 2L;
-	
 	public static final byte toolLength = 18;				//The maximum amount of buttons in the tool bar
-	
+	public static final Color background = new Color(240, 240, 240);
+	public static final Color border = new Color(200, 200, 200);
 	private JButton[] tools = new JButton[18];				//Tool bar buttons
 
 	public ToolBar()
 	{
 		for(byte i = 0; i < tools.length; i++)
 		{
-			tools[i] = new JButton(new ImageIcon("Images/ButtonIcon.png"));
+			BufferedImage image = null;
+			try {
+				image = ImageIO.read(new File("Images/ButtonIcon"+i+".png"));
+			} catch (IOException e) {
+				try {
+					image = ImageIO.read(new File("Images/ButtonIcon.png"));
+				} catch (IOException e1) {}
+			}
+			tools[i] = new JButton(new ImageIcon(image));
+			//tools[i] = new JButton();
 			tools[i].setSelectedIcon(new ImageIcon("Images/ButtonSelectedIcon.png"));
 			tools[i].setBounds(5+40*i,5,30,30);
-			tools[i].setBackground(Color.LIGHT_GRAY);
+			tools[i].setBackground(background);
 			tools[i].setBorderPainted(false);
 			this.add(tools[i]);
 		}
@@ -42,13 +55,13 @@ public class ToolBar extends JPanel
 	//drawMenuFunctions(Graphics g) draws the menu containing the buttons at the top of the screen
 	public void drawToolBar(Graphics g)
 	{
-		g.setColor(Color.LIGHT_GRAY);
+		g.setColor(background);
 		g.fillRect(0, 0, GUI.screenWidth - 1, GUI.toolBarHeight);
-		g.setColor(Color.BLACK);
+		g.setColor(border);
 		g.drawRect(0, 0, GUI.screenWidth - 1, GUI.toolBarHeight);
 	}
 	
-	public JButton getTools(int index)
+	JButton getTools(int index)
 	{
 		return tools[index];
 	}
