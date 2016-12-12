@@ -43,43 +43,40 @@ public class CursorListener implements MouseListener, MouseMotionListener, Mouse
 	//mousePressed(MouseEvent e) responds to any digital input on the mouse being held
 	//MouseEvent e = information of the mouse event
 	public void mousePressed(MouseEvent e) {
-		if(MIDIMain.getMode() == 2)
+		object = -1;
+		coordinates[0] = (short) e.getX();
+		coordinates[1] = (short) e.getY();
+		//Left-Click
+		if(e.getButton() == MouseEvent.BUTTON1)
 		{
-			object = -1;
-			coordinates[0] = (short) e.getX();
-			coordinates[1] = (short) e.getY();
-			//Left-Click
-			if(e.getButton() == MouseEvent.BUTTON1)
+			click = 1;
+			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY() + MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
+			if(object >= 0)
 			{
-				click = 1;
-				object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY() + MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
-				if(object >= 0)
-				{
-					origin[0] = (short) ((coordinates[0] - GUI.mouseDisplacement - GUI.sideBarWidth) - MIDISong.getNotes(MIDIMain.getTrackMenu())[object].getX());
-				}
-				else
-				{
-					origin[0] = (short) (coordinates[0] + MIDIMain.getXCoordinate());
-					origin[1] = (short) (coordinates[1] + MIDIMain.getYCoordinate());
-				}
+				origin[0] = (short) ((coordinates[0] - GUI.mouseDisplacement - GUI.sideBarWidth) - MIDISong.getNotes(MIDIMain.getTrackMenu(), object).getX());
 			}
-			//Middle-Click
-			else if(e.getButton() == MouseEvent.BUTTON2)
+			else
 			{
-				click = 2;
-				origin[0] = (short) (coordinates[0] + MIDIMain.getPreLength());
-				origin[1] = (short) (coordinates[1] + MIDIMain.getPreHeight());
+				origin[0] = (short) (coordinates[0] + MIDIMain.getXCoordinate());
+				origin[1] = (short) (coordinates[1] + MIDIMain.getYCoordinate());
 			}
-			//Right-Click
-			else if(e.getButton() == MouseEvent.BUTTON3)
+		}
+		//Middle-Click
+		else if(e.getButton() == MouseEvent.BUTTON2)
+		{
+			click = 2;
+			origin[0] = (short) (coordinates[0] + MIDIMain.getPreLength());
+			origin[1] = (short) (coordinates[1] + MIDIMain.getPreHeight());
+		}
+		//Right-Click
+		else if(e.getButton() == MouseEvent.BUTTON3)
+		{
+			click = 3;
+			object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY()+ MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
+			if(object < 0)
 			{
-				click = 3;
-				object = Notes.identifyContained(e.getX() + MIDIMain.getXCoordinate() - GUI.sideBarWidth - GUI.mouseDisplacement, (short)(e.getY()+ MIDIMain.getYCoordinate() - GUI.fullAddHeight - GUI.windowBarHeight));
-				if(object < 0)
-				{
-					origin[0] = (short) coordinates[0];
-					origin[1] = (short) coordinates[1];
-				}
+				origin[0] = (short) coordinates[0];
+				origin[1] = (short) coordinates[1];
 			}
 		}
 	}
