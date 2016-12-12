@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.util.ArrayList;
 
 /** 
  * Date: October 24, 2016
@@ -11,16 +12,17 @@ import java.awt.Graphics2D;
 public class NotifyAnimation 
 {
 	//Sets minimum limit to character space in notification window
-	private static byte characterLimit = 24;
-	
+	private static byte characterLimit = 50;
 	//Determines whether the window should appear
 	private static boolean trigger = false;
 	//The current time of the animation
 	private static short anmTimer = 0;
 	//The y location of the notification window
-	private static short value = 480;
+	private static short y = 0;
+	//The animation value for the window
+	private static short value = 0;
 	//The message contained in the window
-	private static String[] message;
+	private static ArrayList<String> message = new ArrayList<String>();
 	//The header of the message
 	private static String header;
 	
@@ -29,6 +31,7 @@ public class NotifyAnimation
 	public static void drawNoteWindow(Graphics2D g){
 		if(trigger == true)
 		{
+			y = GUI.screenHeight;
 			//50 = 500 milliseconds
 			
 			//for 250 milliseconds
@@ -57,19 +60,19 @@ public class NotifyAnimation
 			//Text Box
 			g.setStroke(GUI.bold);
 			g.setColor(Color.WHITE);
-			g.fillRect(530, value, 180, 100);
+			g.fillRect(GUI.screenWidth - 330, y +value, 320, 100);
 			g.setColor(Color.BLACK);
-			g.drawRect(530, value, 180, 100);
+			g.drawRect(GUI.screenWidth - 330, y +value, 320, 100);
 			
 			g.setStroke(GUI.basic);
 			
 			//Message
 			g.setFont(GUI.defaultFont);
-			g.drawString("- "+header+" -", 540, value + 20);
+			g.drawString("- "+header+" -", GUI.screenWidth - 320, y + value + 20);
 			g.setFont(GUI.romanBaseline);
-			for(byte i = 0; i < message.length; i++)
+			for(byte i = 0; i < message.size(); i++)
 			{
-				g.drawString(message[i], 535, value + 40 + i*20);
+				g.drawString(message.get(i), GUI.screenWidth - 325, y +value + 40 + i*20);
 			}
 		}
 	}
@@ -77,9 +80,8 @@ public class NotifyAnimation
 	//sendMessage(String s) receives a sent class
 	//String s = full length string of message
 	public static void sendMessage(String head, String s){
-		
 		header = head;
-		message = new String[(s.length())/characterLimit+1];
+		message.clear();
 		byte a = 0;
 		
 		//While String is larger than limit
@@ -88,43 +90,45 @@ public class NotifyAnimation
 			//If line limit is reached
 			if(a > 1 && s.length() > characterLimit)
 			{
-				message[a] = s.substring(0,characterLimit)+"...";
+				message.add(s.substring(0,characterLimit)+"...");
 				s = " ";
 			}
 			//Checks if line in message has spaces
-			else if(s.substring(characterLimit).contains(" "))
+			else if(s.substring(0, characterLimit).contains(" "))
 			{
-				message[a] = s.substring(0, s.indexOf(' ', characterLimit));
+				message.add(s.substring(0, s.lastIndexOf(' ', characterLimit)));
 				
 				//checks if line is long enough to remove space
 				if(s.length() > characterLimit+1)
-					s = s.substring(s.indexOf(' ', characterLimit));
+					s = s.substring(s.lastIndexOf(' ', characterLimit));
 			}
 			else
 			{
 				s = s.substring(0, characterLimit)+"-"+s.substring(characterLimit);
-				message[a] = s.substring(0, characterLimit + 1);
+				message.add(s.substring(0, characterLimit + 1));
 				s = s.substring(characterLimit);
 			}
 			
 			//If line starts with space
-			if(message[a].startsWith(" "))
+			while(message.get(a).startsWith(" "))
 			{
-				message[a] = message[a].substring(1);
+				String temp = message.get(a).substring(1);
+				message.remove(a);
+				message.add(temp);
 			}
 			a++;
 		}
-		message[a] = s;
+		message.add(s);
 		
-		for(byte i = 0; i < message.length; i++)
+		for(byte i = 0; i < message.size(); i++)
 		{
 			//If a line of the message equals null
-			if(message[i] == null)
-				message[i] = " ";
+			if(message.get(i) == null)
+				message.remove(i);
 		}
 		
-		value = 480; 	//Reset location
-		anmTimer = 0;	//Reset timer
-		trigger = true;	//Turn on animation
+		value = 0;	//Reset location
+		anmTimer = 0;				//Reset timer
+		trigger = true;				//Turn on animation
 	}
 }
