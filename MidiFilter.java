@@ -1,7 +1,7 @@
 import java.io.File;
 import javax.swing.filechooser.*;
 
-public class MidiFilter extends FileFilter
+public class MIDIFilter extends FileFilter
 {
 	/**
 	 * Date: October 31, 2016
@@ -10,8 +10,8 @@ public class MidiFilter extends FileFilter
 	 * with the correct extension
 	 */
 	
-	public final static String mid = "mid";			//Extension of midi files
-    public final static String soundbank = "sf2";	//Extension of soundbank files
+	public final static String[] mid = {"mid","midi"};  //Extensions of midi files
+    public final static String soundbank = "sf2";	 	//Extension of soundbank files
 	
 	private boolean midiFile = true;	//Determines if .mid or .sf2 extensions should be filtered
 	
@@ -27,12 +27,12 @@ public class MidiFilter extends FileFilter
 		//If extension does exist
 	    if (extension != null) {
 	    	//If extension equals .mid
-	        if(extension.equals(mid) && midiFile){
+	        if((extension.equals(mid[0]) || extension.equals(mid[1])) && midiFile){
 	        	return true;
 	        } 
 	        //If extension equals .sf2
 	        else if(extension.equals(soundbank) && !midiFile){
-	        	
+	        	return true;
 	        }
 	        else 
 	        {
@@ -53,7 +53,7 @@ public class MidiFilter extends FileFilter
 	    //If extension does exist
 	    if (extension != null) {
 	    	//If extension equals .mid
-	        if (extension.equals(mid)){
+	        if (extension.equals(mid[0]) || (extension.equals(mid[1]))){
 	            type = "Midi File";
 	        }
 	        //If extension equals .sf2
