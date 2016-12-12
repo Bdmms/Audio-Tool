@@ -27,8 +27,8 @@ public class GUI extends JPanel
 	public final static byte topBarHeight = 20;								//Height of top label
 	public final static byte fullAddHeight = toolBarHeight + topBarHeight ; //Combined height
 	public final static short sideBarWidth = 100;							//Side label width
-	public final static short screenHeight = 480;							//Screen height
-	public final static short screenWidth = 720;							//Screen width
+	public static short screenHeight = 480;							//Screen height
+	public static short screenWidth = 720;							//Screen width
 	
 	public final static byte windowBarHeight = 54;							//Height of window label bar (It's very annoying to deal with)
 	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
@@ -41,6 +41,7 @@ public class GUI extends JPanel
 	public final static Font romanBaseline = new Font("Roman Baseline", Font.ROMAN_BASELINE, 10);					//Roman Baseline font
 	
 	private ToolBar toolBar = new ToolBar();				//The tool bar that holds the buttons for use in the editors
+	private ToolBarExtension extend = new ToolBarExtension();//The extension to the tool bar
 	private JScrollBar scroll = new JScrollBar();			//The scroll bar used in the track editor
 	private InfoBar info = new InfoBar();					//The song information bar
 	
@@ -53,12 +54,15 @@ public class GUI extends JPanel
 		add(toolBar);
 		
 		//initialize scroll bar
-		scroll.setBounds(680, 50, 20, 320);
+		if(screenHeight >= 480)
+			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3);
+		else
+			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3 + (screenHeight - 480)/2);
 		scroll.setUnitIncrement(10);
 		add(scroll);
 		
 		//initialize info bar
-		info.setBounds(15, GUI.screenHeight - 80, (GUI.screenWidth / 2) -15, 60);
+		info.setBounds(15, GUI.screenHeight - 140, (GUI.screenWidth / 2) -15, 120);
 		info.setLayout(null);
 		info.setVisible(true);
 		add(info);
@@ -77,6 +81,7 @@ public class GUI extends JPanel
 		else if(MIDIMain.getMode() == 1){drawTrackEditor(g2D);}	//Track Editor
 		else if(MIDIMain.getMode() >= 2){drawNoteEditor(g2D);}	//Note Editor
 		
+		//If the selection box is being used
 		if(MIDIMain.isSelecting() == true)
 		{
 			g2D.setColor(new Color(0, 0, 255, 100));
@@ -84,7 +89,9 @@ public class GUI extends JPanel
 		}
 		
 		NotifyAnimation.drawNoteWindow(g2D);
+		extend.drawExtension(g2D);
 		
+		//CURSOR DEBUG
 		/*
 		g2D.setColor(Color.BLACK);
 		g2D.fillOval(CursorListener.getLocation()[0] - 10 - mouseDisplacement, CursorListener.getLocation()[1] - fullAddHeight - 10 + 5, 20, 20);
@@ -111,6 +118,34 @@ public class GUI extends JPanel
 		return info;
 	}
 	
+	//getExtension() returns the component of the tool bar that extends
+	public ToolBarExtension getExtension()
+	{
+		return extend;
+	}
+	
+	//resizeComponents() manually changes the size of components that do not automatically resize
+	public void resizeComponents()
+	{
+		//Scroll bar
+		if(GUI.screenHeight >= 480)
+			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3);
+		else
+			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3 + (screenHeight - 480)/2);
+		
+		//If scroll bar is needed in list
+		if(Tracks.getButtonLength() > Tracks.tracksVisible)
+			scroll.setValues(MIDIMain.getScrollValue(), (Tracks.trackHeight+5)*Tracks.tracksVisible, 0, (Tracks.trackHeight+5)*Tracks.getButtonLength());
+		else
+			scroll.setValues(0, 100, 0, 100);
+		
+		//Info bar
+		info.setBounds(15, screenHeight - 140, (screenWidth / 2) -15, 120);
+		//Tool bar
+		toolBar.setSize(screenWidth, toolBarHeight + 1);
+		toolBar.getTools(17).setLocation(screenWidth - 35,5);
+	}
+	
 	//scrollBar() processes the input of the scroll bar and returns the new value of the scroll bar
 	public short setComponentsOfScrollBar()
 	{
@@ -133,7 +168,7 @@ public class GUI extends JPanel
 	public void drawStartScreen(Graphics2D g)
 	{
 		g.setFont(new Font("FONT", Font.BOLD, 50));
-		g.drawString("WELCOME", 230, 240);
+		g.drawString("WELCOME", screenWidth/2 - 130, screenHeight/2);
 	}
 	
 	//drawTrackEditor(Graphics2D g) draws the track editor (menu = 1)
@@ -169,7 +204,7 @@ public class GUI extends JPanel
 		g.setColor(Color.BLACK);
 		g.setFont(smallFont);
 		g.drawRect(0, toolBarHeight, sideBarWidth, topBarHeight);
-		g.drawString("INSERT TITLE", 10, toolBarHeight + 15);
+		g.drawString(MIDIReader.getFileName(14), 5, toolBarHeight + 15);
 		g.setStroke(basic);
 	}
 	
@@ -196,7 +231,6 @@ public class GUI extends JPanel
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
 				g.drawString(i/MIDISong.getMeasureLength()+"", (int)(sideBarWidth - 5 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			//*FIX
 			else if(i%(MIDISong.getMeasureLength()/4) == 0 && MIDIMain.getPreLength() > 10)
 			{
 				g.setFont(smallFont);
@@ -240,6 +274,7 @@ public class GUI extends JPanel
 		
 		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
 		{
+			g.setColor(Color.BLACK);
 			//If scale > 15
 			if(MIDIMain.getPreHeight() > 15)
 			{
@@ -255,12 +290,13 @@ public class GUI extends JPanel
 			//If scale == 5
 			else
 			{
-				//g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 				if(i%4 == 0)
 				{
 					g.drawString(Notes.convertToNote((byte)(Notes.MAX_TONE - i), true), sideBarWidth/2 - 10, fullAddHeight + MIDIMain.getPreHeight()*2 + 5 + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 					g.drawLine(0, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 				}
+				g.setColor(Color.GRAY);
+				g.drawLine((sideBarWidth*3)/4, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate(), sideBarWidth, fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate());
 			}
 		}
 	}
@@ -302,20 +338,20 @@ public class GUI extends JPanel
 	public void drawNotes(Graphics2D g)
 	{
 		//Loops through every note and draws it as a rectangle
-		for(int i = 0; i < MIDISong.getNotes(MIDIMain.getTrackMenu()).length; i++)
+		for(int i = 0; i < Notes.getNumNotes(); i++)
 		{
 			//If note is on screen
 			if(isNoteVisible(i))
 			{
 				g.setColor(new Color(51,186,164));
-				g.fillRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+				g.fillRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
 				
-				if(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].isSelected())
+				if(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).isSelected())
 					g.setColor(Color.GREEN);
 				else
 					g.setColor(Color.BLACK);
 				g.setStroke(bold);
-				g.drawRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, MIDISong.getNotes(MIDIMain.getTrackMenu())[i].getLength(), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+				g.drawRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
 			}
 			g.setStroke(basic);
 		}
@@ -325,11 +361,14 @@ public class GUI extends JPanel
 	//int note = note being checked
 	public static boolean isNoteVisible(int note)
 	{
-		if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() + MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getLength() >  MIDIMain.getXCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getX() < MIDIMain.getXCoordinate() + (screenWidth - sideBarWidth))
+		try
 		{
-			if(MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getY() + MIDIMain.getPreHeight() > MIDIMain.getYCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu())[note].getY() < MIDIMain.getYCoordinate() + (screenHeight - fullAddHeight))
-				return true;
-		}
+			if(MIDISong.getNotes(MIDIMain.getTrackMenu(), note).getX() + MIDISong.getNotes(MIDIMain.getTrackMenu(), note).getLength() >  MIDIMain.getXCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu(), note).getX() < MIDIMain.getXCoordinate() + (screenWidth - sideBarWidth))
+			{
+				if(MIDISong.getNotes(MIDIMain.getTrackMenu(), note).getY() + MIDIMain.getPreHeight() > MIDIMain.getYCoordinate() && MIDISong.getNotes(MIDIMain.getTrackMenu(), note).getY() < MIDIMain.getYCoordinate() + (screenHeight - fullAddHeight))
+					return true;
+			}
+		}catch(NullPointerException e){}
 		return false;
 	}
 }

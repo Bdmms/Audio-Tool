@@ -1,9 +1,12 @@
+import java.util.ArrayList;
+
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
 import javax.sound.midi.MidiEvent;
 import javax.sound.midi.MidiMessage;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Track;
 
 /**
  * Date: November 1, 2016
@@ -15,11 +18,11 @@ import javax.sound.midi.ShortMessage;
 public class MIDISong 
 {
 	private static Sequence sequence;			//The sequence for the song
-	private static long length = 100;			//The length of the song in ticks
+	private static long length = 1;				//The length of the song in ticks
+	private static long tempo = 0;				//The tempo of the song (in microseconds per beat)
 	private static short measureLength = 16;	//The length of each measure in ticks
-	private static Tracks[] tracks;				//The tracks contained in the song
-	private static long tempo = 0;		//The tempo of the song in mpb
-	private static MidiEvent tempoChange;		//The message for tempo change
+	private static ArrayList<Tracks> tracks;	//The tracks contained in the song
+	private static MidiEvent tempoChange;		//The tempo change message
 	
 	//setSong(Sequence seq) sets the sequence for the song and other information
 	//Sequence seq = sequence the song reads
@@ -27,11 +30,10 @@ public class MIDISong
 	{
 		sequence = seq;
 		length = sequence.getTickLength();
-		resetTracks();
-
+		
 		for(byte t = 0; t < seq.getTracks().length; t++)
 		{
-			int v = Tracks.readForMeta(t, (byte) 2);
+			int v = Tracks.readForMeta(t, (byte) 2, 0);
 			
 			if(v >= 0)
 			{
@@ -46,48 +48,49 @@ public class MIDISong
 			}
 		}
 		
-		for(byte t = 0; t < seq.getTracks().length; t++)
+		for(byte t = 0; t < sequence.getTracks().length; t++)
 		{
-			for(int m = 0; m < seq.getTracks()[t].size(); m++)
+			for(int m = 0; m < sequence.getTracks()[t].size(); m++)
 			{
-				if(seq.getTracks()[t].get(m).getMessage().getMessage()[1] == 0x51 && tempo == 0)
+				if(getMessage(t, m).getMessage()[1] == 0x51 && tempo == 0)
 				{
-					for(int d = 3; d < seq.getTracks()[t].get(m).getMessage().getMessage().length; d++)
+					for(int d = 3; d < getMessage(t, m).getMessage().length; d++)
 					{
-						tempo += seq.getTracks()[t].get(m).getMessage().getMessage()[d] * Math.pow(2, (seq.getTracks()[t].get(m).getMessage().getMessage().length - d - 1)*8);
+						tempo += getMessage(t, m).getMessage()[d] * Math.pow(2, (getMessage(t, m).getMessage().length - d - 1)*8);
 					}
-					System.out.println("Tempo: " + tempo);
-					tempoChange = seq.getTracks()[t].get(m);
+					//System.out.println("Tempo: "+tempo);
+					tempoChange = sequence.getTracks()[t].get(m);
 					break;
 				}
 			}
 		}
-
+		resetTracks();
 	}
 	
 	//resetTracks() changes the amount of tracks in the sequence
 	private static void resetTracks()
 	{
-		tracks = new Tracks[sequence.getTracks().length];
-		for(byte i = 0; i < tracks.length; i++)
+		tracks = new ArrayList<Tracks>();
+		for(byte i = 0; i < sequence.getTracks().length; i++)
 		{
-			tracks[i] = new Tracks(i);
+			tracks.add(new Tracks(i));
 		}
 	}
 	
 	//addTrack() adds a new track to the sequence
 	public static void addTrack()
 	{
-		if(tracks.length < 16)
+		if(tracks.size() < 16)
 		{
 			sequence.createTrack();
-			resetTracks();
+			tracks.add(new Tracks((byte)(sequence.getTracks().length - 1)));
 		}
 		else
 		{
 			NotifyAnimation.sendMessage("Notification", "Track limit has been reached. (Only 16 tracks can exist in one song)");
 		}
 	}
+	
 	//addNote(byte trackNum) adds a note to the track in a sequence
 	//byte trackNum = track containing notes
 	//long tick = tick of the new note
@@ -95,7 +98,7 @@ public class MIDISong
 	//long endTick = location of the end of the note
 	public static void addNote(byte trackNum, long tick, byte tone, byte volume, long endTick)
 	{
-		tracks[trackNum].addNote(tick, endTick, tone, volume);
+		tracks.get(trackNum).addNote(tick, endTick, tone, volume);
 	}
 	
 	//addNote(byte trackNum) adds a note to the track in a sequence
@@ -105,36 +108,55 @@ public class MIDISong
 	{
 		sequence.getTracks()[trackNum].remove(MIDISong.getNotes(trackNum, note).getStartMessage());
 		sequence.getTracks()[trackNum].remove(MIDISong.getNotes(trackNum, note).getEndMessage());
-		tracks[trackNum].removeNote(note);
+		tracks.get(trackNum).removeNote(note);
+	}
+	
+	//moveTrack(byte trackNum, byte target) changes the order of the tracks in the song
+	//byte trackNum = selected track
+	//byte target = target location
+	public static void moveTrack(byte trackNum, byte target)
+	{
+		Tracks temp = tracks.get(target);
+		tracks.set(target, tracks.get(trackNum));
+		tracks.remove(trackNum);
+		tracks.add(trackNum, temp);
+		
+		Track tem = sequence.getTracks()[target];
+		sequence.getTracks()[target] = sequence.getTracks()[trackNum];
+		sequence.getTracks()[trackNum] = tem;
+
+		tracks.get(target).changeChannel(target);
+		tracks.get(target).changeChannel(trackNum);
 	}
 	
 	//openTrack(byte trackNum) opens the designated track to be used in the note editor
 	//byte teackNum = specified track in the array
 	public static void openTrack(byte trackNum)
 	{
-		tracks[trackNum].openTrack();
+		tracks.get(trackNum).openTrack();
 	}
 	
 	//closeTrack(byte trackNum) closes the designated track to be used in the note editor
 	//byte teackNum = specified track in the array
 	public static void closeTrack(byte trackNum)
 	{
-		tracks[trackNum].closeTrack();
+		tracks.get(trackNum).closeTrack();
 	}
 	
 	//saveTrack(byte trackNum) saves the track so that notes are updated in the sequence
 	//byte teackNum = specified track in the array
 	public static void saveTrack(byte trackNum)
 	{
-		tracks[trackNum].saveTrack();
+		tracks.get(trackNum).saveTrack();
 	}
 	
+	//saveSequence() saves the sequence so that it can be written as a file
 	public static Sequence saveSequence()
 	{
 		try {
-			for(byte i = 0; i < tracks.length; i++)
+			for(byte i = 0; i < tracks.size(); i++)
 			{
-				sequence.getTracks()[i].add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + i, tracks[i].getInstrument(), i), 0));
+				sequence.getTracks()[i].add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + i, tracks.get(i).getInstrument(), i), 0));
 			}
 			
 			setTempo(tempo);
@@ -176,20 +198,20 @@ public class MIDISong
 	//int note = index of note in array
 	public static Notes getNotes(byte trackNum, int note)
 	{
-		return tracks[trackNum].getNotes(note);
+		return tracks.get(trackNum).getNotes(note);
 	}
 	
 	//getTracks() returns the designated track in the song
 	//byte teackNum = specified track in the array
 	public static Tracks getTracks(byte trackNum)
 	{
-		return tracks[trackNum];
+		return tracks.get(trackNum);
 	}
 	
 	//getTracksLength() returns the amount of tracks in the song
 	public static byte getTracksLength()
 	{
-		return (byte) tracks.length;
+		return (byte) tracks.size();
 	}
 	
 	//getSequence() returns the sequence of the song
@@ -225,7 +247,7 @@ public class MIDISong
 	{
 		return((double) 60000000 / tempo) ;
 	}
-
+	
 	//getTempo() returns the tempo of the song
 	public static long getTempo()
 	{
