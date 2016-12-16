@@ -19,10 +19,10 @@ public class ToolBar extends JPanel
 	 */
 	
 	private static final long serialVersionUID = 2L;
-	public static final byte toolLength = 18;				//The maximum amount of buttons in the tool bar
 	public static final Color background = new Color(240, 240, 240);
 	public static final Color border = new Color(200, 200, 200);
-	private JButton[] tools = new JButton[18];				//Tool bar buttons
+	public static int toolLength = 10;						//The maximum amount of buttons in the tool bar
+	private JButton[] tools = new JButton[11];				//Tool bar buttons
 
 	public ToolBar()
 	{
@@ -44,6 +44,7 @@ public class ToolBar extends JPanel
 			tools[i].setBorderPainted(false);
 			this.add(tools[i]);
 		}
+		toolLength = tools.length;
 	}
 	
 	//Draws tool bar at top of screen
@@ -61,7 +62,7 @@ public class ToolBar extends JPanel
 		g.drawRect(0, 0, GUI.screenWidth - 1, GUI.toolBarHeight);
 	}
 	
-	JButton getTools(int index)
+	public JButton getTools(int index)
 	{
 		return tools[index];
 	}
