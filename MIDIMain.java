@@ -19,7 +19,8 @@ public class MIDIMain implements ActionListener
 	 * most of the menu information (i.e. menu type, menu location, etc.)
 	 */
 	
-	private JFrame window = new JFrame("MIDI EDITOR TOOL");	//The window the components are displayed on
+	private JFrame window = new JFrame("M.E.A.T.");		//The window the components are displayed on
+	//Midi Editor Accessing Tool
 	private GUI visual = new GUI();							//The drawing component used to display most graphics
 	private CursorListener mouse = new CursorListener();	//Mouse Listener used to register mouse movement and inputs
 	private KeyboardListener key = new KeyboardListener();	//Key Listener used to register key inputs
@@ -27,14 +28,13 @@ public class MIDIMain implements ActionListener
 	private MIDIFilter filter = new MIDIFilter();			//The file filter for the JFileChooser
 	private MIDIPlayer player = new MIDIPlayer();			//The class that can play midi files
 	private MIDIReader reader = new MIDIReader();			//The class that reads and creates midi files
-	private ToolBar toolBar;								//The tool bar that holds the buttons for use in the editors
-	private JScrollBar scroll;								//The scroll bar used in the track editor
-	private InfoBar info;									//The song information bar
+	private static ToolBar toolBar;							//The tool bar that holds the buttons for use in the editors
+	private static JScrollBar scroll;						//The scroll bar used in the track editor
+	private static InfoBar info;							//The song information bar
 	
 	private static byte selected = 0;						//The selection mode (0 = single | 1 = selecting notes | 2 = selected notes)
 	private static Rectangle selectBox;						//The rectangle that is used to select notes
 	
-	private static boolean play = false;					//Determines if the song is being played or not
 	private static byte mode = 0;							//Determines which menu the program displays
 	private static byte track = -1;							//Determines which track has been entered
 	private static short[] scale = {20, 20};				//The values that are used to space the grid layout (x, y)
@@ -67,7 +67,7 @@ public class MIDIMain implements ActionListener
 			//Process
 			if(mode == 1)
 				Tracks.trackLayout();
-			if(mode >= 2 && play)
+			if(mode >= 2 && player.isPlaying())
 				x = scale[0]*player.getTickPosition();
 			
 			//Outputs
@@ -75,6 +75,7 @@ public class MIDIMain implements ActionListener
 			
 			//Pause (Repeat)
 			pause(10);
+			window.setFocusable(true);
 		}
 	}
 
@@ -213,10 +214,6 @@ public class MIDIMain implements ActionListener
 		{
 			//Tool bar
 			toolBar.setVisible(false);
-			for(byte i = 0; i < ToolBar.toolLength; i++)
-			{
-				toolBar.getTools(i).setVisible(false);
-			}
 			
 			//Track buttons
 			for(byte i = 0; i < Tracks.getButtonLength(); i++)
@@ -240,12 +237,10 @@ public class MIDIMain implements ActionListener
 		//Track Editor
 		else if(mode == 1)
 		{
+			visual.resizeComponents();
+			
 			//Tool bar
 			toolBar.setVisible(true);
-			for(byte i = 0; i < ToolBar.toolLength - 6; i++)
-			{
-				toolBar.getTools(i).setVisible(true);
-			}
 			toolBar.getTools(ToolBar.toolLength - 1).setVisible(false);
 			
 			//Track buttons
@@ -274,10 +269,6 @@ public class MIDIMain implements ActionListener
 		{
 			//Tool bar
 			toolBar.setVisible(true);
-			for(byte i = 0; i < ToolBar.toolLength - 6; i++)
-			{
-				toolBar.getTools(i).setVisible(true);
-			}
 			toolBar.getTools(ToolBar.toolLength - 1).setVisible(true);
 			
 			//Track buttons
@@ -347,41 +338,23 @@ public class MIDIMain implements ActionListener
 		//Tool #1: PLAY
 		if(e.getSource() == toolBar.getTools(0))
 		{
-			//If song is playing
-			if(play == true)
-			{
-				play = false;
-				player.stop();
-			}
-			else
-			{
-				if(mode == 2)
-					MIDISong.saveTrack(track);
-				play = true;
-				player.play(true);
+			//If in note editor
+			if(mode == 2)
+				MIDISong.saveTrack(track);
+			player.play(true);
+			//If Song is playing
+			if(player.isPlaying())
 				player.setTickPosition(x/scale[0]);
-			}
 		}
 		//Tool #2: STOP
 		if(e.getSource() == toolBar.getTools(1))
 		{
-			//If song is playing
-			if(play == true)
-			{
-				play = false;
-				player.stop();
-				player.setTickPosition(0);
-				x = 0;
-			}
-			else
-			{
-				//If in note editor
-				if(mode == 2)
-					MIDISong.saveTrack(track);
-				play = true;
-				player.setTickPosition(0);
-				player.play(true);
-			}
+			//If in note editor
+			if(mode == 2)
+				MIDISong.saveTrack(track);
+			player.setTickPosition(0);
+			player.play(true);
+			x = 0;
 		}
 		//Tool #3: ADD
 		if(e.getSource() == toolBar.getTools(2))
@@ -408,22 +381,17 @@ public class MIDIMain implements ActionListener
 		//Tool #4 REMOVE / DELETE
 		if(e.getSource() == toolBar.getTools(3))
 		{
-			for(int i = Notes.getNumNotes()-1; i >= 0; i--)
-			{
-				//if note is selected
-				if(MIDISong.getNotes(track, i).isSelected())
-				{
-					MIDISong.removeNote(track, i);
-				}
-			}
-			SelectableObject.unSelectAll();
+			//if(mode == 1)
+				//MIDISong.deleteTrack(trackNum);
+			if(mode == 2)
+				MIDISong.removeSelectedNotes(track);
 		}
 		//Tool #5 SKIP LEFT
 		if(e.getSource() == toolBar.getTools(4))
 		{
 			x -= (GUI.screenWidth - GUI.sideBarWidth);
 			gridLimits();
-			if(play == true)
+			if(player.isPlaying())
 				player.setTickPosition(x/scale[0]);
 		}
 		//Tool #6 SKIP RIGHT
@@ -431,7 +399,7 @@ public class MIDIMain implements ActionListener
 		{
 			x += (GUI.screenWidth - GUI.sideBarWidth);
 			gridLimits();
-			if(play == true)
+			if(player.isPlaying())
 				player.setTickPosition(x/scale[0]);
 		}
 		//Tool #7 SHIFT UP
@@ -490,7 +458,22 @@ public class MIDIMain implements ActionListener
 				}
 			}
 		}
-		//Tool #18: GO BACK
+		//Tool #9 TOGGLE INFOBAR
+		if(e.getSource() == toolBar.getTools(8))
+		{
+			if(info.isVisible())
+				info.setVisibleAnimation(false);	
+			else
+				info.setVisibleAnimation(true);
+		}
+		//Tool #10 SELECT ALL
+		if(e.getSource() == toolBar.getTools(9))
+		{
+			Notes.selectAllNotes();
+			//selection mode set to multi-select
+			selected = 2;
+		}
+		//Tool #11: GO BACK
 		if(e.getSource() == toolBar.getTools(ToolBar.toolLength - 1))
 		{
 			MIDISong.closeTrack(track);
@@ -568,12 +551,13 @@ public class MIDIMain implements ActionListener
 		//MenuBar -> Edit -> Copy
 		if(e.getActionCommand().equals("Copy"))
 		{
-			Notes.copyNotes(false);
+			Notes.copyNotes();
 		}
 		//MenuBar -> Edit -> Cut
 		if(e.getActionCommand().equals("Cut"))
 		{
-			Notes.copyNotes(true);
+			Notes.copyNotes();
+			MIDISong.removeSelectedNotes(track);
 		}
 		//MenuBar -> Edit -> Paste
 		if(e.getActionCommand().equals("Paste"))
@@ -583,15 +567,7 @@ public class MIDIMain implements ActionListener
 		//MenuBar -> Edit -> Delete
 		if(e.getActionCommand().equals("Delete"))
 		{
-			for(int i = Notes.getNumNotes()-1; i >= 0; i--)
-			{
-				//if note is selected
-				if(MIDISong.getNotes(track, i).isSelected())
-				{
-					MIDISong.removeNote(track, i);
-				}
-			}
-			SelectableObject.unSelectAll();
+			MIDISong.removeSelectedNotes(track);
 		}
 		//MenuBar -> View -> Precision
 		if(e.getActionCommand().equals("Precision"))
@@ -611,7 +587,7 @@ public class MIDIMain implements ActionListener
 		if(e.getActionCommand().equals("Rename Song"))
 		{
 			String s = JOptionPane.showInputDialog("What will you name the song?", MIDIReader.getFileName(0));
-			if(s != null)
+			if(!s.startsWith("") || s.length() > 0)
 				MIDIReader.setFileName(s);
 		}
 		//MenuBar -> Song -> Change Tempo
@@ -620,6 +596,8 @@ public class MIDIMain implements ActionListener
 			long t = Long.parseLong(JOptionPane.showInputDialog("What will be the new tempo (micorseconds per beat)?", MIDISong.getTempo()));
 			if(t > 0)
 				MIDISong.setTempo(t);
+			else
+				NotifyAnimation.sendMessage("Invaild", "The tempo value given is invalid");
 		}
 		//MenuBar -> Organize -> Track Colour
 		/*if(e.getActionCommand().equals("Track Colour"))
@@ -660,32 +638,62 @@ public class MIDIMain implements ActionListener
 	//keyControl() responds to key inputs in the program
 	public void keyControl()
 	{
+		//Space
+		if(key.getSpace())
+		{
+			//If in note editor
+			if(mode == 2)
+				MIDISong.saveTrack(track);
+			player.play(true);
+			//If Song is playing
+			if(player.isPlaying())
+				player.setTickPosition(x/scale[0]);
+			key.setSpace(false);
+		}
+		//Delete
+		if(key.getDelete())
+		{
+			MIDISong.removeSelectedNotes(track);
+			key.setDelete(false);
+		}
 		//A
 		if(key.getLetters()[0])
 		{
-			String temp = "";
-			for(int a = 48; a < 256; a++)
-			{
-				temp += (char) a;
-			}
-			NotifyAnimation.sendMessage("CHARACTER SPREAD", temp);
-			//NotifyAnimation.sendMessage("Notification", "This message is brought to you by SONIC 3 & KNUCKLES 1.5 HD REMIX REMASTERING COLLECTION VERSION 2 UPDATED PLUS ULTRA ARCADE EDITION CROSS TURBO");
-			//NotifyAnimation.sendMessage("AAAAA","12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890");
+			x -= (GUI.screenWidth - GUI.sideBarWidth);
+			gridLimits();
+			if(player.isPlaying())
+				player.setTickPosition(x/scale[0]);
 			key.setLetter(false, (byte) 0);
-			key.setControl(false);
 		}
 		//C
 		if(key.getControl() && key.getLetters()[2])
 		{
-			Notes.copyNotes(false);
+			Notes.copyNotes();
 			key.setLetter(false, (byte) 2);
 			key.setControl(false);
+		}
+		//D
+		if(key.getLetters()[3])
+		{
+			x += (GUI.screenWidth - GUI.sideBarWidth);
+			gridLimits();
+			if(player.isPlaying())
+				player.setTickPosition(x/scale[0]);
+			key.setLetter(false, (byte) 3);
 		}
 		//V
 		if(key.getControl() && key.getLetters()[21])
 		{
 			Notes.pasteNotes(x/scale[0], (byte)0);		
 			key.setLetter(false, (byte) 21);
+			key.setControl(false);
+		}
+		//X
+		if(key.getControl() && key.getLetters()[23])
+		{
+			Notes.copyNotes();
+			MIDISong.removeSelectedNotes(track);	
+			key.setLetter(false, (byte) 23);
 			key.setControl(false);
 		}
 	}
@@ -981,5 +989,11 @@ public class MIDIMain implements ActionListener
 			return true;
 		else
 			return false;
+	}
+	
+	//isInfoBarVisible()
+	public static boolean isInfoBarVisible()
+	{
+		return info.isVisible();
 	}
 }
