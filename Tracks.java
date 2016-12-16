@@ -32,16 +32,18 @@ public class Tracks extends SelectableObject
 	
 	private Color colour = Color.LIGHT_GRAY;
 	private int numNotes = 0;									//The number of notes in a track
+	private int endNotes = 0;
 	private byte instrument = 0;								//The instrument used for the track
 	private byte volume = 100;									//The master volume of every note in a track
 	private byte channel = 0;									//The channel that corresponds with track
 	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
-	
+
 	//Constructor method
 	//byte chan = channel of track
 	public Tracks(byte chan)
 	{
 		channel = chan;
+		cleanTrack();
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 		
 		//DEBUG
@@ -74,9 +76,9 @@ public class Tracks extends SelectableObject
 	public void changeChannel(byte chan)
 	{
 		channel = chan;
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 		//Set messages to correct channel
 		saveTrack();
+		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 	}
 	
 	//openTrack(byte trackNum) opens the data in a track for use in the note editor
@@ -85,6 +87,7 @@ public class Tracks extends SelectableObject
 	{
 		Notes.setTrack(channel);
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		endNotes = countMessage(channel, (byte)ShortMessage.NOTE_OFF);
 		//If their are a real amount of notes
 		if(numNotes >= 0)
 		{
@@ -99,6 +102,8 @@ public class Tracks extends SelectableObject
 					if(a >= 0)
 					{
 						notes.add(new Notes(MIDISong.getEvent(channel, i), MIDISong.getEvent(channel, a)));
+						MIDISong.getSequence().getTracks()[channel].remove(notes.get(Notes.getNumNotes()-1).getStartMessage());
+						MIDISong.getSequence().getTracks()[channel].remove(notes.get(Notes.getNumNotes()-1).getEndMessage());
 					}
 					else
 					{
@@ -106,13 +111,40 @@ public class Tracks extends SelectableObject
 						numNotes--;
 					}
 				}
-				i++;
+				else
+				{
+					i++;
+				}
 			}
+			saveTrack();
 		}
 		//If note length is invalid
 		else
 		{
 			NotifyAnimation.sendMessage("Error", "Track "+channel+" cannot be edited because it exceeds note limit!");
+		}
+	}
+	
+	//cleanTrack() removes any unwanted or invalid midi messages
+	public void cleanTrack()
+	{
+		for(int m = 0; m < MIDISong.getSequence().getTracks()[channel].size(); m++)
+		{
+			if(MIDISong.getEvent(channel, m).getTick() < 0)
+			{
+				MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, m));
+			}
+			//0x80 = NOTE_OFF || checks all varied message types that exist
+			/*
+			for(int status = 0x80; status < 0xF0; status += 16)
+			{
+				if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, m).getStatus(), (byte)status) && Notes.getMessageChannel((byte)MIDISong.getMessage(channel, m).getStatus(), (byte)status) != channel)
+				{
+					MIDISong.getSequence().getTracks()[Notes.getMessageChannel((byte)MIDISong.getMessage(channel, m).getStatus(), (byte)status)].add(MIDISong.getEvent(channel, m));
+					MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, m));
+				}
+			}
+			*/
 		}
 	}
 	
@@ -138,7 +170,7 @@ public class Tracks extends SelectableObject
 			}
 			for(n = 0; n < Notes.getNumNotes(); n++)
 			{
-				notes.get(n).setMidiEvent(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON + channel, channel, MIDISong.getNotes(channel, n).getTone(), MIDISong.getNotes(channel, n).getVolume()), MIDISong.getNotes(channel, n).getTick()), new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF + channel, channel, MIDISong.getNotes(channel, n).getTone(), MIDISong.getNotes(channel, n).getVolume()), MIDISong.getNotes(channel, n).getEndTick()));
+				notes.get(n).setMidiEvent(new MidiEvent(new ShortMessage(ShortMessage.NOTE_ON + channel, channel, notes.get(n).getTone(), notes.get(n).getVolume()), notes.get(n).getTick()), new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF + channel, channel, notes.get(n).getTone(), notes.get(n).getVolume()), notes.get(n).getEndTick()));
 				MIDISong.getSequence().getTracks()[channel].add(notes.get(n).getStartMessage());
 				MIDISong.getSequence().getTracks()[channel].add(notes.get(n).getEndMessage());
 			}
@@ -221,24 +253,28 @@ public class Tracks extends SelectableObject
 			{
 				return i;
 			}
-			//If note has no end before the start of the next note
-			else if(Notes.isMessageChannel((byte)MIDISong.getMessage(trackNum, i).getStatus(), (byte)ShortMessage.NOTE_ON, chan) && MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_TONE] == tone && add == false)
+			else if(MIDISong.getTracks(trackNum).endNotes != MIDISong.getTracks(trackNum).numNotes)
 			{
-				int c = i;
-				while(MIDISong.getEvent(trackNum, c).getTick() == MIDISong.getEvent(trackNum, i).getTick() && c < MIDISong.getSequence().getTracks()[trackNum].size())
+				//If note has no end before the start of the next note
+				if(Notes.isMessageChannel((byte)MIDISong.getMessage(trackNum, i).getStatus(), (byte)ShortMessage.NOTE_ON, chan) && MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_TONE] == tone && add == false)
 				{
-					if(Notes.isMessageChannel((byte)MIDISong.getMessage(trackNum, c).getStatus(), (byte)ShortMessage.NOTE_OFF, chan))
+					int c = i;
+					while(MIDISong.getEvent(trackNum, c).getTick() == MIDISong.getEvent(trackNum, i).getTick() && c < MIDISong.getSequence().getTracks()[trackNum].size())
 					{
-						return c;
+						if(Notes.isMessageChannel((byte)MIDISong.getMessage(trackNum, c).getStatus(), (byte)ShortMessage.NOTE_OFF, chan))
+						{
+							return c;
+						}
+						c++;
+						MIDISong.getTracks(trackNum).endNotes++;
 					}
-					c++;
+					try {
+						MIDISong.getSequence().getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, tone, MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(trackNum, i).getTick()));
+						i = eventFrom + 1;	//Start from beginning
+						add = true;
+					} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array Index Out of Bound! (No Value Assigned)");
+					} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Invalid midi data!");}
 				}
-				try {
-					MIDISong.getSequence().getTracks()[trackNum].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF, trackNum, tone, MIDISong.getMessage(trackNum, i).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(trackNum, i).getTick()));
-					i = eventFrom + 1;	//Start from beginning
-					add = true;
-				} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array Index Out of Bound! (No Value Assigned)");
-				} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Invalid midi data!");}
 			}
 		}
 		return eventFrom + 1;
@@ -382,7 +418,7 @@ public class Tracks extends SelectableObject
 			//Checks if button is behind components
 			for(byte i = 0; i < trackButtons.size(); i++)
 			{
-				if(trackButtons.get(i).getLocation().getY() < GUI.toolBarHeight || trackButtons.get(i).getLocation().getY() + trackButtons.get(i).getHeight() > GUI.screenHeight - 140)
+				if(trackButtons.get(i).getLocation().getY() < GUI.toolBarHeight || (trackButtons.get(i).getLocation().getY() + trackButtons.get(i).getHeight() > GUI.screenHeight - 140  && MIDIMain.isInfoBarVisible()))
 				{
 					trackButtons.get(i).setEnabled(false);
 					trackButtons.get(i).setOpaque(false);
@@ -393,7 +429,7 @@ public class Tracks extends SelectableObject
 					trackButtons.get(i).setOpaque(true);
 				}
 				
-				if(instrumentList.get(i).getLocation().getY() < GUI.toolBarHeight || instrumentList.get(i).getLocation().getY() + instrumentList.get(i).getHeight() > GUI.screenHeight - 140)
+				if(instrumentList.get(i).getLocation().getY() < GUI.toolBarHeight || (instrumentList.get(i).getLocation().getY() + instrumentList.get(i).getHeight() > GUI.screenHeight - 140 && MIDIMain.isInfoBarVisible()))
 				{
 					instrumentList.get(i).setEnabled(false);
 					instrumentList.get(i).setOpaque(false);
