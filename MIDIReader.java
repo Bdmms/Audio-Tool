@@ -18,7 +18,7 @@ public class MIDIReader {
 	 */
 	public Sequence readFile(File file){
 	
-		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[0]))
+		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[0]) || MIDIFilter.getExtension(file).equals(MIDIFilter.mid[1]))
 		{
 			fileName = file.getName();
 				
