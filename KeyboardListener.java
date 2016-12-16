@@ -9,7 +9,7 @@ import java.awt.event.KeyListener;
 
 public class KeyboardListener implements KeyListener
 {
-	private boolean space, ctrl, enter;
+	private boolean space, ctrl, delete;
 	private boolean[] letters = new boolean[26];
 	private boolean[] numbers = new boolean[10];
 
@@ -51,18 +51,18 @@ public class KeyboardListener implements KeyListener
 	/*
 	 * getEnter() returns the boolean value of the enter key
 	 */
-	public boolean getEnter(){
+	public boolean getDelete(){
 		
-		return enter;
+		return delete;
 	}
 	
 	/*
 	 * setEnter(boolean state) sets the boolean value of the enter key
 	 * boolean state = the boolean value of the enter key
 	 */
-	public void setEnter(boolean state){
+	public void setDelete(boolean state){
 		
-		enter = state;
+		delete = state;
 	}
 	
 	/*
@@ -113,7 +113,6 @@ public class KeyboardListener implements KeyListener
 	 * 
 	 */
 	public void keyPressed(KeyEvent e) {
-				
 		for(byte c = 0; c<=25; c++)
 		{
 			//determines if control and the 'c' key are being pressed simultaneously 
@@ -155,17 +154,17 @@ public class KeyboardListener implements KeyListener
 		for(byte n = 0; n<=9; n++)
 		{
 			//sets the pressed number's boolean value to true in the array of numbers
-			if(e.getKeyChar() -48 == n)
+			if(e.getKeyChar() - 48 == n)
 			{
 				numbers [n] = true;
 				System.out.println(n);
 			}
 		}
 		
-		//determines if the enter key is pressed
-		if(e.getKeyCode() == KeyEvent.VK_ENTER)
+		//determines if the delete key is pressed
+		if(e.getKeyCode() == KeyEvent.VK_DELETE)
 		{
-			enter = true;
+			delete = true;
 		}
 		
 		//determines if the space key is pressed
@@ -188,10 +187,10 @@ public class KeyboardListener implements KeyListener
 			ctrl = false;
 		}
 		
-		//determines if the enter key is released
-		if(e.getKeyCode() == KeyEvent.VK_ENTER)
+		//determines if the delete key is released
+		if(e.getKeyCode() == KeyEvent.VK_DELETE)
 		{
-			enter = false;
+			delete = false;
 		}
 		
 		//determines if the space key is released
