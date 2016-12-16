@@ -48,24 +48,20 @@ public class GUI extends JPanel
 	public GUI()
 	{
 		//initialize tool bar
-		toolBar.setSize(720,41);
 		toolBar.setLayout(null);
 		toolBar.setBackground(Color.LIGHT_GRAY);
 		add(toolBar);
 		
 		//initialize scroll bar
-		if(screenHeight >= 480)
-			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3);
-		else
-			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3 + (screenHeight - 480)/2);
 		scroll.setUnitIncrement(10);
 		add(scroll);
 		
 		//initialize info bar
-		info.setBounds(15, GUI.screenHeight - 140, (GUI.screenWidth / 2) -15, 120);
 		info.setLayout(null);
 		info.setVisible(true);
 		add(info);
+		
+		resizeComponents();
 	}
 	
 	//paintComponent(Graphics g) responds to the .repaint() method when used
@@ -73,6 +69,9 @@ public class GUI extends JPanel
 	public void paintComponent(Graphics g) 
 	{
 		Graphics2D g2D = (Graphics2D) g;	//Graphics2D allows access more methods
+		
+		g.setColor(Color.WHITE);
+		g.fillRect(0, 0, screenWidth, screenHeight);
 		
 		g2D.setColor(Color.BLACK);
 		g2D.setStroke(basic);
@@ -143,7 +142,7 @@ public class GUI extends JPanel
 		info.setBounds(15, screenHeight - 140, (screenWidth / 2) -15, 120);
 		//Tool bar
 		toolBar.setSize(screenWidth, toolBarHeight + 1);
-		toolBar.getTools(17).setLocation(screenWidth - 35,5);
+		toolBar.getTools(ToolBar.toolLength - 1).setLocation(screenWidth - 35,5);
 	}
 	
 	//scrollBar() processes the input of the scroll bar and returns the new value of the scroll bar
