@@ -464,11 +464,20 @@ public class Tracks extends SelectableObject
 		}
 	}
 	
+	//removeTrackButton(byte button) removes a set of buttons for a track
+	//byte button = button being removed
+	public static void removeTrackButton()
+	{
+		MIDIMain.removeTrackButton((byte)(trackButtons.size() - 1));
+		instrumentList.remove(trackButtons.size() - 1);
+		trackButtons.remove(trackButtons.size() - 1);
+	}
+	
 	public static void resizeButtons()
 	{
 		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 		{
-			Tracks.getInstrumentListButton(t).setSize(GUI.screenWidth/3, 20);
+			instrumentList.get(t).setSize(GUI.screenWidth/3, 20);
 		}
 	}
 	
