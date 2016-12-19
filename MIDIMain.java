@@ -8,6 +8,8 @@ import java.awt.event.*;
 public class MIDIMain implements ActionListener
 {
 	/**
+	 * Adobe kuler (color scheme website)
+	 * 
 	 * Audio Tool Project
 	 * 
 	 * By: Ethan Lee and Sean Rannie
@@ -21,7 +23,7 @@ public class MIDIMain implements ActionListener
 	
 	private JFrame window = new JFrame("M.E.A.T.");		//The window the components are displayed on
 	//Midi Editor Accessing Tool
-	private GUI visual = new GUI();							//The drawing component used to display most graphics
+	private static GUI visual = new GUI();							//The drawing component used to display most graphics
 	private CursorListener mouse = new CursorListener();	//Mouse Listener used to register mouse movement and inputs
 	private KeyboardListener key = new KeyboardListener();	//Key Listener used to register key inputs
 	private JFileChooser fileIn = new JFileChooser();		//The file directory that opens when choosing a file
@@ -134,10 +136,10 @@ public class MIDIMain implements ActionListener
 		//Each branch of the menu bar is created
 		JMenu[] menu = {new JMenu("FILE"), new JMenu("EDIT"), new JMenu("VIEW"), new JMenu("SONG"), new JMenu("SOUNDBANK"), new JMenu("HELP")}; 
 		//The menu inside each branch is created
-		JMenuItem[] file = {new JMenuItem("New"), new JMenuItem("Open"), new JMenuItem("Save"), new JMenuItem("Save As"), new JMenuItem("Delete File"), new JMenuItem("Quit")};
-		JMenuItem[] edit = {new JMenuItem("Undo"), new JMenuItem("Redo"), new JMenuItem("Copy"), new JMenuItem("Cut"), new JMenuItem("Paste"), new JMenuItem("Delete")};
+		JMenuItem[] file = {new JMenuItem("New"), new JMenuItem("Open"), new JMenuItem("Save"), new JMenuItem("Save As"), new JMenuItem("Quit")};
+		JMenuItem[] edit = {new JMenuItem("Copy"), new JMenuItem("Cut"), new JMenuItem("Paste"), new JMenuItem("Delete")};
 		JMenuItem[] view = {new JMenuItem("Precision"), new JMenuItem("Zoom")};
-		JMenuItem[] organize = {new JMenuItem("Rename Song"), new JMenuItem("Change Tempo")};
+		JMenuItem[] song = {new JMenuItem("Rename Song"), new JMenuItem("Set Tempo"), new JMenuItem("Set Length"), new JMenuItem("Set Time Signature")};
 		JMenuItem[] soundbank = {new JMenuItem("Load Soundbank"), new JMenuItem("Set to Default")};
 		JMenuItem[] help = {new JMenuItem("Terms"), new JMenuItem("Tutorials")};
 		
@@ -145,21 +147,25 @@ public class MIDIMain implements ActionListener
 		for(byte i = 0; i < 6; i++)
 		{
 			menu[i].addActionListener(this);
-			file[i].addActionListener(this);
-			edit[i].addActionListener(this);
-			//Adding to menu bar
 			menuBar.add(menu[i]);
-			//Adding to menu branched
-			menu[0].add(file[i]);
-			menu[1].add(edit[i]);
+			if(i < 5)
+			{
+				file[i].addActionListener(this);
+				menu[0].add(file[i]);
+			}
+			if(i < 4)
+			{
+				edit[i].addActionListener(this);
+				menu[1].add(edit[i]);
+				song[i].addActionListener(this);
+				menu[3].add(song[i]);
+			}
 			if(i < 2)
 			{
 				view[i].addActionListener(this);
-				organize[i].addActionListener(this);
 				soundbank[i].addActionListener(this);
 				help[i].addActionListener(this);
 				menu[2].add(view[i]);
-				menu[3].add(organize[i]);
 				menu[4].add(soundbank[i]);
 				menu[5].add(help[i]);
 			}
@@ -196,6 +202,14 @@ public class MIDIMain implements ActionListener
 			visual.add(Tracks.getTrackEntryButton(Tracks.getButtonLength() - 1));
 			visual.add(Tracks.getInstrumentListButton(Tracks.getButtonLength() - 1));
 		}
+	}
+	
+	//removeTrackButton(byte trackNum) removes the buttons from the GUI component
+	//byte trackNum = button track being removed
+	public static void removeTrackButton(byte trackNum)
+	{
+		visual.remove(Tracks.getTrackEntryButton(trackNum));
+		visual.remove(Tracks.getInstrumentListButton(trackNum));
 	}
 	
 	//Mode() sets the components correctly to represent the current menu type
@@ -381,8 +395,14 @@ public class MIDIMain implements ActionListener
 		//Tool #4 REMOVE / DELETE
 		if(e.getSource() == toolBar.getTools(3))
 		{
-			//if(mode == 1)
-				//MIDISong.deleteTrack(trackNum);
+			if(mode == 1)
+			{
+				for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+				{
+					if(MIDISong.getTracks(t).isSelected())
+						MIDISong.deleteTrack(t);
+				}
+			}
 			if(mode == 2)
 				MIDISong.removeSelectedNotes(track);
 		}
@@ -525,28 +545,23 @@ public class MIDIMain implements ActionListener
 		{
 			if(mode == 2)
 				MIDISong.saveTrack(track);
-			reader.saveFile(MIDISong.saveSequence(), JOptionPane.showInputDialog("What will you save the file as?", MIDIReader.getFileName(0)));
-			NotifyAnimation.sendMessage("Notification","File saved...");
-		}
-		//MenuBar -> File -> Delete File
-		if(e.getActionCommand().equals("Delete File"))
-		{
-			NotifyAnimation.sendMessage("Error","Are you sure about that!?");
+			String s = JOptionPane.showInputDialog("What will you save the file as?", MIDIReader.getFileName(0));
+			
+			if(!s.startsWith("") || s.length() > 0)
+			{
+				MIDIReader.setFileName(s);
+				reader.saveFile(MIDISong.saveSequence(), s);
+				NotifyAnimation.sendMessage("Notification","File saved...");
+			}
+			else
+			{
+				NotifyAnimation.sendMessage("invalid","Name is invalid. File was not saved.");
+			}
 		}
 		//MenuBar -> File -> Quit
 		if(e.getActionCommand().equals("Quit"))
 		{
 			System.exit(1);
-		}
-		//MenuBar -> Edit -> Undo
-		if(e.getActionCommand().equals("Undo"))
-		{
-			
-		}
-		//MenuBar -> Edit -> Redo
-		if(e.getActionCommand().equals("Redo"))
-		{
-					
 		}
 		//MenuBar -> Edit -> Copy
 		if(e.getActionCommand().equals("Copy"))
@@ -572,16 +587,26 @@ public class MIDIMain implements ActionListener
 		//MenuBar -> View -> Precision
 		if(e.getActionCommand().equals("Precision"))
 		{
-			short p = Short.parseShort(JOptionPane.showInputDialog("How many ticks will appear on screen? (6 - 620)", (GUI.screenWidth - GUI.sideBarWidth)/scale[0]));
-			if(p > 0)
-				scale[0] = (short) ((GUI.screenWidth - GUI.sideBarWidth)/p);
+			try
+			{
+				short p = Short.parseShort(JOptionPane.showInputDialog("How many ticks will appear on screen? (6 - 620)", (GUI.screenWidth - GUI.sideBarWidth)/scale[0]));
+				if(p > 0)
+					scale[0] = (short) ((GUI.screenWidth - GUI.sideBarWidth)/p);
+				else
+					NotifyAnimation.sendMessage("Invaild", "The value given for precision is invalid.");
+			}catch(NumberFormatException ex){NotifyAnimation.sendMessage("Invaild", "The value given for precision is invalid.");}
 		}
 		//MenuBar -> View -> Zoom
 		if(e.getActionCommand().equals("Zoom"))
 		{
-			short z = Short.parseShort(JOptionPane.showInputDialog("How many tones will be displayed on screen?", (GUI.screenHeight - GUI.fullAddHeight)/scale[1]));
-			if(z > 0)
-				scale[1] = (short) ((GUI.screenHeight - GUI.fullAddHeight)/z);
+			try
+			{
+				short z = Short.parseShort(JOptionPane.showInputDialog("How many tones will be displayed on screen?", (GUI.screenHeight - GUI.fullAddHeight)/scale[1]));
+				if(z > 0)
+					scale[1] = (short) ((GUI.screenHeight - GUI.fullAddHeight)/z);
+				else
+					NotifyAnimation.sendMessage("Invaild", "The value given for zoom is invalid.");
+			}catch(NumberFormatException ex){NotifyAnimation.sendMessage("Invaild", "The value given for zoom is invalid.");}
 		}
 		//MenuBar -> Song -> Rename Song
 		if(e.getActionCommand().equals("Rename Song"))
@@ -590,30 +615,45 @@ public class MIDIMain implements ActionListener
 			if(!s.startsWith("") || s.length() > 0)
 				MIDIReader.setFileName(s);
 		}
-		//MenuBar -> Song -> Change Tempo
-		if(e.getActionCommand().equals("Change Tempo"))
+		//MenuBar -> Song -> Set Tempo
+		if(e.getActionCommand().equals("Set Tempo"))
 		{
-			long t = Long.parseLong(JOptionPane.showInputDialog("What will be the new tempo (micorseconds per beat)?", MIDISong.getTempo()));
-			if(t > 0)
-				MIDISong.setTempo(t);
-			else
-				NotifyAnimation.sendMessage("Invaild", "The tempo value given is invalid");
-		}
-		//MenuBar -> Organize -> Track Colour
-		/*if(e.getActionCommand().equals("Track Colour"))
-		{
-			for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+			try
 			{
-				//If track is selected
-				if(MIDISong.getTracks(t).isSelected())
+				long t = Long.parseLong(JOptionPane.showInputDialog("What will be the new tempo (micorseconds per beat)?", MIDISong.getLength()/MIDISong.getMeasureLength()));
+				if(t > 0)
+					MIDISong.setTempo(t);
+				else
+					NotifyAnimation.sendMessage("Invaild", "The tempo value given is invalid.");
+			}catch(NumberFormatException ex){NotifyAnimation.sendMessage("Invaild", "The tempo value given is invalid.");}
+		}
+		//MenuBar -> Song -> Set Length
+		if(e.getActionCommand().equals("Set Length"))
+		{
+			try
+			{
+				int l = Integer.parseInt(JOptionPane.showInputDialog("How many measures should the song have?", MIDISong.getLength()/MIDISong.getMeasureLength()));
+				if(l*MIDISong.getMeasureLength() > 640)
+					MIDISong.setLength(l);
+				else
+					NotifyAnimation.sendMessage("Invaild", "The length given is either too small or invalid.");
+			}catch(NumberFormatException ex){NotifyAnimation.sendMessage("Invaild", "The length given invalid.");}
+		}
+		//MenuBar -> Song -> Set Time Signature
+		if(e.getActionCommand().equals("Set Time Signature"))
+		{
+			try
+			{
+				byte t = Byte.parseByte(JOptionPane.showInputDialog("How many beats per measure should there be?", MIDISong.getBeatNum()));
+				if(t > 0 && t <= 33)
 				{
-					Color c = new Color(Integer.parseInt(JOptionPane.showInputDialog("How much red?", MIDISong.getTracks(t).getColour().getRed())), Integer.parseInt(JOptionPane.showInputDialog("How much blue?", MIDISong.getTracks(t).getColour().getGreen())), Integer.parseInt(JOptionPane.showInputDialog("How much green?", MIDISong.getTracks(t).getColour().getBlue())));
-					if(c != null)
-						MIDISong.getTracks(t).setColour(c);
-					break;
+					MIDISong.setTimeSignature(t, (byte)4);
+					NotifyAnimation.sendMessage("Notification", "The length of the song may not work with the time signature. Please adjust the length of the song if needed.");
 				}
-			}
-		}*/
+				else
+					NotifyAnimation.sendMessage("Invaild", "The value given is either too large or invalid.");
+			}catch(NumberFormatException ex){NotifyAnimation.sendMessage("Invaild", "The value given is invalid.");}
+		}
 		//MenuBar -> Soundbank -> Load Soundbank
 		if(e.getActionCommand().equals("Load Soundbank"))
 		{
