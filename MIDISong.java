@@ -19,7 +19,7 @@ public class MIDISong
 	private static Sequence sequence;			//The sequence for the song
 	private static long length = 1;				//The length of the song in ticks
 	private static long tempo = 0;				//The tempo of the song (in microseconds per beat)
-	private static short measureLength = 16;	//The length of each measure in ticks
+	private static byte[] measureLength = {4,4};//The time signature of the song (beats per measure, ticks per beat)
 	private static ArrayList<Tracks> tracks;	//The tracks contained in the song
 	private static MidiEvent tempoChange;		//The tempo change message
 	
@@ -191,6 +191,7 @@ public class MIDISong
 	{
 		tracks.remove(trackNum);
 		sequence.deleteTrack(sequence.getTracks()[trackNum]);
+		Tracks.removeTrackButton();
 	}
 	
 	//saveTrack(byte trackNum) saves the track so that notes are updated in the sequence
@@ -224,7 +225,7 @@ public class MIDISong
 	//setLength(long l) sets the length of the song in ticks
 	public static void setLength(long l)
 	{
-		length = l;
+		length = l*measureLength[0]*16/measureLength[1];
 	}
 	
 	//setTempo(long l) sets the tempo of the song (in microseconds per beat)
@@ -242,6 +243,13 @@ public class MIDISong
 			NotifyAnimation.sendMessage("Error", "Tempo cannot be changed.");
 			System.out.println("Original: "+tempoChange.getMessage().getMessage()[3]+" "+tempoChange.getMessage().getMessage()[4]+" "+tempoChange.getMessage().getMessage()[5]);
 			System.out.println("New: "+a[0]+" "+a[1]+" "+a[2]);}
+	}
+	
+	//setTimeSignature(byte t, byte b) sets the time signature of the somg
+	public static void setTimeSignature(byte t, byte b)
+	{
+		measureLength[0] = t;
+		measureLength[1] = b;
 	}
 	
 	//getNotes(byte trackNum) returns the array of notes in a designated track
@@ -305,15 +313,15 @@ public class MIDISong
 		return tempo;
 	}
 	
+	//getBeatsPerMeasure() returns the number of beats per measure in the song
+	public static byte getBeatNum()
+	{
+		return measureLength[0];
+	}
+	
 	//getMeasureLength() returns the length of each measure in ticks
 	public static long getMeasureLength()
 	{
-		return measureLength;
-	}
-	
-	//setMeasureLength(short l) sets the length of each measure in ticks (max of 65534)
-	public static void setMeasureLength(short l)
-	{
-		measureLength = l;
+		return measureLength[0]*16/measureLength[1];
 	}
 }
