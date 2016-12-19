@@ -228,30 +228,34 @@ public class GUI extends JPanel
 				g.setColor(Color.BLACK);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Measure / Bar
 				g.drawString(i/MIDISong.getMeasureLength()+"", (int)(sideBarWidth - 5 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			else if(i%(MIDISong.getMeasureLength()/4) == 0 && MIDIMain.getPreLength() > 10)
+			else if(i%(MIDISong.getMeasureLength()/MIDISong.getBeatNum()) == 0 && MIDIMain.getPreLength() > 10)
 			{
 				g.setFont(smallFont);
 				g.setColor(Color.BLACK);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Quarter Note
 				g.drawString(((i%MIDISong.getMeasureLength())/4+1)+"", (int)(sideBarWidth - 2 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			else if(i%(MIDISong.getMeasureLength()/8) == 0 && MIDIMain.getPreLength() > 22)
+			else if(i%(MIDISong.getMeasureLength()/(MIDISong.getBeatNum()*2)) == 0 && MIDIMain.getPreLength() > 22)
 			{
 				g.setFont(smallFont);
 				g.setColor(Color.GRAY);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Eighth note
 				g.drawString((i%MIDISong.getMeasureLength())/2+"/"+8, (int)(sideBarWidth - 6 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			else if(i%(MIDISong.getMeasureLength()/16) == 0 && MIDIMain.getPreLength() > 40)
+			else if(i%(MIDISong.getMeasureLength()/(MIDISong.getBeatNum()*4)) == 0 && MIDIMain.getPreLength() > 40)
 			{
 				g.setFont(smallFont);
 				g.setColor(Color.GRAY);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Sixteenth note
 				g.drawString(i%MIDISong.getMeasureLength()+"/"+16, (int)(sideBarWidth - 10 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
 		}
@@ -320,7 +324,7 @@ public class GUI extends JPanel
 				g.setColor(Color.GRAY);
 			}
 			
-			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%2 == 0) || (MIDIMain.getPreLength() > 10 && i%4 == 0) || i%8 == 0)
+			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%(MIDISong.getBeatNum()/2) == 0) || (MIDIMain.getPreLength() > 10 && i%MIDISong.getBeatNum() == 0) || i%(MIDISong.getBeatNum()*2) == 0)
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), screenHeight);
 		}
 		
