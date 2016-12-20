@@ -17,7 +17,7 @@ public class InfoBar extends JPanel{
 	
 	private static final long serialVersionUID = 2L;
 	private boolean visible = true;
-	private short seconds = 0;
+	//private short seconds = 0;
 	private short opacity = 255;
 	private JLabel [] field = new JLabel[8];
 	
@@ -40,12 +40,17 @@ public class InfoBar extends JPanel{
 		}
 	}
 	
-	public String timeConverter()
+	public short tickToTime()
+	{
+		return (short)(((double) (MIDIPlayer.getTickPosition()) / MIDISong.getSequence().getTickLength() * MIDISong.getSequence().getMicrosecondLength() / 1000000));
+	}
+	
+	public String timeConverter(short seconds)
 	{
 		String time = null;
+		short elapsed = tickToTime();
+		time = elapsed/60 + ":" + String.format("%02d",(elapsed % 60)) + "/" + (seconds/60)  + ":" + String.format("%02d",(seconds % 60));
 		
-		seconds = (short) (MIDISong.getSequence().getMicrosecondLength() / 1000000);
-		time = (seconds / 60) + ":" + String.format("%02d",(seconds % 60)) + " min";
 		
 		return time;		
 	}
@@ -57,7 +62,7 @@ public class InfoBar extends JPanel{
 		field[2].setText("Created by:");
 		field[3].setText("Artist");
 		field[4].setText("Length:");
-		field[5].setText(timeConverter());
+		field[5].setText(timeConverter((short)(MIDISong.getSequence().getMicrosecondLength() / 1000000)));
 		field[6].setText("Tempo:");
 		field[7].setText(Math.round(MIDISong.getTempoBpm()) + " bpm");
 	}
