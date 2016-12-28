@@ -95,10 +95,9 @@ public class InfoBar extends JPanel{
 		else if(visible == true)
 			opacity = 255;
 		
-		g.setColor(Color.LIGHT_GRAY);
-		g.setColor(new Color(Color.LIGHT_GRAY.getRed(), Color.LIGHT_GRAY.getGreen(), Color.LIGHT_GRAY.getBlue(), opacity));
+		g.setColor(new Color(GUI.colours[GUI.getColourScheme()][1].getRed(), GUI.colours[GUI.getColourScheme()][1].getGreen(), GUI.colours[GUI.getColourScheme()][1].getBlue(), opacity));
 		g.fillRect(0, 0, (GUI.screenWidth / 2) -20, 120);
-		g.setColor(new Color(0, 0, 0, opacity));
+		g.setColor(new Color(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT].getRed(), GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT].getGreen(), GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT].getBlue(), opacity));
 		g.setStroke(GUI.bold);
 		g.drawRect(0, 0, (GUI.screenWidth / 2) -20, 120);
 	}
