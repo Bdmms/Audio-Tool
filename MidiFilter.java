@@ -10,8 +10,8 @@ public class MIDIFilter extends FileFilter
 	 * with the correct extension
 	 */
 	
-	public final static String[] mid = {"mid","midi"};  //Extensions of midi files
-    public final static String soundbank = "sf2";	 	//Extension of soundbank files
+	public final static String[] mid = {"mid","midi"};  	//Extensions of midi files
+    	public final static String soundbank = "sf2";	 	//Extension of soundbank files
 	
 	private boolean midiFile = true;	//Determines if .mid or .sf2 extensions should be filtered
 	
@@ -19,14 +19,13 @@ public class MIDIFilter extends FileFilter
 	//File f = file being checked
 	public boolean accept(File f) {
 		//If file is a directory
-		if (f.isDirectory()) {
+		if (f.isDirectory())
 		    return true;
-		}
 		
 		String extension = getExtension(f);
 		//If extension does exist
 	    if (extension != null) {
-	    	//If extension equals .mid
+	    	//If extension equals .mid (or .midi)
 	        if((extension.equals(mid[0]) || extension.equals(mid[1])) && midiFile){
 	        	return true;
 	        } 
