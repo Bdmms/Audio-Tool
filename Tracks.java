@@ -30,7 +30,6 @@ public class Tracks extends SelectableObject
 	private static ArrayList<JComboBox<String>> instrumentList = new ArrayList<JComboBox<String>>();	//Instrument indicator for tracks
 	private VolumeSlider slider = new VolumeSlider((short)0,(short)0, true);
 	
-	private Color colour = Color.LIGHT_GRAY;
 	private int numNotes = 0;									//The number of notes in a track
 	private int endNotes = 0;
 	private byte instrument = 0;								//The instrument used for the track
@@ -43,8 +42,7 @@ public class Tracks extends SelectableObject
 	public Tracks(byte chan)
 	{
 		channel = chan;
-		cleanTrack();
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		updateNoteCount();
 		
 		//DEBUG
 		/*
@@ -76,9 +74,7 @@ public class Tracks extends SelectableObject
 	public void changeChannel(byte chan)
 	{
 		channel = chan;
-		//Set messages to correct channel
-		saveTrack();
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		updateNoteCount();
 	}
 	
 	//openTrack(byte trackNum) opens the data in a track for use in the note editor
@@ -86,7 +82,7 @@ public class Tracks extends SelectableObject
 	public void openTrack()
 	{
 		Notes.setTrack(channel);
-		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+		updateNoteCount();
 		endNotes = countMessage(channel, (byte)ShortMessage.NOTE_OFF);
 		//If their are a real amount of notes
 		if(numNotes >= 0)
@@ -213,6 +209,11 @@ public class Tracks extends SelectableObject
 		numNotes--;
 	}
 	
+	public void updateNoteCount()
+	{
+		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
+	}
+	
 	//countMessage(byte trackNum, byte message) counts the number of notes in the class and returns it
 	//byte trackNum = track being identified in sequence
 	//byte message =  status type being counted
@@ -221,13 +222,11 @@ public class Tracks extends SelectableObject
 		int counter = 0;
 		for(int i = 0; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
 		{
-			//If message is a note
+			//If message is the message being searched
 			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), message))
-			{
 				counter++;
-			}
-			//If track size is too long
-			if(i == 0xFFFFFFF)
+			//If track size is too long (Error handler for large tracks)
+			if(i == 0xFFFFFFFF)
 			{
 				counter = -1;
 				break;
@@ -312,13 +311,6 @@ public class Tracks extends SelectableObject
 		return -1;
 	}
 	
-	//setColour(int c) sets the instrument of the track
-	//int c = colour being set (in hexadecimal)
-	public void setColour(Color c)
-	{
-		colour = c;
-	}
-	
 	//setInstrument(byte inst) sets the instrument of the track
 	//byte inst = instrument value to set
 	public void setInstrument(byte inst)
@@ -326,10 +318,12 @@ public class Tracks extends SelectableObject
 		instrument = inst;
 	}
 	
-	//setInstrument(byte inst) returns the colour of the track
-	public Color getColour()
+	//setVolume(byte v) sets the volume of the track
+	//byte v = new volume
+	public void setVolume(byte v)
 	{
-		return colour;
+		volume = v;
+		slider.setVolume(v);
 	}
 	
 	//getInstrument() returns the instrument of the track
@@ -369,7 +363,7 @@ public class Tracks extends SelectableObject
 	public void drawTrack(Graphics2D g, short y)
 	{
 		//Background
-		g.setColor(colour);
+		g.setColor(GUI.colours[GUI.getColourScheme()][2]);
 		g.fillRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
 		
 		//Volume Slider
@@ -379,24 +373,24 @@ public class Tracks extends SelectableObject
 		
 		if(isSelected())
 		{
-			g.setStroke(GUI.bold);
-			g.setColor(Color.GREEN);
+			g.setStroke(GUI.superBold);
+			g.setColor(GUI.colours[GUI.getColourScheme()][4]);
 			g.drawRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
 			g.setStroke(GUI.basic);
 		}
 		else
 		{
-			g.setColor(Color.BLACK);
+			g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
 			g.drawRoundRect(50, trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), GUI.screenWidth-100, trackHeight, 50, 50);
 		}
 		
 		//Text Boxes
-		g.setColor(Color.WHITE);
+		g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_BG]);
 		g.fillRect(201, 11+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 98, 18);
 		g.fillRect(GUI.screenWidth*3/4 + 41, 16+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 68, 18);
 		g.fillRect(GUI.screenWidth*3/4 + 41, 36+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 68, 18);
 		//Borders
-		g.setColor(Color.BLACK);
+		g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
 		g.drawRect(200, 10+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 100, 20);
 		g.drawRect(GUI.screenWidth*3/4 + 40, 15+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 70, 20);
 		g.drawRect(GUI.screenWidth*3/4 + 40, 35+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y - MIDIMain.getScrollValue(), 70, 20);
