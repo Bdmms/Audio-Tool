@@ -48,24 +48,20 @@ public class GUI extends JPanel
 	public GUI()
 	{
 		//initialize tool bar
-		toolBar.setSize(720,41);
 		toolBar.setLayout(null);
 		toolBar.setBackground(Color.LIGHT_GRAY);
 		add(toolBar);
 		
 		//initialize scroll bar
-		if(screenHeight >= 480)
-			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3);
-		else
-			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3 + (screenHeight - 480)/2);
 		scroll.setUnitIncrement(10);
 		add(scroll);
 		
 		//initialize info bar
-		info.setBounds(15, GUI.screenHeight - 140, (GUI.screenWidth / 2) -15, 120);
 		info.setLayout(null);
 		info.setVisible(true);
 		add(info);
+		
+		resizeComponents();
 	}
 	
 	//paintComponent(Graphics g) responds to the .repaint() method when used
@@ -73,6 +69,9 @@ public class GUI extends JPanel
 	public void paintComponent(Graphics g) 
 	{
 		Graphics2D g2D = (Graphics2D) g;	//Graphics2D allows access more methods
+		
+		g.setColor(Color.WHITE);
+		g.fillRect(0, 0, screenWidth, screenHeight);
 		
 		g2D.setColor(Color.BLACK);
 		g2D.setStroke(basic);
@@ -143,7 +142,7 @@ public class GUI extends JPanel
 		info.setBounds(15, screenHeight - 140, (screenWidth / 2) -15, 120);
 		//Tool bar
 		toolBar.setSize(screenWidth, toolBarHeight + 1);
-		toolBar.getTools(17).setLocation(screenWidth - 35,5);
+		toolBar.getTools(ToolBar.toolLength - 1).setLocation(screenWidth - 35,5);
 	}
 	
 	//scrollBar() processes the input of the scroll bar and returns the new value of the scroll bar
@@ -229,30 +228,34 @@ public class GUI extends JPanel
 				g.setColor(Color.BLACK);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Measure / Bar
 				g.drawString(i/MIDISong.getMeasureLength()+"", (int)(sideBarWidth - 5 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			else if(i%(MIDISong.getMeasureLength()/4) == 0 && MIDIMain.getPreLength() > 10)
+			else if(i%(MIDISong.getMeasureLength()/MIDISong.getBeatNum()) == 0 && MIDIMain.getPreLength() > 10)
 			{
 				g.setFont(smallFont);
 				g.setColor(Color.BLACK);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Quarter Note
 				g.drawString(((i%MIDISong.getMeasureLength())/4+1)+"", (int)(sideBarWidth - 2 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			else if(i%(MIDISong.getMeasureLength()/8) == 0 && MIDIMain.getPreLength() > 22)
+			else if(i%(MIDISong.getMeasureLength()/(MIDISong.getBeatNum()*2)) == 0 && MIDIMain.getPreLength() > 22)
 			{
 				g.setFont(smallFont);
 				g.setColor(Color.GRAY);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Eighth note
 				g.drawString((i%MIDISong.getMeasureLength())/2+"/"+8, (int)(sideBarWidth - 6 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
-			else if(i%(MIDISong.getMeasureLength()/16) == 0 && MIDIMain.getPreLength() > 40)
+			else if(i%(MIDISong.getMeasureLength()/(MIDISong.getBeatNum()*4)) == 0 && MIDIMain.getPreLength() > 40)
 			{
 				g.setFont(smallFont);
 				g.setColor(Color.GRAY);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
+				//Sixteenth note
 				g.drawString(i%MIDISong.getMeasureLength()+"/"+16, (int)(sideBarWidth - 10 + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight - 6);
 			}
 		}
@@ -321,7 +324,7 @@ public class GUI extends JPanel
 				g.setColor(Color.GRAY);
 			}
 			
-			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%2 == 0) || (MIDIMain.getPreLength() > 10 && i%4 == 0) || i%8 == 0)
+			if(MIDIMain.getPreLength() > 20 || (MIDIMain.getPreLength() > 15 && i%(MIDISong.getBeatNum()/2) == 0) || (MIDIMain.getPreLength() > 10 && i%MIDISong.getBeatNum() == 0) || i%(MIDISong.getBeatNum()*2) == 0)
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), screenHeight);
 		}
 		

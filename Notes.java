@@ -98,6 +98,15 @@ public class Notes extends SelectableObject
 		}
 	}
 	
+	//selectAllNotes() selects all notes in the track
+	public static void selectAllNotes()
+	{
+		for(int i = 0; i < numNotes; i++)
+		{
+			MIDISong.getNotes(track, i).selection(true);
+		}
+	}
+	
 	//copyNotes() clears every note that has been copied (to avoid pasting between tracks)
 	public static void diposeCopiedNotes()
 	{
@@ -105,7 +114,7 @@ public class Notes extends SelectableObject
 	}
 	
 	//copyNotes() copies all of the notes selected
-	public static void copyNotes(boolean delete)
+	public static void copyNotes()
 	{
 		diposeCopiedNotes();
 		
@@ -125,8 +134,6 @@ public class Notes extends SelectableObject
 			{
 				long[] noteInfo = {MIDISong.getNotes(track, i).getTick() - start, MIDISong.getNotes(track, i).getEndTick() - start, MIDISong.getNotes(track, i).getTone(), MIDISong.getNotes(track, i).getVolume()};
 				copiedNotes.add(noteInfo);
-				if(delete)
-					MIDISong.removeNote(track, i);
 			}
 		}
 	}

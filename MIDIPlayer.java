@@ -21,7 +21,7 @@ public class MIDIPlayer implements MetaEventListener
 	private MidiChannel chan[];								//The channels the program has access too
 	//private Soundbank sound;								//The soundbank for the instruments
 	private boolean loop;									//Determines whether a played song should loop
-	//private boolean paused;								//Determines if song is being paused
+	private boolean play = false;							//Determines if song is being paused
 
 	private boolean noteOn = false;							//if a note is playing in the synthesizer
 	private byte[] noteData = {0,0};						//The volume and tone of the note
@@ -122,6 +122,12 @@ public class MIDIPlayer implements MetaEventListener
 		return sequencer.getTickPosition();
 	}
 	
+	//isPlaying() returns whether the song is playing
+	public boolean isPlaying()
+	{
+		return play;
+	}
+	
 	public void NoteOn(byte tone, byte volume)
 	{
 		if(noteOn == false)
@@ -149,20 +155,18 @@ public class MIDIPlayer implements MetaEventListener
 		if(sequencer != null && MIDISong.getSequence() != null && sequencer.isOpen())
 		{
 			try{
-				sequencer.setSequence(MIDISong.getSequence());
-				sequencer.start();
-				this.loop = loop;
-			}catch (Exception ex){ex.printStackTrace();}
-		}
-	}
-	
-	//stop() stops the song currently being played
-	public void stop()
-	{
-		if(sequencer != null && sequencer.isOpen())
-		{
-			try{
-				sequencer.stop();
+				if(play)
+				{
+					sequencer.stop();
+					play = false;
+				}
+				else
+				{
+					sequencer.setSequence(MIDISong.getSequence());
+					sequencer.start();
+					this.loop = loop;
+					play = true;
+				}
 			}catch (Exception ex){ex.printStackTrace();}
 		}
 	}
