@@ -57,22 +57,46 @@ public class MIDISong
 					{
 						tempo += getMessage(t, m).getMessage()[d] * Math.pow(2, (getMessage(t, m).getMessage().length - d - 1)*8);
 					}
-					//System.out.println("Tempo: "+tempo);
 					tempoChange = sequence.getTracks()[t].get(m);
 					break;
 				}
 			}
 		}
+		
 		resetTracks();
+		/*
+		for(byte t = 0; t < sequence.getTracks().length; t++)
+		{
+			for(int m = 0; m < sequence.getTracks()[t].size(); m++)
+			{
+				if(Notes.isMessageStatus((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE) && getMessage(t, m).getMessage()[1] == 7)
+				{
+					tracks.get(Notes.getMessageChannel((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE)).setVolume(getMessage(t, m).getMessage()[2]);
+					sequence.getTracks()[t].remove(getEvent(t, m));
+				}
+			}
+		}
+		*/
 	}
 	
 	//resetTracks() changes the amount of tracks in the sequence
 	private static void resetTracks()
 	{
 		tracks = new ArrayList<Tracks>();
-		for(byte i = 0; i < sequence.getTracks().length; i++)
+		for(byte t = 0; t < sequence.getTracks().length; t++)
 		{
-			tracks.add(new Tracks(i));
+			tracks.add(new Tracks(t));
+			for(int m = 0; m < sequence.getTracks()[t].size(); m++)
+			{
+				if(Notes.isMessageStatus((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE) && getMessage(t, m).getMessage()[1] == 7)
+				{
+					byte i = Notes.getMessageChannel((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE);
+					tracks.get(i).setVolume(getMessage(t, m).getMessage()[2]);
+					MIDIPlayer.setVolume(i, getMessage(t, m).getMessage()[2]);
+					sequence.getTracks()[t].remove(getEvent(t, m));
+				}
+			}
+			tracks.get(t).cleanTrack();
 		}
 	}
 	
@@ -128,47 +152,70 @@ public class MIDISong
 	
 	//moveTrack(byte trackNum, byte target) changes the order of the tracks in the song
 	//byte trackNum = selected track
-	//byte target = target location
+	//byte target = target location to swap with
 	public static void moveTrack(byte trackNum, byte target)
 	{
-		Tracks temp = tracks.get(target);
-		tracks.set(target, tracks.get(trackNum));
-		tracks.remove(trackNum);
-		tracks.add(trackNum, temp);
-		
-		Sequence seq = null;
-		try {
-			seq = new Sequence(javax.sound.midi.Sequence.PPQ,24);
-		} catch (InvalidMidiDataException e) {}
-		seq.createTrack();
-		
-		//create temporary (from target)
-		for(int m = 0; m < sequence.getTracks()[target].size(); m++)
+		if(trackNum != target)
 		{
-			seq.getTracks()[0].add(getEvent(target, m));
+			Tracks temp = tracks.get(target);
+			tracks.set(target, tracks.get(trackNum));
+			tracks.remove(trackNum);
+			tracks.add(trackNum, temp);
+			
+			Sequence seq = null;
+			try {
+				seq = new Sequence(javax.sound.midi.Sequence.PPQ,24);
+			} catch (InvalidMidiDataException e) {}
+			seq.createTrack();
+			
+			//create temporary (from target)
+			for(int m = 0; m < sequence.getTracks()[target].size(); m++)
+			{
+				seq.getTracks()[0].add(getEvent(target, m));
+			}
+			//remove from target
+			for(int m = sequence.getTracks()[target].size() - 1; m >= 0; m--)
+					{
+				sequence.getTracks()[target].remove(getEvent(target, m));
+			}
+			//add to target (from track)
+			for(int m = 0; m < sequence.getTracks()[trackNum].size(); m++)
+			{
+				sequence.getTracks()[target].add(getEvent(trackNum, m));
+			}
+			//remove from track
+			for(int m = sequence.getTracks()[trackNum].size() - 1; m >= 0; m--)
+			{
+				sequence.getTracks()[trackNum].remove(getEvent(trackNum, m));
+			}
+			//add to track (from temp)
+			for(int m = 0; m < seq.getTracks()[0].size(); m++)
+			{
+				sequence.getTracks()[trackNum].add(seq.getTracks()[0].get(m));
+			}
+			tracks.get(trackNum).changeChannel(trackNum);
+			tracks.get(target).changeChannel(target);	
+			
+			NotifyAnimation.sendMessage("Notification", "Swaping was successful.");
 		}
-		//remove from target
-		for(int m = sequence.getTracks()[target].size() - 1; m >= 0; m--)
-				{
-			sequence.getTracks()[target].remove(getEvent(target, m));
-		}
-		//add to target (from track)
-		for(int m = 0; m < sequence.getTracks()[trackNum].size(); m++)
+	}
+	
+	//mergeTrack(byte trackNum, byte target) merges a track into a targeted track
+	//byte trackNum = selected track
+	//byte target = target location to merge with
+	public static void mergeTrack(byte trackNum, byte target)
+	{
+		if(trackNum != target)
 		{
-			sequence.getTracks()[target].add(getEvent(trackNum, m));
+			for(int m = 0; m < sequence.getTracks()[trackNum].size(); m++)
+			{
+				sequence.getTracks()[target].add(getEvent(trackNum, m));
+			}
+			tracks.get(target).updateNoteCount();
+			
+			deleteTrack(trackNum);
+			NotifyAnimation.sendMessage("Notification", "Merging was successful.");
 		}
-		//remove from track
-		for(int m = sequence.getTracks()[trackNum].size() - 1; m >= 0; m--)
-		{
-			sequence.getTracks()[trackNum].remove(getEvent(trackNum, m));
-		}
-		//add to track (from temp)
-		for(int m = 0; m < seq.getTracks()[0].size(); m++)
-		{
-			sequence.getTracks()[trackNum].add(seq.getTracks()[0].get(m));
-		}
-		tracks.get(trackNum).changeChannel(trackNum);
-		tracks.get(target).changeChannel(target);	
 	}
 	
 	//openTrack(byte trackNum) opens the designated track to be used in the note editor
@@ -192,32 +239,46 @@ public class MIDISong
 		tracks.remove(trackNum);
 		sequence.deleteTrack(sequence.getTracks()[trackNum]);
 		Tracks.removeTrackButton();
+		for(byte t = (byte) (trackNum + 1); t < tracks.size(); t++)
+		{
+			tracks.get(t).changeChannel((byte)(t - 1));
+		}
 	}
 	
 	//saveTrack(byte trackNum) saves the track so that notes are updated in the sequence
 	//byte teackNum = specified track in the array
 	public static void saveTrack(byte trackNum)
 	{
-
 		tracks.get(trackNum).saveTrack();
 	}
 	
 	//saveSequence() saves the sequence so that it can be written as a file
 	public static Sequence saveSequence()
 	{
+		Sequence seq = null;
 		try {
-			for(byte i = 0; i < tracks.size(); i++)
+			seq = new Sequence(sequence.getDivisionType(), sequence.getResolution());
+		} catch (InvalidMidiDataException e1) {}
+		
+		try {
+			for(byte t = 0; t < tracks.size(); t++)
 			{
-				sequence.getTracks()[i].add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + i, tracks.get(i).getInstrument(), i), 0));
+				seq.createTrack();
+				for(int m = 0; m < sequence.getTracks()[t].size(); m++)
+				{
+					seq.getTracks()[t].add(getEvent(t, m));
+				}
+				seq.getTracks()[t].add(new MidiEvent(new ShortMessage(ShortMessage.CONTROL_CHANGE + t, 7, tracks.get(t).getVolume()), 0));
+				seq.getTracks()[t].add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + t, tracks.get(t).getInstrument(), t), 0));
 			}
 			
 			setTempo(tempo);
 			
 			//END OF TRACK
 			byte[] b = {};
-			sequence.getTracks()[0].add(new MidiEvent(new MetaMessage(0x2F, b, 0), sequence.getTickLength()));
+			seq.getTracks()[0].add(new MidiEvent(new MetaMessage(0x2F, b, 0), sequence.getTickLength()));
 
-			return sequence;
+			return seq;
 		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "File could not be saved");}
 		return null;
 	}
@@ -252,7 +313,24 @@ public class MIDISong
 		measureLength[1] = b;
 	}
 	
-	//getNotes(byte trackNum) returns the array of notes in a designated track
+	//getAvgVolume(byte trackNum) returns the average volume of all selected notes
+	//byte trackNum = track containing notes
+	public static byte getAvgVolume(byte trackNum)
+	{
+		int v = 0;
+		int num = 0;
+		for(int n = 0; n < Notes.getNumNotes(); n++)
+		{
+			if(tracks.get(trackNum).getNotes(n).isSelected())
+			{
+				v += tracks.get(trackNum).getNotes(n).getVolume();
+				num++;
+			}
+		}
+		return (byte)(v/num);
+	}
+	
+	//getNotes(byte trackNum, int note) returns the array of notes in a designated track
 	//byte teackNum = specified track in the array
 	//int note = index of note in array
 	public static Notes getNotes(byte trackNum, int note)
