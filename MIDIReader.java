@@ -11,6 +11,7 @@ public class MIDIReader {
 
 	//variables
 	private static String fileName = null;
+	private boolean named = false;
 	
 	/*
 	 * readFile(String fileName) returns sequence of the opened file
@@ -18,6 +19,8 @@ public class MIDIReader {
 	 */
 	public Sequence readFile(File file){
 	
+		named = true;
+		
 		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[0]) || MIDIFilter.getExtension(file).equals(MIDIFilter.mid[1]))
 		{
 			fileName = file.getName();
@@ -42,19 +45,6 @@ public class MIDIReader {
 		fileName = fileName.substring(0, fileName.lastIndexOf(MIDIFilter.mid[0]));
 		
 		return null;
-	}
-	
-	/*
-	 * getFileName() returns the String of the file name
-	 */
-	public static String getFileName(int limit)
-	{
-		if(limit != 0 && fileName.length() > limit)
-		{
-			return fileName.substring(0, limit -2)+"...";
-		}
-		else
-			return fileName;
 	}
 	
 	/*
@@ -104,7 +94,7 @@ public class MIDIReader {
 	 */
 	public void saveFile(Sequence s, String file)
 	{
-		if(!file.endsWith(MIDIFilter.mid[0]) || !file.endsWith(MIDIFilter.mid[1]))
+		if(!file.endsWith(MIDIFilter.mid[0]) && !file.endsWith(MIDIFilter.mid[1]))
 			file += ".mid";
 		try
 		{
@@ -112,8 +102,48 @@ public class MIDIReader {
 		}
 		catch(IOException ex){ex.printStackTrace();}
 		
+		named = true;
 	}
 	
+	public void saveConfig(int w, int h, int x, int y, byte c)
+	{
+		try {
+			PrintWriter write = new PrintWriter(new BufferedWriter(new FileWriter("windowSetup/Config.txt", false)));
+			write.println(w + "x" + h);
+			write.println(x + "x" + y);
+			write.println(c);
+			write.close();
+		} catch (IOException e) {
+			//Won't ever be seen though
+			NotifyAnimation.sendMessage("Error", "Configuration failed to save properly");
+		}
+	}
+	
+	public short[] getConfig()
+	{
+		short[] v = {720, 480, 0, 0, 0};
+		try {
+			BufferedReader read = new BufferedReader(new FileReader("windowSetup/Config.txt"));
+
+			String s = read.readLine();
+			v[0] = Short.parseShort(s.substring(0, s.indexOf('x')));
+			v[1] = Short.parseShort(s.substring(s.indexOf('x') + 1));
+			s = read.readLine();
+			v[2] = Short.parseShort(s.substring(0, s.indexOf('x')));
+			v[3] = Short.parseShort(s.substring(s.indexOf('x') + 1));
+			v[4] = Short.parseShort(read.readLine());
+			
+			read.close();
+		} catch (FileNotFoundException e) {NotifyAnimation.sendMessage("Error", "Configuration could not be read.");
+		} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Configuration could not be read.");}
+		
+		return v;
+	}
+	
+	/*
+	 * getSoundbank(File file) returns the soundbank that was read
+	 * File file = file being read
+	 */
 	public Soundbank getSoundbank(File file)
 	{
 		Soundbank sound = null;
@@ -123,13 +153,16 @@ public class MIDIReader {
 		return sound;
 	}
 	
+	/*
+	 * getInstrumentList() returns a list that is read from the document Instrument_List
+	 */
 	public static String[] getInstrumentList()
 	{
 		String[] s = new String[0];
 		BufferedReader read;
 		int lines = 0;
 		try {
-			read = new BufferedReader(new FileReader("Instrument_List.txt"));
+			read = new BufferedReader(new FileReader("windowSetup/Instrument_List.txt"));
 			
 			while (!read.readLine().equals("END"))
 			{
@@ -139,7 +172,7 @@ public class MIDIReader {
 			s = new String[lines];
 			read.close();
 			
-			read = new BufferedReader(new FileReader("Instrument_List.txt"));
+			read = new BufferedReader(new FileReader("windowSetup/Instrument_List.txt"));
 			
 			for(int i = 0; i < lines; i++)
 			{
@@ -154,4 +187,24 @@ public class MIDIReader {
 		return s;
 	}
 	
+	/*
+	 * getFileName() returns the String of the file name
+	 */
+	public static String getFileName(int limit)
+	{
+		if(limit != 0 && fileName.length() > limit)
+		{
+			return fileName.substring(0, limit -2)+"...";
+		}
+		else
+			return fileName;
+	}
+	
+	/*
+	 * isFileNamed() returns whether the file has been saved before
+	 */
+	public boolean isFileNamed()
+	{
+		return named;
+	}
 }
