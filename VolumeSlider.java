@@ -35,10 +35,10 @@ public class VolumeSlider
 	
 	public void drawVolumeSlider(Graphics2D g)
 	{
-		g.setStroke(GUI.bold);
-		g.setColor(Color.BLACK);
 		int[] xi = {x, x+width, x+width};
 		int[] yi = {y+height/2, y+height, y};
+		g.setStroke(GUI.bold);
+		g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
 		g.drawPolygon(xi, yi, 3);
 		
 		g.setStroke(GUI.basic);
@@ -48,19 +48,19 @@ public class VolumeSlider
 		yi[2] = y + 15 - (int)(value*width*((double)height/2)/width);
 		g.fillPolygon(xi, yi, 3);
 		
-		g.setStroke(GUI.bold);
+		g.setStroke(GUI.superBold);
 		if(button)
 		{
 			if(mute)
 				g.setColor(Color.RED);
 			else
-				g.setColor(Color.cyan);
+				g.setColor(GUI.colours[GUI.getColourScheme()][3]);
 				
 			g.drawOval(x - 20, y - 15, 20, 20);
 			g.drawLine(x - 18, y - 13, x - 2, y + 3);
 		}
 		
-		g.setColor(Color.GREEN);
+		g.setColor(GUI.colours[GUI.getColourScheme()][3]);
 		g.drawRoundRect(x+(short)(value*width)-2, y, 4, 30, 2, 8);
 		
 		g.setStroke(GUI.basic);
@@ -96,6 +96,11 @@ public class VolumeSlider
 				register = false;
 		}
 		return mute;
+	}
+	
+	public void setVolume(byte v)
+	{
+		value = (float)v/128;
 	}
 	
 	public void setValue(short v)
