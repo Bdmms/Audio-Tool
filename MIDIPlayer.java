@@ -17,8 +17,8 @@ public class MIDIPlayer implements MetaEventListener
 	public static final int END_OF_TRACK_MESSAGE = 0x2F;	//the status message for the END_OF_TRACK_MESSAGE
 	
 	private Synthesizer synth;								//The synthesizer of the player
-	private Sequencer sequencer;							//The sequencer of the player
-	private MidiChannel chan[];								//The channels the program has access too
+	private static Sequencer sequencer;							//The sequencer of the player
+	private static MidiChannel chan[];								//The channels the program has access too
 	//private Soundbank sound;								//The soundbank for the instruments
 	private boolean loop;									//Determines whether a played song should loop
 	private boolean play = false;							//Determines if song is being paused
@@ -88,7 +88,7 @@ public class MIDIPlayer implements MetaEventListener
 		chan[track].setMute(state);
 	}
 	
-	public void setVolume(byte channel, byte volume)
+	public static void setVolume(byte channel, byte volume)
 	{
 		chan[channel].controlChange(7, volume);
 	}
@@ -117,7 +117,7 @@ public class MIDIPlayer implements MetaEventListener
 	}
 	
 	//getTickPosition() returns the tick position of the song being played
-	public long getTickPosition()
+	public static long getTickPosition()
 	{
 		return sequencer.getTickPosition();
 	}
@@ -146,6 +146,12 @@ public class MIDIPlayer implements MetaEventListener
 			noteOn = false;
 			chan[MIDIMain.getTrackMenu()].noteOff(noteData[0], noteData[1]);
 		}
+	}
+	
+	public void stop()
+	{
+		sequencer.stop();
+		play = false;
 	}
 	
 	//play(Sequence seq, boolean loop) plays the the song
