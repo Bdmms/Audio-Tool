@@ -10,7 +10,7 @@ import javax.sound.midi.*;
 public class MIDIReader {
 
 	//variables
-	private static String fileName = null;
+	private static File midiFile = null;
 	private boolean named = false;
 	
 	/*
@@ -23,7 +23,7 @@ public class MIDIReader {
 		
 		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[0]) || MIDIFilter.getExtension(file).equals(MIDIFilter.mid[1]))
 		{
-			fileName = file.getName();
+			midiFile = file;
 				
 			try
 			{
@@ -42,8 +42,6 @@ public class MIDIReader {
 			catch (Exception ex){NotifyAnimation.sendMessage("Error", "File could not be read.");;}
 		}
 		
-		fileName = fileName.substring(0, fileName.lastIndexOf(MIDIFilter.mid[0]));
-		
 		return null;
 	}
 	
@@ -53,7 +51,9 @@ public class MIDIReader {
 	 */
 	public static void setFileName(String s)
 	{
-		fileName = s;
+		if(!s.endsWith(MIDIFilter.mid[0]) && !s.endsWith(MIDIFilter.mid[1]))
+			s += ".mid";
+		midiFile = new File(midiFile.getPath().substring(0, midiFile.getPath().lastIndexOf('/') + 1) + s);
 	}
 	
 	/*
@@ -65,11 +65,12 @@ public class MIDIReader {
 		{
 			Sequence s = new Sequence(javax.sound.midi.Sequence.PPQ,24);
 			s.createTrack();
-			fileName = "MIDI Song";
+			//fileName = "Song";
+			midiFile = new File("Song");
 			
-			//GENERAL INFO		
-			byte[] b = {(byte)0xF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, (byte)0xF7};
-			s.getTracks()[0].add(new MidiEvent(new SysexMessage(b,8), 0));
+			//SYSEX MESSAGE		
+			//byte[] b = {(byte)0xF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, (byte)0xF7};
+			//s.getTracks()[0].add(new MidiEvent(new SysexMessage(b,8), 0));
 
 			//SET TEMPO
 			//{32,0,0} (0x200000)
@@ -92,13 +93,19 @@ public class MIDIReader {
 	 * public void saveFile saves the MIDI file
 	 * Sequence s = the sequence that is being saved
 	 */
-	public void saveFile(Sequence s, String file)
+	public void saveFile(Sequence s, File file)
 	{
-		if(!file.endsWith(MIDIFilter.mid[0]) && !file.endsWith(MIDIFilter.mid[1]))
-			file += ".mid";
+		if(!file.getName().endsWith("."+MIDIFilter.mid[0]) && !file.getName().endsWith("."+MIDIFilter.mid[1]))
+		{
+			if(file.getName().contains("."))
+				file = new File(file.getPath().substring(0, file.getPath().lastIndexOf('.')) + "." + MIDIFilter.mid[0]);
+			else
+				file = new File(file.getPath() + "." + MIDIFilter.mid[0]);
+		}
+		midiFile = file;
 		try
 		{
-			MidiSystem.write(s, 1, new File(file));
+			MidiSystem.write(s, 1, midiFile);
 		}
 		catch(IOException ex){ex.printStackTrace();}
 		
@@ -188,16 +195,24 @@ public class MIDIReader {
 	}
 	
 	/*
-	 * getFileName() returns the String of the file name
+	 * getFileName() returns the String of the file name without its extension
 	 */
 	public static String getFileName(int limit)
 	{
-		if(limit != 0 && fileName.length() > limit)
+		if(limit != 0 && midiFile.getName().length() > limit)
 		{
-			return fileName.substring(0, limit -2)+"...";
+			return midiFile.getName().replaceAll("."+MIDIFilter.mid[0], "").substring(0, limit -2)+"...";
 		}
 		else
-			return fileName;
+			return midiFile.getName().replaceAll("."+MIDIFilter.mid[0], "");
+	}
+	
+	/*
+	 * getFile() returns the file that contains the midi
+	 */
+	public static File getFile()
+	{
+		return midiFile;
 	}
 	
 	/*
