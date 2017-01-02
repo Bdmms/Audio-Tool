@@ -1,6 +1,5 @@
 import java.awt.Rectangle;
 import java.util.ArrayList;
-
 import javax.sound.midi.MidiEvent;
 
 /**
@@ -24,7 +23,7 @@ public class Notes extends SelectableObject
 	private static int numNotes = 0;				//Number of notes processed
 	private static byte track = 0;					//Track being accessed
 	
-	private MidiEvent start;				//start of note in sequence
+	private MidiEvent start;			//start of note in sequence
 	private MidiEvent end;				//end of note in sequence
 	private byte tone = 60;				//tone of the note
 	private byte volume = 0;			//volume of the note
@@ -168,6 +167,10 @@ public class Notes extends SelectableObject
 	//byte t = new tone
 	public void setTone(byte t)
 	{
+		if(t < 0)
+			t = 0;
+		if(t > 120)
+			t = 120;
 		tone = t;
 	}
 	
@@ -190,7 +193,7 @@ public class Notes extends SelectableObject
 		end.setTick(x);;
 	}
 	
-	//setLocation(byte t) sets the location of the note
+	//setLocation(long x, short y) sets the location of the note
 	//long x = x location of note
 	//short y = tone / y location of note
 	public void setLocation(long x, short y)
@@ -199,12 +202,18 @@ public class Notes extends SelectableObject
 		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
 		if(x < 0)
 			x = 0;
-		if(y < 0)
-			y = 0;
-		if(y > 120)
-			y = 120;
+		if(x + (end.getTick() - start.getTick()) > MIDISong.getLength())
+			x = MIDISong.getLength() - end.getTick() + start.getTick();
 		end.setTick(x + (end.getTick() - start.getTick()));
 		start.setTick(x);
+		setTone((byte) y);
+	}
+	
+	//setLocation(short y) sets the location of the note
+	//short y = tone / y location of note
+	public void setY(short y)
+	{
+		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
 		setTone((byte) y);
 	}
 	
@@ -265,7 +274,6 @@ public class Notes extends SelectableObject
 	//getVolume() returns the volume of the note
 	public byte getVolume()
 	{
-		//return MIDISong.getMessage(MIDIMain.getTrackMenu(), begin).getMessage()[DATA_VELOCITY];
 		return volume;
 	}
 	
