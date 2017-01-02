@@ -21,21 +21,21 @@ public class GUI extends JPanel
 	 * therefore the explanation will not be repeated.
 	 */
 	
-	//GUI Size = 720 x 480
 	private static final long serialVersionUID = 1L;						//Default serial ID
+	public final static byte COLOUR_BG = 5;									//The index for the background colour
+	public final static byte COLOUR_TEXT = 6;								//The index for the text/border colour
 	public final static byte toolBarHeight = 40;							//Height of toolBar
 	public final static byte topBarHeight = 20;								//Height of top label
 	public final static byte fullAddHeight = toolBarHeight + topBarHeight ; //Combined height
 	public final static short sideBarWidth = 100;							//Side label width
+	public final static byte windowBarHeight = 54;							//Height of window label bar (may change depending on OS)
+	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
 	public static short screenHeight = 480;									//Screen height
 	public static short screenWidth = 720;									//Screen width
 	
-	public final static byte windowBarHeight = 54;							//Height of window label bar (It's very annoying to deal with)
-	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
-	
 	public final static BasicStroke basic = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);	//Default thin border
 	public final static BasicStroke bold = new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);		//Thick border
-	public final static BasicStroke superBold = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);	//Thicker border
+	public final static BasicStroke superBold = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0);//Thicker border
 	public final static Font defaultFont = new Font("default", Font.PLAIN, 12);										//Default Font
 	public final static Font smallFont = new Font("small", Font.PLAIN, 10);											//Smaller Font size
 	public final static Font boldFont = new Font("bold", Font.BOLD, 12);											//Bold default font
@@ -48,9 +48,6 @@ public class GUI extends JPanel
 	public final static Color[] Set4 = {new Color(0xB24148), new Color(0x30B250), new Color(0xFF777F), new Color(0xFF9097), new Color(0x77FF99), new Color(255,200,200), Color.BLACK};
 	public final static Color[] Set5 = {new Color(0xCC784B), new Color(0x58B241), new Color(0xB29E93), new Color(0x9390FF), new Color(0x92FF77), Color.WHITE, Color.BLACK};
 	public final static Color[][] colours = {Set1, Set2, Set3, Set4, Set5};
-	
-	public final static byte COLOUR_BG = 5;
-	public final static byte COLOUR_TEXT = 6;
 	
 	private ToolBar toolBar = new ToolBar();				//The tool bar that holds the buttons for use in the editors
 	private JScrollBar scroll = new JScrollBar();			//The scroll bar used in the track editor
@@ -266,7 +263,7 @@ public class GUI extends JPanel
 			else if(i%(MIDISong.getMeasureLength()/(MIDISong.getBeatNum()*2)) == 0 && MIDIMain.getPreLength() > 22)
 			{
 				g.setFont(smallFont);
-				g.setColor(colours[colour][0]);
+				g.setColor(Color.GRAY);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
 				//Eighth note
@@ -275,7 +272,7 @@ public class GUI extends JPanel
 			else if(i%(MIDISong.getMeasureLength()/(MIDISong.getBeatNum()*4)) == 0 && MIDIMain.getPreLength() > 40)
 			{
 				g.setFont(smallFont);
-				g.setColor(colours[colour][0]);
+				g.setColor(Color.GRAY);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight/8);
 				g.drawLine((int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), toolBarHeight + topBarHeight*7/8, (int)(sideBarWidth + MIDIMain.getPreLength()*i - MIDIMain.getXCoordinate()), fullAddHeight);
 				//Sixteenth note
