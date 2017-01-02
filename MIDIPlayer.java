@@ -21,7 +21,7 @@ public class MIDIPlayer implements MetaEventListener
 	private static MidiChannel chan[];								//The channels the program has access too
 	//private Soundbank sound;								//The soundbank for the instruments
 	private boolean loop;									//Determines whether a played song should loop
-	private boolean play = false;							//Determines if song is being paused
+	private static boolean play = false;							//Determines if song is being paused
 
 	private boolean noteOn = false;							//if a note is playing in the synthesizer
 	private byte[] noteData = {0,0};						//The volume and tone of the note
@@ -123,7 +123,7 @@ public class MIDIPlayer implements MetaEventListener
 	}
 	
 	//isPlaying() returns whether the song is playing
-	public boolean isPlaying()
+	public static boolean isPlaying()
 	{
 		return play;
 	}
