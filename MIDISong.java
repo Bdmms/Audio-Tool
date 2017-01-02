@@ -21,7 +21,8 @@ public class MIDISong
 	private static long tempo = 0;				//The tempo of the song (in microseconds per beat)
 	private static byte[] measureLength = {4,4};//The time signature of the song (beats per measure, ticks per beat)
 	private static ArrayList<Tracks> tracks;	//The tracks contained in the song
-	private static MidiEvent tempoChange;		//The tempo change message
+	private static ArrayList<MidiEvent> tempoChange = new ArrayList<MidiEvent>();		
+	//The tempo change messages in the song (note only one is used in the program)
 	
 	//setSong(Sequence seq) sets the sequence for the song and other information
 	//Sequence seq = sequence the song reads
@@ -30,9 +31,32 @@ public class MIDISong
 		sequence = seq;
 		length = sequence.getTickLength();
 
+		//DEBUG
+		/*
+		for(byte t = 0; t < sequence.getTracks().length; t++)
+		{
+			if(t >= 0)
+			{
+				System.out.println("\nTrack "+(t+1)+" ----------------------------------------");
+				for(int i = 0; i < MIDISong.getSequence().getTracks()[t].size(); i++)
+				{
+					System.out.print("\n"+String.format("%4d",i)+": "+String.format("%4d",MIDISong.getEvent(t, i).getTick())+" ticks |");
+					for(int m = 0; m < MIDISong.getMessage(t, i).getLength(); m++)
+					{
+						System.out.print(String.format("%4d",MIDISong.getMessage(t, i).getMessage()[m])+"|");
+					}
+				}
+				System.out.println(" ");
+			}
+		}
+		*/
+		
+		/*
+		 * UNUSED
+		 * Reads for text messages written into the midi file.
 		for(byte t = 0; t < seq.getTracks().length; t++)
 		{
-			int v = Tracks.readForMeta(t, (byte) 2, 0);
+			int v = Tracks.readForMeta(t, (byte)0x01, 0);
 			
 			if(v >= 0)
 			{
@@ -46,58 +70,90 @@ public class MIDISong
 				System.out.println(s);
 			}
 		}
-		
-		for(byte t = 0; t < sequence.getTracks().length; t++)
-		{
-			for(int m = 0; m < sequence.getTracks()[t].size(); m++)
-			{
-				if(getMessage(t, m).getMessage()[1] == 0x51 && tempo == 0)
-				{
-					for(int d = 3; d < getMessage(t, m).getMessage().length; d++)
-					{
-						tempo += getMessage(t, m).getMessage()[d] * Math.pow(2, (getMessage(t, m).getMessage().length - d - 1)*8);
-					}
-					tempoChange = sequence.getTracks()[t].get(m);
-					break;
-				}
-			}
-		}
+		*/
 		
 		resetTracks();
-		/*
-		for(byte t = 0; t < sequence.getTracks().length; t++)
+	}
+	
+	private static void searchTrack(byte t)
+	{
+		for(int m = 0; m < MIDISong.getSequence().getTracks()[t].size(); m++)
 		{
-			for(int m = 0; m < sequence.getTracks()[t].size(); m++)
+			try
 			{
-				if(Notes.isMessageStatus((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE) && getMessage(t, m).getMessage()[1] == 7)
+				//If message is program change (instrument change)
+				if(Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PROGRAM_CHANGE))
 				{
-					tracks.get(Notes.getMessageChannel((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE)).setVolume(getMessage(t, m).getMessage()[2]);
-					sequence.getTracks()[t].remove(getEvent(t, m));
+					tracks.get(Notes.getMessageChannel((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PROGRAM_CHANGE)).setInstrument((byte)MIDISong.getMessage(t, m).getMessage()[1]);
+					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getSequence().getTracks()[t].get(m));
+					m--;
+				}
+				//If message is a volume change
+				if(Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE) && MIDISong.getMessage(t, m).getMessage()[1] == 7)
+				{
+					byte i = Notes.getMessageChannel((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE);
+					MIDISong.getTracks(t).setVolume(MIDISong.getMessage(t, m).getMessage()[2]);
+					MIDIPlayer.setVolume(i, MIDISong.getMessage(t, m).getMessage()[2]);
+					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
+					m--;
+				}
+				//If message is a tempo change
+				if(getMessage(t, m).getMessage()[1] == 0x51)
+				{
+					if(tempo == 0)
+					{
+						for(int d = 3; d < getMessage(t, m).getMessage().length; d++)
+						{
+							tempo += getMessage(t, m).getMessage()[d] * Math.pow(2, (getMessage(t, m).getMessage().length - d - 1)*8);
+						}
+					}
+					tempoChange.add(sequence.getTracks()[t].get(m));
 				}
 			}
+			catch(IndexOutOfBoundsException e){
+				addTrack();
+				m--;
+			};
 		}
-		*/
 	}
 	
 	//resetTracks() changes the amount of tracks in the sequence
 	private static void resetTracks()
 	{
+		tempoChange.clear();
+		tempo = 0;
+		
 		tracks = new ArrayList<Tracks>();
+		for(byte t = 0; t < sequence.getTracks().length; t++){
+			tracks.add(new Tracks(t));}
+		
 		for(byte t = 0; t < sequence.getTracks().length; t++)
 		{
-			tracks.add(new Tracks(t));
-			for(int m = 0; m < sequence.getTracks()[t].size(); m++)
-			{
-				if(Notes.isMessageStatus((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE) && getMessage(t, m).getMessage()[1] == 7)
-				{
-					byte i = Notes.getMessageChannel((byte)getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE);
-					tracks.get(i).setVolume(getMessage(t, m).getMessage()[2]);
-					MIDIPlayer.setVolume(i, getMessage(t, m).getMessage()[2]);
-					sequence.getTracks()[t].remove(getEvent(t, m));
-				}
-			}
+			searchTrack(t);
 			tracks.get(t).cleanTrack();
+			if(t > 15)
+			{
+				sequence.deleteTrack(sequence.getTracks()[t]);
+				tracks.remove(t);
+				t--;
+			}
 		}
+		
+		for(byte t = 0; t < sequence.getTracks().length; t++)
+		{
+			tracks.get(t).updateNoteCount();
+		}
+		
+		if(tempoChange.isEmpty())
+		{
+			//Setting a default tempo
+			byte[] c = {0x10, 0x0, 0x0};
+			try {
+				tempoChange.add(new MidiEvent(new MetaMessage(0x51, c, 3), 0));
+				sequence.getTracks()[0].add(tempoChange.get(0));
+			} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Tempo cannot be added to song. Song is currently lacking a tempo.");}
+		}
+			
 	}
 	
 	//addTrack() adds a new track to the sequence
@@ -255,12 +311,9 @@ public class MIDISong
 	//saveSequence() saves the sequence so that it can be written as a file
 	public static Sequence saveSequence()
 	{
-		Sequence seq = null;
 		try {
-			seq = new Sequence(sequence.getDivisionType(), sequence.getResolution());
-		} catch (InvalidMidiDataException e1) {}
-		
-		try {
+			Sequence seq = new Sequence(sequence.getDivisionType(), sequence.getResolution());
+			
 			for(byte t = 0; t < tracks.size(); t++)
 			{
 				seq.createTrack();
@@ -289,20 +342,24 @@ public class MIDISong
 		length = l*measureLength[0]*16/measureLength[1];
 	}
 	
+	public static void setTempoBpm(int t)
+	{
+		setTempo((long)(60000000 / t)) ;
+	}
+	
 	//setTempo(long l) sets the tempo of the song (in microseconds per beat)
 	//long t = new tempo (in microseconds per beat)
 	public static void setTempo(long t)
 	{
-		tempo = t;
-		//Set Tempo
 		byte[] a = {(byte)((tempo%Math.pow(2, 32))/Math.pow(2, 16)),(byte)(tempo%Math.pow(2, 16)/Math.pow(2, 8)), (byte)(tempo%Math.pow(2, 8))};
 		try {
-			sequence.getTracks()[0].remove(tempoChange);
-			tempoChange = new MidiEvent(new MetaMessage(0x51, a, a.length), 0);
-			sequence.getTracks()[0].add(tempoChange);
+			sequence.getTracks()[0].remove(tempoChange.get(0));
+			tempoChange.set(0, new MidiEvent(new MetaMessage(0x51, a, a.length), 0));
+			sequence.getTracks()[0].add(tempoChange.get(0));
+			tempo = t;
 		} catch (InvalidMidiDataException e) {
 			NotifyAnimation.sendMessage("Error", "Tempo cannot be changed.");
-			System.out.println("Original: "+tempoChange.getMessage().getMessage()[3]+" "+tempoChange.getMessage().getMessage()[4]+" "+tempoChange.getMessage().getMessage()[5]);
+			System.out.println("Original: "+tempoChange.get(0).getMessage().getMessage()[3]+" "+tempoChange.get(0).getMessage().getMessage()[4]+" "+tempoChange.get(0).getMessage().getMessage()[5]);
 			System.out.println("New: "+a[0]+" "+a[1]+" "+a[2]);}
 	}
 	
