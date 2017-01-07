@@ -14,15 +14,17 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollBar;
 
- // M.E.A.T (Midi Editor & Accessing Tool)
- // Audio Tool Project
-
 /**
+ * <h1>
+ * M.E.A.T (Midi Editor & Accessing Tool)
+ * Audio Tool Project
+ * </h1>
+ * <p>
  * The Main class that contains all of the components of the window and
  * responds to all user inputs to create the appropriate response since
  * it is connected to all other classes in the project. This class controls
  * most of the menu information (i.e. menu type, menu location, etc.)
- * 
+ * </p>
  * @author Ethan Lee and Sean Rannie [October 15, 2016]
  */
 public class MIDIMain implements ActionListener, WindowListener
@@ -53,7 +55,9 @@ public class MIDIMain implements ActionListener, WindowListener
 	private static long x = 0;									//The x value used in the note editor
 	
 	/**
-	 * Where the program starts.
+	 * <blockquote>
+	 * <p><pre>{@code public static void main(String[] args) }</pre></p> 
+	 * Where the program starts.</p> 
 	 * @param args
 	 */
 	public static void main(String[] args) 
@@ -62,8 +66,9 @@ public class MIDIMain implements ActionListener, WindowListener
 	}
 	
 	/**
-	 * The constructor of MIDIMain. It allows non-static varibles to be
-	 * used outside of main(String[] args).
+	 * <blockquote>
+	 * <p><pre>{@code public MIDIMain()}</pre></p> 
+	 * The constructor of MIDIMain. It allows non-static varibles to be used outside of main(String[] args).</p> 
 	 */
 	public MIDIMain()
 	{
@@ -75,7 +80,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		{
 			//If screen isn't in focus, inputs do not have to be processed
 			if(focus){
-				//Inputs
+				//Inputs and processes
 				resize();
 				mouseControl();
 				keyControl();
@@ -83,9 +88,6 @@ public class MIDIMain implements ActionListener, WindowListener
 					scrollY = visual.setComponentsOfScrollBar();
 			}
 			
-			//Process
-			if(mode == 1)
-				Tracks.trackLayout();
 			if(MIDIPlayer.isPlaying())
 				x = scale[0]*MIDIPlayer.getTickPosition();
 			
@@ -101,7 +103,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	 * <blockquote>
 	 * <h1><i>initialization</i></h1>
 	 * <p><pre>{@code public void initialization()}</pre></p> 
-	 * Initializes basic graphical components of the program.</p> 
+	 * Initializes basic components of the program.</p> 
 	 */
 	public void initialization()
 	{
@@ -149,6 +151,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		fileIn.addChoosableFileFilter(filter);
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setGUIComponents()}</pre></p> 
+	 * Adds graphical components already initialized in the <b>GUI</b> class to main.</p> 
+	 */
 	//createToolBar() initializes the tool bar
 	public void setGUIComponents()
 	{	
@@ -163,7 +170,12 @@ public class MIDIMain implements ActionListener, WindowListener
 		toolBar.getComboBox().addActionListener(this);
 	}
 	
-	//createMenuBar() initializes a JMenuBar and returns it
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public JMenuBar setMenuBar()}</pre></p> 
+	 * Initializes the JMenuBar for the program.</p>
+	 * @return The JMenuBar that was created 
+	 */
 	public JMenuBar setMenuBar()
 	{
 		//Menu bar component is created
@@ -215,48 +227,74 @@ public class MIDIMain implements ActionListener, WindowListener
 		return menuBar;
 	}
 	
-	//setTrackButtons(byte length) sets the track buttons / instrument lists according to the number of tracks in the song
-	//byte length = number of tracks in the song
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setTrackButtons(byte length)}</pre></p> 
+	 * Sets the track buttons / instrument lists according to the number of tracks in the song.</p>
+	 * @param length = number of tracks in the song
+	 */
 	public void setTrackButtons(byte length)
 	{
-		//Remove current set of buttons
-		for(byte i = 0; i < Tracks.getButtonLength(); i++)
-		{
-			visual.remove(Tracks.getTrackEntryButton(i));
-			visual.remove(Tracks.getInstrumentListButton(i));
-		}
-		Tracks.resetAllButtons();
 		//Add the track buttons to specified length
-		for(byte i = 0; i < length; i++)
+		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 		{
-			addTrackButtons();
+			addTrackButtons(t);
 		}
 	}
 	
-	//addInstrumentList() adds an instrument button to the interface
-	public void addTrackButtons()
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void addTrackButtons(byte chan)}</pre></p> 
+	 * Adds a track button and a instrument list to the main class (action listener).</p>
+	 * @param chan = channel of the track being added
+	 */
+	public void addTrackButtons(byte chan)
 	{
-		//If there are less then 16 tracks
-		if(Tracks.isNotMaximum())
+		if(chan >= 0 && chan < 16)
 		{
-			Tracks.addTrackButtons();
-			Tracks.getTrackEntryButton(Tracks.getButtonLength() - 1).addActionListener(this);
-			Tracks.getInstrumentListButton(Tracks.getButtonLength() - 1).addActionListener(this);
-			visual.add(Tracks.getTrackEntryButton(Tracks.getButtonLength() - 1));
-			visual.add(Tracks.getInstrumentListButton(Tracks.getButtonLength() - 1));
+			MIDISong.getTracks(chan).getTrackEntryButton().addActionListener(this);
+			MIDISong.getTracks(chan).getInstrumentListComboBox().addActionListener(this);
+			visual.add(MIDISong.getTracks(chan).getTrackEntryButton());
+			visual.add(MIDISong.getTracks(chan).getInstrumentListComboBox());
 		}
 	}
 	
-	//removeTrackButton(byte trackNum) removes the buttons from the GUI component
-	//byte trackNum = button track being removed
-	public static void removeTrackButton(byte trackNum)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void removeTrackButton(byte chan)}</pre></p> 
+	 * Removes the buttons from the GUI component.</p>
+	 * @param chan = channel of track being removed
+	 */
+	public void removeTrackButton(byte chan)
 	{
-		visual.remove(Tracks.getTrackEntryButton(trackNum));
-		visual.remove(Tracks.getInstrumentListButton(trackNum));
+		visual.remove(MIDISong.getTracks(chan).getTrackEntryButton());
+		visual.remove(MIDISong.getTracks(chan).getInstrumentListComboBox());
 	}
 	
-	//mode() sets the components correctly to represent the current menu type
-	//int newMode = the menu that is being set
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void clearAllTrackButtons()}</pre></p> 
+	 * Clears all of the button components so that another song can be used.</p>
+	 */
+	public void clearAllTrackButtons()
+	{
+		//If a song has been set
+		if(mode > 0)
+		{
+			//Remove current set of buttons
+			for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+			{
+				removeTrackButton(t);
+			}
+		}
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mode(int newMode)}</pre></p> 
+	 * Sets the components correctly to represent the current menu type.</p>
+	 * @param newMode = the menu that is being set
+	 */
 	public void mode(int newMode)
 	{
 		mode = (byte)newMode;
@@ -275,13 +313,6 @@ public class MIDIMain implements ActionListener, WindowListener
 		{
 			//Tool bar
 			toolBar.setVisible(false);
-			
-			//Track buttons
-			for(byte i = 0; i < Tracks.getButtonLength(); i++)
-			{
-				Tracks.getTrackEntryButton(i).setVisible(false);
-				Tracks.getInstrumentListButton(i).setVisible(false);
-			}
 			
 			//Scroll bar
 			scroll.setVisible(false);
@@ -305,18 +336,15 @@ public class MIDIMain implements ActionListener, WindowListener
 			toolBar.getTools(ToolBar.toolLength - 1).setVisible(false);
 			
 			//Track buttons
-			for(byte i = 0; i < Tracks.getButtonLength(); i++)
+			for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 			{
-				Tracks.getTrackEntryButton(i).setVisible(true);
-				Tracks.getInstrumentListButton(i).setVisible(true);
+				MIDISong.getTracks(t).getTrackEntryButton().setVisible(true);
+				MIDISong.getTracks(t).getInstrumentListComboBox().setVisible(true);
 			}
 			
 			//Scroll bar
 			scroll.setVisible(true);
-			if(Tracks.getButtonLength() > Tracks.tracksVisible)	//If scroll bar is needed in list
-				scroll.setValues(scrollY, (Tracks.trackHeight+5)*Tracks.tracksVisible, 0, (Tracks.trackHeight+5)*Tracks.getButtonLength());
-			else
-				scroll.setValues(0, 100, 0, 100);
+			visual.setScrollBarValue();
 			scrollY = visual.setComponentsOfScrollBar();
 			
 			//Info bar
@@ -333,10 +361,10 @@ public class MIDIMain implements ActionListener, WindowListener
 			toolBar.getTools(ToolBar.toolLength - 1).setVisible(true);
 			
 			//Track buttons
-			for(byte i = 0; i < Tracks.getButtonLength(); i++)
+			for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 			{
-				Tracks.getTrackEntryButton(i).setVisible(false);
-				Tracks.getInstrumentListButton(i).setVisible(false);
+				MIDISong.getTracks(t).getTrackEntryButton().setVisible(false);
+				MIDISong.getTracks(t).getInstrumentListComboBox().setVisible(false);
 			}
 			
 			//Scroll bar
@@ -367,7 +395,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//changeLimit() determining how large the scale can be
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void changeLimit()}</pre></p> 
+	 * Determines how large the scale can be.</p>
+	 */
 	public void changeLimit()
 	{
 		limit = 1;
@@ -376,7 +408,11 @@ public class MIDIMain implements ActionListener, WindowListener
 			limit++;
 	}
 	
-	//playPause() is the function for pause or playing the song
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void playPause()}</pre></p> 
+	 * The function for pausing or playing the song.</p>
+	 */
 	public void playPause()
 	{
 		//If in note editor
@@ -389,7 +425,11 @@ public class MIDIMain implements ActionListener, WindowListener
 			player.setTickPosition(x/scale[0]);
 	}
 	
-	//startStop() is the function for stopping or starting the song
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void startStop()}</pre></p> 
+	 * The function for stopping or starting the song.</p>
+	 */
 	public void startStop()
 	{
 		//If in note editor
@@ -401,30 +441,34 @@ public class MIDIMain implements ActionListener, WindowListener
 		toolBar.changeIcon(MIDIPlayer.isPlaying());
 	}
 	
-	//add() is the function that adds an object
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void add()}</pre></p> 
+	 * The function that adds an object.</p>
+	 */
 	public void add()
 	{
 		//track editor
 		if(mode == 1)//ADD TRACK
 		{
-			MIDISong.addTrack();
-			addTrackButtons();
+			addTrackButtons(MIDISong.addTrack());
 			
-			//If tracks exceed visibility limit
-			if(Tracks.getButtonLength() > Tracks.tracksVisible)
-				scroll.setValues(scrollY, (Tracks.trackHeight+5)*Tracks.tracksVisible, 0, (Tracks.trackHeight+5)*Tracks.getButtonLength());
-			else
-				scroll.setValues(0, 100, 0, 100);
+			visual.setScrollBarValue();
+			
 			scrollY = visual.setComponentsOfScrollBar();
 		}
 		//note editor
 		else if(mode == 2)//ADD NOTE
 		{
-			MIDISong.addNote(track, x/scale[0], (byte)(Notes.MAX_TONE - (y + (GUI.screenHeight - GUI.fullAddHeight)/2)/scale[1]), (byte)78, x/scale[0]+8);
+			MIDISong.addNote(track, (byte)(Notes.MAX_TONE - (y + (GUI.screenHeight - GUI.fullAddHeight)/2)/scale[1]), (byte)78, x/scale[0], x/scale[0]+8);
 		}
 	}
 	
-	//delete() is the function that deletes an object
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void delete()}</pre></p> 
+	 * The function that deletes an object.</p>
+	 */
 	public void delete()
 	{
 		//If in track editor
@@ -433,16 +477,25 @@ public class MIDIMain implements ActionListener, WindowListener
 			//Find selected track
 			for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 			{
+				//If track is selected
 				if(MIDISong.getTracks(t).isSelected())
+				{
+					removeTrackButton(t);
 					MIDISong.deleteTrack(t);
+				}
 			}
+			visual.setComponentsOfScrollBar();
 		}
 		//Assumed to be note editor
 		else//REMOVE NOTE
 			MIDISong.removeSelectedNotes(track);
 	}
 	
-	//skipLeft() translates the song and the grid to the left (amount varies)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void skipLeft()}</pre></p> 
+	 * Translates the song and the grid to the left (amount varies).</p>
+	 */
 	public void skipLeft()
 	{
 		//If in track editor
@@ -458,7 +511,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//skipRight() translates the song and the grid to the Right (amount varies)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void skipRight()}</pre></p> 
+	 * Translates the song and the grid to the tight (amount varies).</p>
+	 */
 	public void skipRight()
 	{
 		//If in track editor
@@ -474,7 +531,12 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//save() saves the file with current settings and returns whether it was successful
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean save()}</pre></p> 
+	 * Saves the file with current settings.</p>
+	 * @return Whether the action was successful
+	 */
 	public boolean save()
 	{
 		//If in the note editor
@@ -492,7 +554,12 @@ public class MIDIMain implements ActionListener, WindowListener
 			return saveAs();
 	}
 	
-	//saveAs() asks for a name to be given to the file and saves it, it returns whether it was successful
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean saveAs()}</pre></p> 
+	 * Asks for a name to be given to the file and saves it.</p>
+	 * @return Whether the action was successful
+	 */
 	public boolean saveAs()
 	{
 		filter.setFilterMIDI(true);
@@ -512,7 +579,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//close() turns off the program and saves config information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void close()}</pre></p> 
+	 * Turns off the program and saves configuration data.</p>
+	 */
 	public void close()
 	{
 		reader.saveConfig(window.getWidth(), window.getHeight(), window.getX(), window.getY(), GUI.getColourScheme());
@@ -520,36 +591,44 @@ public class MIDIMain implements ActionListener, WindowListener
 		//Program ends here
 	}
 	
-	//actionPerformed(ActionEvent e) is the main direct listener for all components in the JFrame
-	//ActionEvent e = event triggered containing event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void actionPerformed(ActionEvent e)}</pre></p> 
+	 * The main listener for all components in the JFrame.</p>
+	 * @param e = event information
+	 */
 	public void actionPerformed(ActionEvent e) 
 	{
 		toolbarButtons(e);
 		menuBarInput(e);
 		
 		//Track buttons
-		for(byte i = 0; i < Tracks.getButtonLength(); i++)
+		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 		{
 			//If source is equal to one of the track buttons
-			if(e.getSource() == Tracks.getTrackEntryButton(i))
+			if(e.getSource() == MIDISong.getTracks(t).getTrackEntryButton())
 			{
 				SelectableObject.unSelectAll();
 				player.stop();
-				track = i;
+				track = t;
 				MIDISong.openTrack(track);
 				mode(2);
 			}
 			//If source is equal to one of the instrument combo boxes
-			if(e.getSource() == Tracks.getInstrumentListButton(i))
+			if(e.getSource() == MIDISong.getTracks(t).getInstrumentListComboBox())
 			{
-				player.setInstrument((byte)Tracks.getInstrumentListButton(i).getSelectedIndex(), i);
-				MIDISong.getTracks(i).setInstrument((byte)Tracks.getInstrumentListButton(i).getSelectedIndex());
+				player.setInstrument((byte)MIDISong.getTracks(t).getInstrumentListComboBox().getSelectedIndex(), t);
+				MIDISong.getTracks(t).setInstrument((byte)MIDISong.getTracks(t).getInstrumentListComboBox().getSelectedIndex());
 			}
 		}
 	}
 	
-	//toolbarButtons(ActionEvent e) responds to the button inputs in the tool bar
-	//ActionEvent e = input information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void toolbarButtons(ActionEvent e)}</pre></p> 
+	 * Responds to inputs made in the toolBar.</p>
+	 * @param e = event information
+	 */
 	public void toolbarButtons(ActionEvent e)
 	{
 		//Tool #1: PLAY
@@ -675,8 +754,12 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//menuBarInput() responds to inputs made in the menu bar
-	//ActionEvent e = input information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void menuBarInput(ActionEvent e)}</pre></p> 
+	 * Responds to inputs made in the menuBar.</p>
+	 * @param e = event information
+	 */
 	public void menuBarInput(ActionEvent e)
 	{
 		//MenuBar -> File -> New
@@ -696,6 +779,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			int v = fileIn.showOpenDialog(window);
 			//If file is usable
 			if (v == JFileChooser.APPROVE_OPTION) {
+				clearAllTrackButtons();
 	            MIDISong.setSong(reader.readFile(fileIn.getSelectedFile()));
 	            player.setAllInstruments();
 				setTrackButtons(MIDISong.getTracksLength());
@@ -745,7 +829,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		//MenuBar -> Edit -> Paste
 		if(e.getActionCommand().equals("Paste"))
 		{
-			Notes.pasteNotes(x/scale[0], (byte)0);
+			Notes.pasteNotes(x/scale[0]);
 		}
 		//MenuBar -> Edit -> Delete
 		if(e.getActionCommand().equals("Delete"))
@@ -794,7 +878,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		{
 			try
 			{
-				int t = Integer.parseInt(JOptionPane.showInputDialog("What will be the new tempo (beats per minute)?", Math.round(MIDISong.getTempoBpm())));
+				double t = Double.parseDouble(JOptionPane.showInputDialog("What will be the new tempo (beats per minute)?", MIDISong.getTempoBpm()));
 				//If tempo is valid
 				if(t > 0)
 					//Due to the tempo being stored as microseconds per beat, a rounding error may occur
@@ -862,7 +946,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//keyControl() responds to key inputs in the program
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void keyControl()}</pre></p> 
+	 * Responds to key inputs made in the program.</p>
+	 */
 	public void keyControl()
 	{
 		//Space (PLAY / PAUSE)
@@ -912,7 +1000,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		//V (PASTE)
 		if(key.getControl() && key.getLetters()[21])
 		{
-			Notes.pasteNotes(x/scale[0], (byte)0);		
+			Notes.pasteNotes(x/scale[0]);		
 			key.setLetter(false, (byte) 21);
 			key.setControl(false);
 		}
@@ -933,7 +1021,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//mouseControl() responds to mouse inputs recorded in the CursorListener class
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mouseControl()}</pre></p> 
+	 * Responds to mouse inputs recorded in the <b>CursorListener</b> class.</p>
+	 */
 	public void mouseControl()
 	{
 		//Note Editor
@@ -973,12 +1065,17 @@ public class MIDIMain implements ActionListener, WindowListener
 						{
 							MIDISong.mergeTrack((byte)(selected - 17), t);
 							selected = 0;
+							//Adjust Components
+							removeTrackButton((byte)(selected - 17));
+							visual.setComponentsOfScrollBar();
 						}
 						//If selection mode is set to swap tracks
 						else if(selected > 0)
 						{
 							MIDISong.moveTrack(t, (byte)(selected - 1));
 							selected = 0;
+							//Adjust Components
+							visual.setComponentsOfScrollBar();
 						}
 					}
 				}
@@ -989,7 +1086,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//singleSelectControls() processes the inputs for selecting a group of notes
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void singleSelectControls()}</pre></p> 
+	 * Processes the inputs for selecting a single note.</p>
+	 */
 	public void singleSelectControls()
 	{
 		//Left Click
@@ -1021,7 +1122,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				Notes.unSelectAll();
 				if(CursorListener.getLocation()[0] - GUI.mouseDisplacement < GUI.sideBarWidth && CursorListener.getLocation()[1] > GUI.fullAddHeight + GUI.windowBarHeight)
 				{
-					player.NoteOn((byte)(Notes.MAX_TONE - (CursorListener.getLocation()[1] - GUI.windowBarHeight - GUI.fullAddHeight + y)/scale[1]), (byte) 78);
+					player.noteOn((byte)(Notes.MAX_TONE - (CursorListener.getLocation()[1] - GUI.windowBarHeight - GUI.fullAddHeight + y)/scale[1]), (byte) 78);
 				}
 				else
 				{
@@ -1032,7 +1133,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 		else 
 			//Turns off any playing notes
-			player.NoteOff();
+			player.noteOff();
 		
 		//Right Click
 		if(CursorListener.getClick() == 3)
@@ -1064,7 +1165,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//multiSelectControls() processes the inputs for selecting a group of notes
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void multiSelectControls()}</pre></p> 
+	 * Processes the inputs for selecting a group of notes.</p>
+	 */
 	public void multiSelectControls()
 	{
 		//Left Click
@@ -1145,7 +1250,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//gridControl() processes the inputs used in the note editor
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void gridControl()}</pre></p> 
+	 * Processes the inputs made in the note editor.</p>
+	 */
 	public void gridControl()
 	{
 		//If selecting one objects
@@ -1181,7 +1290,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		gridLimits();
 	}
 	
-	//gridLimits() limits the value that can be assigned to coordinate variables
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void gridLimits()}</pre></p> 
+	 * Limits the value that can be assigned to coordinate variables.</p>
+	 */
 	public void gridLimits()
 	{
 		//Limits to the scale
@@ -1207,58 +1320,102 @@ public class MIDIMain implements ActionListener, WindowListener
 			y = (short) (120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight));
 	}
 	
-	//pause(int t) stops the program temporary for the designated amount of time
-	//int t = time paused in milliseconds (1/1000 of a second)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code private static void pause(int t)}</pre></p> 
+	 * Stops the program temporary for the designated amount of time.</p>
+	 * @param t = time paused in milliseconds (1/1000 of a second)
+	 */
 	private static void pause(int t)
 	{
 		try{
 			Thread.sleep(t);
-		} catch (Exception exc){}
+		} catch (Exception exc){NotifyAnimation.sendMessage("Error", "A thread error occured");}
 	}
 	
-	//getMode() returns value of the current mode type
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static byte getMode()}</pre></p> 
+	 * Returns value of the current mode type.</p>
+	 * @return The value of the current mode type
+	 */
 	public static byte getMode()
 	{
 		return mode;
 	}
 	
-	//getXCoordinate() returns the x value of the display
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static long getXCoordinate()}</pre></p> 
+	 * Returns the x value of the grid.</p>
+	 * @return The x value of the grid
+	 */
 	public static long getXCoordinate()
 	{
 		return x;
 	}
 	
-	//getYCoordinate() returns the y value of the display
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static long getYCoordinate()}</pre></p> 
+	 * Returns the y value of the grid.</p>
+	 * @return The y value of the grid
+	 */
 	public static short getYCoordinate()
 	{
 		return y;
 	}
 	
-	//getScrollValue() returns the value assigned to the scrollBar
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static short getScrollValue()}</pre></p> 
+	 * Returns the value assigned to the scrollBar.</p>
+	 * @return The value assigned to the scrollBar
+	 */
 	public static short getScrollValue()
 	{
 		return scrollY;
 	}
 	
-	//getPreLength() returns the x scaling of the note editor grid
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static short getPreLength()}</pre></p> 
+	 * Returns the x scaling of the note editor grid.</p>
+	 * @return The x scaling of the note editor grid
+	 */
 	public static short getPreLength()
 	{
 		return scale[0];
 	}
 	
-	//getPreHeight() returns the y scaling of the note editor grid
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static short getPreHeight()}</pre></p> 
+	 * Returns the y scaling of the note editor grid.</p>
+	 * @return The y scaling of the note editor grid
+	 */
 	public static short getPreHeight()
 	{
 		return scale[1];
 	}
 	
-	//getTrackMenu() returns the current track being viewed from number order
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static byte getTrackMenu()}</pre></p> 
+	 * Returns the current track being viewed from number order.</p>
+	 * @return The current track being viewed
+	 */
 	public static byte getTrackMenu()
 	{
 		return track;
 	}
 	
-	//getSelectBox() returns the highlighted box used to select notes
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static Rectangle getSelectBox()}</pre></p> 
+	 * Returns the highlighted box used to select notes.</p>
+	 * @return The selection box
+	 */
 	public static Rectangle getSelectBox()
 	{
 		//Calculations have to be adjusted depending on the displacement of the mouse from an origin point
@@ -1285,7 +1442,12 @@ public class MIDIMain implements ActionListener, WindowListener
 		return selectBox;
 	}
 	
-	//isSelecting() returns whether multiple notes are being selected
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static boolean isSelecting()}</pre></p> 
+	 * Returns the selection mode of the program (meaning varies).</p>
+	 * @return The state of selection (neutral, single, multiple, etc.)
+	 */
 	public static boolean isSelecting()
 	{
 		//If selection mode is not neutral (in the process of selecting notes)
@@ -1295,22 +1457,40 @@ public class MIDIMain implements ActionListener, WindowListener
 			return false;
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static boolean isInfoBarVisible()}</pre></p> 
+	 * Returns whether the info bar is being displayed on screen.</p>
+	 * @return The visibility of the info bar
+	 */
 	//isInfoBarVisible() returns whether the info bar is being displayed on screen
 	public static boolean isInfoBarVisible()
 	{
 		return info.isVisible();
 	}
 
-	//windowActivated(WindowEvent e) responds to when the window is given focus by the OS
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowActivated(WindowEvent e)}</pre></p> 
+	 * Responds to when the window is given focus by the OS.</p>
+	 * @param e = event information
+	 */
 	public void windowActivated(WindowEvent e) {focus = true;}
 
-	//windowClosed(WindowEvent e) responds after the program window is closed
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowClosed(WindowEvent e)}</pre></p> 
+	 * Responds after the program window is closed.</p>
+	 * @param e = event information
+	 */
 	public void windowClosed(WindowEvent e) {}
 
-	//windowClosing(WindowEvent e) responds when the program window is closing
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowClosing(WindowEvent e)}</pre></p> 
+	 * Responds when the program window is closing.</p>
+	 * @param e = event information
+	 */
 	public void windowClosing(WindowEvent e) {
 		if(mode > 0){
 			int choice = JOptionPane.showConfirmDialog(window, "Would you like to save any changes?", "M.E.A.T is shutting down.", JOptionPane.YES_NO_CANCEL_OPTION);
@@ -1323,19 +1503,35 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 
-	//windowDeactivated(WindowEvent e) responds to when the window loses focus from the OS
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowDeactivated(WindowEvent e)}</pre></p> 
+	 * Responds to when the window loses focus from the OS.</p>
+	 * @param e = event information
+	 */
 	public void windowDeactivated(WindowEvent e) {focus = false;}
 
-	//windowDeiconified(WindowEvent e) responds to when the window is returned to normal from minimized
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowDeiconified(WindowEvent e)}</pre></p> 
+	 * Responds to when the window is returned to normal from minimized.</p>
+	 * @param e = event information
+	 */
 	public void windowDeiconified(WindowEvent e) {}
 
-	//windowIconified(WindowEvent e) responds to when the window is minimized
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowIconified(WindowEvent e)}</pre></p> 
+	 * Responds to when the window is minimized.</p>
+	 * @param e = event information
+	 */
 	public void windowIconified(WindowEvent e) {}
 
-	//windowOpened(WindowEvent e) responds when the program window is opened
-	//WindowEvent e = event information
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowOpened(WindowEvent e)}</pre></p> 
+	 * Responds when the program window is opened.</p>
+	 * @param e = event information
+	 */
 	public void windowOpened(WindowEvent e) {}
 }
