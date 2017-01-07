@@ -9,26 +9,27 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 
 /**
- * Date: November 1, 2016
- * 
+ * <b>[Date: November 1, 2016]</b>
+ * <p>
  * This class stores all data that remains in a track of the song. The
  * class stores all notes present in the track.
- * 
+ * </p>
+ * <p>
  * Note: The program trys to keep the track numbers equal to the channel
  * of the notes contained in the track. However, track number and channel
  * may not always be equal to each other.
+ * </p>
  */
-
 public class Tracks extends SelectableObject
 {	
-	public static byte tracksVisible = 4;										//The number of tracks that can visible at one time
+	public static byte tracksVisible = 4;											//The number of tracks that can visible at one time
 	public static final short trackSpace = 10;										//Spacing between track menus
 	public static final short trackHeight = 70;										//The height of the track menus
 	public static final String[] INSTRUMENT_LIST = MIDIReader.getInstrumentList(); 	//The instrument list for the tracks
 	
-	private static ArrayList<JButton> trackButtons = new ArrayList<JButton>();							//Buttons for tracks
-	private static ArrayList<JComboBox<String>> instrumentList = new ArrayList<JComboBox<String>>();	//Instrument indicator for tracks
-	private VolumeSlider slider = new VolumeSlider((short)0,(short)0, true);							//Volume slider for the track
+	private JButton trackButtons;													//Entry button for track
+	private JComboBox<String> instrumentList;										//Instrument indicator for track
+	private VolumeSlider slider = new VolumeSlider((short)0,(short)0, true);		//Volume slider for the track
 	
 	private int numNotes = 0;									//The number of notes in a track
 	private byte instrument = 0;								//The instrument used for the track
@@ -36,26 +37,100 @@ public class Tracks extends SelectableObject
 	private byte channel = 0;									//The channel that corresponds with track
 	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
 
-	//Constructor method
-	//byte chan = channel of track
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public Tracks(byte chan)}</pre></p> 
+	 * The constructor method.</p> 
+	 * @param chan = channel of track
+	 */
 	public Tracks(byte chan)
 	{
 		channel = chan;
+		createTrackButtons();
 	}
 	
-	//changeChannel(byte chan) changes the channel that the track is assigned to
-	//byte chan = channel being assigned
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void changeChannel(byte chan)}</pre></p> 
+	 * Changes the channel that the track is assigned to.</p> 
+	 * @param chan = channel being assigned
+	 */
 	public void changeChannel(byte chan)
 	{
 		channel = chan;
+		trackButtons.setText("Track "+(channel+1));
 		updateNoteCount();
 	}
 	
-	//cleanTrack(byte channel) removes any unwanted or invalid midi messages
-	//byte channel = channel that is being "cleaned"
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void createTrackButtons()}</pre></p> 
+	 * Adds a set of components to the track window.</p>
+	 */
+	public void createTrackButtons()
+	{
+		instrumentList = new JComboBox<String>(INSTRUMENT_LIST);
+		instrumentList.setFont(GUI.smallFont);
+		instrumentList.setSize(GUI.screenWidth/3, 20);
+		instrumentList.setBackground(Color.WHITE);
+		instrumentList.setVisible(true);
+		//To allow key listener to work
+		instrumentList.setFocusable(false);
+			
+		trackButtons = new JButton("Track "+(channel+1));
+		trackButtons.setFont(GUI.boldFont);
+		trackButtons.setSize(100, 20);
+		trackButtons.setBackground(Color.WHITE);
+		trackButtons.setVisible(true);
+		//To allow key listener to work
+		trackButtons.setFocusable(false);
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void trackLayout()}</pre></p> 
+	 * Sets the component correctly for track window.</p>
+	 */
+	public void trackLayout()
+	{
+		try
+		{
+			//If button is behind another component
+			if(trackButtons.getLocation().getY() < GUI.toolBarHeight || (trackButtons.getLocation().getY() + trackButtons.getHeight() > GUI.screenHeight - 140  && MIDIMain.isInfoBarVisible()))
+			{
+				//Disables button
+				trackButtons.setEnabled(false);
+				trackButtons.setOpaque(false);
+			}
+			else
+			{
+				trackButtons.setEnabled(true);
+				trackButtons.setOpaque(true);
+			}
+			//If combo box is behind another component
+			if(instrumentList.getLocation().getY() < GUI.toolBarHeight || (instrumentList.getLocation().getY() + instrumentList.getHeight() > GUI.screenHeight - 140 && MIDIMain.isInfoBarVisible()))
+			{
+				//Disables combo box
+				instrumentList.setEnabled(false);
+				instrumentList.setOpaque(false);
+			}
+			else
+			{
+				instrumentList.setEnabled(true);
+				instrumentList.setOpaque(true);
+			}
+		}
+		catch(Exception ex){}//Program is actually more likely to trigger an exception (Due to action listener making edits to the code while it is processing)
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void cleanTrack()}</pre></p> 
+	 * Removes any unwanted or invalid midi messages and sorts messages to their correct channel.</p> 
+	 */
 	public void cleanTrack()
 	{
-		//Cycle through the track to delete notes
+		//Cycle through the track to each event
 		for(int m = MIDISong.getSequence().getTracks()[channel].size() - 1; m >= 0; m--)
 		{
 			try
@@ -88,8 +163,11 @@ public class Tracks extends SelectableObject
 		}
 	}
 
-	//openTrack(byte trackNum) opens the data in a track for use in the note editor
-	//byte trackNum = the track being opened in the sequence
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void openTrack()}</pre></p> 
+	 * Opens the data in a track for use in the note editor.</p> 
+	 */
 	public void openTrack()
 	{
 		Notes.setTrack(channel);
@@ -138,7 +216,11 @@ public class Tracks extends SelectableObject
 		}
 	}
 	
-	//closeTrack() closes the data in a track for use in the note editor
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void closeTrack()}</pre></p> 
+	 * Removes the data currently being used in the note editor.</p> 
+	 */
 	public void closeTrack()
 	{
 		saveTrack();
@@ -147,7 +229,11 @@ public class Tracks extends SelectableObject
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 	}
 	
-	//saveTrack() updates the values of the notes to the sequence
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void saveTrack()}</pre></p> 
+	 * Updates the values of the notes to the sequence.</p> 
+	 */
 	public void saveTrack()
 	{
 		//int n = note in the sequence
@@ -170,19 +256,27 @@ public class Tracks extends SelectableObject
 		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "The current track has been deleted or corrupted!");}
 	}
 	
-	//addNote(int s, int e) creates a new Notes object using the parameters and adds it to the note array
-	//int s = location of start of note
-	//int e = location of end of notes
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void addNote(MidiEvent s, MidiEvent e)}</pre></p> 
+	 * Creates a new <b>Notes</b> object using the parameters and adds it to the note array.</p> 
+	 * @param s = location of start of note
+	 * @param e = location of end of notes
+	 */
 	public void addNote(MidiEvent s, MidiEvent e)
 	{
 		notes.add(new Notes(s, e));
 	}
 	
-	//addNote(long tick, long endTick, byte t, byte v)) creates a new Notes object using the parameters and adds it to the note array
-	//long tick = location of note
-	//long endTick = location of note's end
-	//byte t = tone of note
-	//byte v = volume of note
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void addNote(long tick, long endTick, byte t, byte v)}</pre></p> 
+	 * Creates a new <b>Notes</b> object using the parameters and adds it to the note array.</p> 
+	 * @param tick = location of start of note
+	 * @param endTick = location of end of notes
+	 * @param t = tone of note
+	 * @param v = volume of note
+	 */
 	public void addNote(long tick, long endTick, byte t, byte v)
 	{
 		MidiEvent eveStart = null;
@@ -199,8 +293,12 @@ public class Tracks extends SelectableObject
 		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Note could not be created.");}
 	}
 	
-	//removeNote(Notes note) removes the note from the track
-	//int note = note being removed
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void removeNote(int note)}</pre></p> 
+	 * Removes the note from the track using its index value.</p> 
+	 * @param note = index of note being removed
+	 */
 	public void removeNote(int note)
 	{
 		notes.remove(note);
@@ -208,52 +306,50 @@ public class Tracks extends SelectableObject
 		numNotes--;
 	}
 	
-	//updateNoteCount() is a method that is used to update the value of numNotes();
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void updateNoteCount()}</pre></p> 
+	 * Updates the value of numNotes().</p> 
+	 */
 	public void updateNoteCount()
 	{
 		numNotes = countMessage(channel, (byte)ShortMessage.NOTE_ON);
 	}
 	
-	//countMessage(byte trackNum, byte message) counts the number of notes in the class and returns it
-	//byte trackNum = track being identified in sequence
-	//byte message =  status type being counted
-	public static int countMessage(byte trackNum, byte message)
-	{
-		int counter = 0;
-		for(int i = 0; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
-		{
-			//If message is the message being searched
-			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), message))
-				counter++;
-		}
-		return counter;
-	}
-	
 	/**
-	 *
-	 *readForNotes(byte tone, int eventFrom) searches for the end of a note
+	 * <blockquote>
+	 * <p><pre>{@code public static int readForNotes(byte tone, int eventFrom, int endNotes)}</pre></p> 
+	 * Searches for the end of a note (or NOTE_OFF message).</p>
 	 * @param tone = tone of the start of the note
 	 * @param eventFrom = location being searched from
 	 * @param endNotes = the number of end messages
+	 * @return Index location of the end message
 	 */
 	public int readForNotes(byte tone, int eventFrom, int endNotes)
 	{
-		boolean add = false;	//If a message is added in, then it cannot add any more messages afterwards
+		//If a message is added in, then it cannot add any more messages afterwards
+		boolean add = false;
+		
+		//Cycle through every event message
 		for(int i = eventFrom + 1; i < MIDISong.getSequence().getTracks()[channel].size(); i++)
 		{
-			//If status of message equals status being searched
+			//If status of message equals NOTE_OFF (the message being searched)
 			if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_OFF) && MIDISong.getMessage(channel, i).getMessage()[Notes.DATA_TONE] == tone)
 			{
 				return i;
 			}
+			//If there is an difference between NOTE_ON and NOTE_OFF messages (means a message needs to be filled in)
 			else if(endNotes != numNotes)
 			{
 				//If note has no end before the start of the next note
 				if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, i).getStatus(), (byte)ShortMessage.NOTE_ON) && MIDISong.getMessage(channel, i).getMessage()[Notes.DATA_TONE] == tone && add == false)
 				{
+					//c is a temporary counter for the event messages
 					int c = i;
+					//Make sure that there isn't a NOTE_OFF message on the same tick as the NOTE_ON message found
 					while(MIDISong.getEvent(channel, c).getTick() == MIDISong.getEvent(channel, i).getTick() && c < MIDISong.getSequence().getTracks()[channel].size())
 					{
+						//A NOTE_OFF message was found on the same tick
 						if(Notes.isMessageStatus((byte)MIDISong.getMessage(channel, c).getStatus(), (byte)ShortMessage.NOTE_OFF))
 						{
 							return c;
@@ -261,9 +357,10 @@ public class Tracks extends SelectableObject
 						c++;
 					}
 					try {
+						//A new NOTE_OFF message is created to fill information and its placed right before the NOTE-ON message
 						MIDISong.getSequence().getTracks()[channel].add(new MidiEvent(new ShortMessage(ShortMessage.NOTE_OFF+channel, channel, tone, MIDISong.getMessage(channel, i).getMessage()[Notes.DATA_VELOCITY]), MIDISong.getEvent(channel, i).getTick()));
 						endNotes++;
-						i = eventFrom + 1;	//Start from beginning
+						i = eventFrom + 1;	//Start from beginning to find the newly added message (index gets lost when a message is added to the sequence)
 						add = true;
 					} catch (ArrayIndexOutOfBoundsException e) {NotifyAnimation.sendMessage("Error", "Array Index Out of Bound! (No Value Assigned)");
 					} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Invalid midi data!");}
@@ -289,69 +386,129 @@ public class Tracks extends SelectableObject
 	 * }
 	*/
 	
-	//setInstrument(byte inst) sets the instrument of the track
-	//byte inst = instrument value to set
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setInstrument(byte inst)}</pre></p> 
+	 * Sets the instrument of the track.</p>
+	 * @param inst = instrument value to set
+	 */
 	public void setInstrument(byte inst)
 	{
 		instrument = inst;
+		instrumentList.setSelectedIndex(instrument);
 	}
 	
-	//setVolume(byte v) sets the volume of the track
-	//byte v = new volume
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setVolume(byte v)}</pre></p> 
+	 * Sets the volume of the track.</p>
+	 * @param v = new volume
+	 */
 	public void setVolume(byte v)
 	{
 		volume = v;
 		slider.setVolume(v);
 	}
 	
-	//getInstrument() returns the instrument of the track
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public byte getInstrument()}</pre></p> 
+	 * Returns the instrument of the track.</p>
+	 * @return The instrument of the track
+	 */
 	public byte getInstrument()
 	{
 		return instrument;
 	}
 	
-	//getNotes() returns the array of notes in the track
-	//int note = index of note in array
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public Notes getNotes(int note)}</pre></p> 
+	 * Returns the <b>Notes</b> object from the array.</p>
+	 * @param note = index of note in array
+	 * @return The <b>Notes</b> object
+	 */
 	public Notes getNotes(int note)
 	{
 		return notes.get(note);
 	}
 	
-	//getChannel() returns the channel the track is assigned to
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public byte getChannel()}</pre></p> 
+	 * Returns the channel the track is assigned to.</p>
+	 * @return The channel the track is assigned to
+	 */
 	public byte getChannel()
 	{
 		return channel;
 	}
 	
-	//getVolume() returns the volume of the track
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public byte getChannel()}</pre></p> 
+	 * Returns the volume of the track.</p>
+	 * @return The volume of the track
+	 */
 	public byte getVolume()
 	{
 		return volume;
 	}
 	
-	//VolumeSlider getSlider() returns the volume slider that sets the volume of the track
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public VolumeSlider getSlider()}</pre></p> 
+	 * Returns the volume slider that sets the volume of the track.</p>
+	 * @return The <b>VolumeSlider</b> object of the track
+	 */
 	public VolumeSlider getSlider()
 	{
 		return slider;
 	}
 	
-	//drawTrack(Graphics g, short y) draws the track window for the track
-	//Graphics g = component of the JPanel used to create visual elements
-	//short y = y location of the window
-	public void drawTrack(Graphics2D g, short y)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public JButton getTrackEntryButton()}</pre></p> 
+	 * Returns the track button for the track.</p>
+	 * @return The track button
+	 */
+	public JButton getTrackEntryButton()
+	{
+		return trackButtons;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public JComboBox<String> getInstrumentListComboBox()}</pre></p> 
+	 * Returns the instrument list for the track.</p>
+	 * @return The instrument list (combo box)
+	 */
+	public JComboBox<String> getInstrumentListComboBox()
+	{
+		return instrumentList;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void drawTrack(Graphics2D g)}</pre></p> 
+	 * Draws the track window for the track.</p>
+	 * @param g = component of the JPanel used to create visual elements
+	 */
+	public void drawTrack(Graphics2D g)
 	{
 		//yLoc is the y location of the track window after considering window size and the scroll value
-		int yLoc = trackSpace + GUI.toolBarHeight + (trackHeight + 5)*y - MIDIMain.getScrollValue();
+		int yLoc = trackSpace + GUI.toolBarHeight + (trackHeight + 5)*channel - MIDIMain.getScrollValue();
 		
 		//Background
 		g.setColor(GUI.colours[GUI.getColourScheme()][2]);
 		g.fillRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
 		
 		//Volume Slider
-		slider.setBounds((short)(GUI.screenWidth/2 + 25), (short)(GUI.fullAddHeight + (trackHeight + 5)*y + trackSpace - MIDIMain.getScrollValue()), (short)(GUI.screenWidth*3/4 - GUI.screenWidth/2), (short)30);
+		slider.setBounds((short)(GUI.screenWidth/2 + 25), (short)(GUI.fullAddHeight + (trackHeight + 5)*channel + trackSpace - MIDIMain.getScrollValue()), (short)(GUI.screenWidth*3/4 - GUI.screenWidth/2), (short)30);
 		slider.drawVolumeSlider(g);
 		volume = slider.getPercent();
 		
+		//If track is selected
 		if(isSelected())
 		{
 			g.setStroke(GUI.superBold);
@@ -373,7 +530,7 @@ public class Tracks extends SelectableObject
 		
 		//Borders
 		g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
-		g.drawRect(200, 10+trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue(), 100, 20);
+		g.drawRect(200, 10 + yLoc, 100, 20);
 		g.drawRect(GUI.screenWidth*3/4 + 40, 15 + yLoc, 70, 20);
 		g.drawRect(GUI.screenWidth*3/4 + 40, 35 + yLoc, 70, 20);
 		//Text
@@ -389,115 +546,40 @@ public class Tracks extends SelectableObject
 		if(channel == 9)
 		{
 			g.setFont(GUI.boldFont);
-			g.drawString("[Percussion]", GUI.screenWidth*5/8, 15 + trackSpace+GUI.toolBarHeight+(trackHeight + 5)*y-MIDIMain.getScrollValue());
+			g.drawString("[Percussion]", GUI.screenWidth*5/8, 15 + yLoc);
 		}
 	}
 	
-	//trackLayout() sets the components correctly in the track editor
-	public static void trackLayout()
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static int countMessage(byte trackNum, byte message)}</pre></p> 
+	 * counts the number of messages of a specified type in the track.
+	 * @param trackNum = track being identified in sequence
+	 * @param message =  status type being counted
+	 * @return The amount of the message that is in the track.
+	 */
+	public static int countMessage(byte trackNum, byte message)
 	{
-		try
+		int counter = 0;
+		for(int i = 0; i < MIDISong.getSequence().getTracks()[trackNum].size(); i++)
 		{
-			//Checks if button is behind components
-			for(byte i = 0; i < trackButtons.size(); i++)
-			{
-				if(trackButtons.get(i).getLocation().getY() < GUI.toolBarHeight || (trackButtons.get(i).getLocation().getY() + trackButtons.get(i).getHeight() > GUI.screenHeight - 140  && MIDIMain.isInfoBarVisible()))
-				{
-					trackButtons.get(i).setEnabled(false);
-					trackButtons.get(i).setOpaque(false);
-				}
-				else
-				{
-					trackButtons.get(i).setEnabled(true);
-					trackButtons.get(i).setOpaque(true);
-				}
-				
-				if(instrumentList.get(i).getLocation().getY() < GUI.toolBarHeight || (instrumentList.get(i).getLocation().getY() + instrumentList.get(i).getHeight() > GUI.screenHeight - 140 && MIDIMain.isInfoBarVisible()))
-				{
-					instrumentList.get(i).setEnabled(false);
-					instrumentList.get(i).setOpaque(false);
-				}
-				else
-				{
-					instrumentList.get(i).setEnabled(true);
-					instrumentList.get(i).setOpaque(true);
-				}
-			}
+			//If message is the message being searched
+			if(Notes.isMessageStatus((byte)MIDISong.getMessage(trackNum, i).getStatus(), message))
+				counter++;
 		}
-		catch(Exception ex){}//Program is actually more likely to trigger and exception
+		return counter;
 	}
 	
-	//addInstrumentList() adds an instrument button to the interface
-	public static void addTrackButtons()
-	{
-		if(trackButtons.size() < 16 && instrumentList.size() < 16)
-		{
-			instrumentList.add(new JComboBox<String>(INSTRUMENT_LIST));
-			instrumentList.get(instrumentList.size() - 1).setFont(GUI.smallFont);
-			instrumentList.get(instrumentList.size() - 1).setSize(GUI.screenWidth/3, 20);
-			instrumentList.get(instrumentList.size() - 1).setBackground(Color.WHITE);
-			instrumentList.get(instrumentList.size() - 1).setVisible(true);
-			instrumentList.get(instrumentList.size() - 1).setSelectedIndex(MIDISong.getTracks((byte)(instrumentList.size() - 1)).getInstrument());
-			//To allow key listener to work
-			instrumentList.get(instrumentList.size() - 1).setFocusable(false);
-			
-			trackButtons.add(new JButton("Track "+(trackButtons.size()+1)));
-			trackButtons.get(trackButtons.size() - 1).setFont(GUI.boldFont);
-			trackButtons.get(trackButtons.size() - 1).setSize(100, 20);
-			trackButtons.get(trackButtons.size() - 1).setBackground(Color.WHITE);
-			trackButtons.get(trackButtons.size() - 1).setVisible(true);
-			//To allow key listener to work
-			trackButtons.get(trackButtons.size() - 1).setFocusable(false);
-		}
-	}
-	
-	//removeTrackButton(byte button) removes a set of buttons for a track
-	//byte button = button being removed
-	public static void removeTrackButton()
-	{
-		MIDIMain.removeTrackButton((byte)(trackButtons.size() - 1));
-		instrumentList.remove(trackButtons.size() - 1);
-		trackButtons.remove(trackButtons.size() - 1);
-	}
-	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void resizeButtons()}</pre></p> 
+	 * Resizes the button components for the new window size.</p>
+	 */
 	public static void resizeButtons()
 	{
 		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 		{
-			instrumentList.get(t).setSize(GUI.screenWidth/3, 20);
+			MIDISong.getTracks(t).getInstrumentListComboBox().setSize(GUI.screenWidth/3, 20);
 		}
-	}
-	
-	public static void resetAllButtons()
-	{
-		for(byte i = (byte) (trackButtons.size() - 1); i >= 0; i--)
-		{
-			trackButtons.remove(i);
-			instrumentList.remove(i);
-		}
-	}
-	
-	public static JButton getTrackEntryButton(int index)
-	{
-		return trackButtons.get(index);
-	}
-	
-	public static JComboBox<String> getInstrumentListButton(int index)
-	{
-		return instrumentList.get(index);
-	}
-	
-	public static byte getButtonLength()
-	{
-		return (byte)trackButtons.size();
-	}
-	
-	public static boolean isNotMaximum()
-	{
-		if(trackButtons.size() < 16 && instrumentList.size() < 16)
-		{
-			return true;
-		}
-		return false;
 	}
 }
