@@ -1,30 +1,35 @@
-/**
- * This class reads, opens and creates MIDI files for the program.
- * It enables the user interaction with MIDIs.
- */
-
-//libraries
 import java.io.*;
 import javax.sound.midi.*;
 
+/**
+ * <b>[Date: October 29, 2016]</b>
+ * <p>
+ * This class reads, opens and creates MIDI files for the program.
+ * It enables the user interaction with MIDIs.
+ * </p>
+ */
 public class MIDIReader {
 
-	//variables
-	private static File midiFile = null;
-	private boolean named = false;
+	private static File midiFile = null;	//The file that contains the sequence
+	private boolean named = false;			//Whether the file has been named
 	
-	/*
-	 * readFile(String fileName) returns sequence of the opened file
-	 * String fileName = the name of the file
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public Sequence readFile(File file)}</pre></p> 
+	 * Reads the file to retrieve the sequence.</p> 
+	 * @param file = the file being opened
+	 * @return The sequence from the opened file
 	 */
 	public Sequence readFile(File file){
 	
 		named = true;
 		
+		//If file contains a correct extension
 		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[0]) || MIDIFilter.getExtension(file).equals(MIDIFilter.mid[1]))
 		{
 			midiFile = file;
 				
+			//File is opened
 			try
 			{
 				InputStream is = new FileInputStream(file);
@@ -36,28 +41,32 @@ public class MIDIReader {
 				}
 				Sequence s = MidiSystem.getSequence(is);
 				is.close();
-				
 				return s;
 			}
 			catch (Exception ex){NotifyAnimation.sendMessage("Error", "File could not be read.");;}
 		}
-		
 		return null;
 	}
 	
-	/*
-	 * setFileName(String s) sets the name of the file
-	 * String s = new name of file
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void setFileName(String s)}</pre></p> 
+	 * Sets the name of the file.</p> 
+	 * @param s = new name of file
 	 */
 	public static void setFileName(String s)
 	{
+		//If s lacks the correct extension
 		if(!s.endsWith(MIDIFilter.mid[0]) && !s.endsWith(MIDIFilter.mid[1]))
 			s += ".mid";
 		midiFile = new File(midiFile.getPath().substring(0, midiFile.getPath().lastIndexOf('/') + 1) + s);
 	}
 	
-	/*
-	 * public sequence createFile() returns the sequence of a new file
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public Sequence createFile()}</pre></p> 
+	 * Creates a new sequence.</p> 
+	 * @return The sequence that was create
 	 */
 	public Sequence createFile()
 	{		
@@ -89,14 +98,18 @@ public class MIDIReader {
 		return null;
 	}
 	
-	/*
-	 * public void saveFile saves the MIDI file
-	 * Sequence s = the sequence that is being saved
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void saveFile(Sequence s, File file)}</pre></p> 
+	 * Saves the sequence to a file.</p> 
+	 * @param s = the sequence that is being saved
 	 */
 	public void saveFile(Sequence s, File file)
 	{
+		//If file does not have the correct extension name
 		if(!file.getName().endsWith("."+MIDIFilter.mid[0]) && !file.getName().endsWith("."+MIDIFilter.mid[1]))
 		{
+			//If file has a period (suggests it has an extension)
 			if(file.getName().contains("."))
 				file = new File(file.getPath().substring(0, file.getPath().lastIndexOf('.')) + "." + MIDIFilter.mid[0]);
 			else
@@ -105,6 +118,7 @@ public class MIDIReader {
 		midiFile = file;
 		try
 		{
+			//Writes file
 			MidiSystem.write(s, 1, midiFile);
 		}
 		catch(IOException ex){ex.printStackTrace();}
@@ -112,20 +126,37 @@ public class MIDIReader {
 		named = true;
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void saveConfig(int w, int h, int x, int y, byte c)}</pre></p> 
+	 * Saves the config information.</p> 
+	 * @param w = width of the screen
+	 * @param h = height of the screen
+	 * @param x = x location of the window on screen
+	 * @param y = y location of the window on screen
+	 * @param c = colour scheme last used
+	 */
 	public void saveConfig(int w, int h, int x, int y, byte c)
 	{
 		try {
+			//Writes information
 			PrintWriter write = new PrintWriter(new BufferedWriter(new FileWriter("windowSetup/Config.txt", false)));
 			write.println(w + "x" + h);
 			write.println(x + "x" + y);
 			write.println(c);
 			write.close();
 		} catch (IOException e) {
-			//Won't ever be seen though
+			//Won't ever be seen though (program closes immediately afterwards)
 			NotifyAnimation.sendMessage("Error", "Configuration failed to save properly");
 		}
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public short[] getConfig()}</pre></p> 
+	 * Reads the config information.</p> 
+	 * @return An array containing all config information
+	 */
 	public short[] getConfig()
 	{
 		short[] v = {720, 480, 0, 0, 0};
@@ -133,11 +164,16 @@ public class MIDIReader {
 			BufferedReader read = new BufferedReader(new FileReader("windowSetup/Config.txt"));
 
 			String s = read.readLine();
+			//width of the screen
 			v[0] = Short.parseShort(s.substring(0, s.indexOf('x')));
+			//height of the screen
 			v[1] = Short.parseShort(s.substring(s.indexOf('x') + 1));
 			s = read.readLine();
+			//x location of the window on screen
 			v[2] = Short.parseShort(s.substring(0, s.indexOf('x')));
+			//y location of the window on screen
 			v[3] = Short.parseShort(s.substring(s.indexOf('x') + 1));
+			//colour scheme
 			v[4] = Short.parseShort(read.readLine());
 			
 			read.close();
@@ -147,21 +183,29 @@ public class MIDIReader {
 		return v;
 	}
 	
-	/*
-	 * getSoundbank(File file) returns the soundbank that was read
-	 * File file = file being read
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public Soundbank getSoundbank(File file)}</pre></p> 
+	 * Reads a soundbank from a file.</p> 
+	 * @param file = file being read
+	 * @return The soundbank that was read
 	 */
 	public Soundbank getSoundbank(File file)
 	{
 		Soundbank sound = null;
 		try {
+			//Read soundbank file
 			sound = MidiSystem.getSoundbank(file);
 		} catch (Exception ex) {NotifyAnimation.sendMessage("Error", "Soundbank could not be opened.");}
 		return sound;
 	}
 	
-	/*
-	 * getInstrumentList() returns a list that is read from the document Instrument_List
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static String[] getInstrumentList()}</pre></p> 
+	 * Reads the instrument list from the document Instrument_List.</p> 
+	 * @param file = file being read
+	 * @return The instrument list as a String[] array
 	 */
 	public static String[] getInstrumentList()
 	{
@@ -171,6 +215,7 @@ public class MIDIReader {
 		try {
 			read = new BufferedReader(new FileReader("windowSetup/Instrument_List.txt"));
 			
+			//Determine size of list (Also determines if there is an end)
 			while (!read.readLine().equals("END"))
 			{
 				lines++;
@@ -179,8 +224,10 @@ public class MIDIReader {
 			s = new String[lines];
 			read.close();
 			
+			//Reset reader
 			read = new BufferedReader(new FileReader("windowSetup/Instrument_List.txt"));
 			
+			//Read every item of the list
 			for(int i = 0; i < lines; i++)
 			{
 				s[i] = read.readLine();
@@ -194,8 +241,12 @@ public class MIDIReader {
 		return s;
 	}
 	
-	/*
-	 * getFileName() returns the String of the file name without its extension
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static String getFileName(int limit)}</pre></p> 
+	 * Returns the String of the file name without its extension.</p> 
+	 * @param limit = how many characters of the String to return (0 = unlimited)
+	 * @return The file name
 	 */
 	public static String getFileName(int limit)
 	{
@@ -207,16 +258,22 @@ public class MIDIReader {
 			return midiFile.getName().replaceAll("."+MIDIFilter.mid[0], "");
 	}
 	
-	/*
-	 * getFile() returns the file that contains the midi
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static File getFile()}</pre></p> 
+	 * Returns the file that contains the midi.</p> 
+	 * @return The file that contains the sequence
 	 */
 	public static File getFile()
 	{
 		return midiFile;
 	}
 	
-	/*
-	 * isFileNamed() returns whether the file has been saved before
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean isFileNamed()}</pre></p> 
+	 * Determines if the file has been saved before.</p> 
+	 * @return Whether the file has been named
 	 */
 	public boolean isFileNamed()
 	{
