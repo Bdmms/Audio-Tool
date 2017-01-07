@@ -18,23 +18,38 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+/**
+ * <b>[Date: December 19, 2016]</b>
+ * <p>
+ * This class contains all elements required to create a second
+ * window for the tutorials. The window allows different file 
+ * types to be viewed, which make up each tutorial. The class
+ * also provides its own JPanel and MouseListener.
+ * </p>
+ */
 public class TutorialArchive extends JPanel implements ActionListener, MouseListener
 {
 	private static final long serialVersionUID = 1L;
-	private static JFrame tutorial;
-	private JComboBox<String> sections;
-	private ArrayList<String> doc = new ArrayList<String>();
-	private ArrayList<File> files = new ArrayList<File>();
-	private byte max = 0;
-	private byte step = 0;
-	private boolean paged = false;
-	private boolean image = false;
-	
+	private JFrame tutorial;									//The window for the tutorials
+	private JComboBox<String> sections;							//The combo box that is used to navigate the files
+	private ArrayList<String> doc = new ArrayList<String>();	//The array of the lines of text in a document
+	private ArrayList<File> files = new ArrayList<File>();		//The array of files that exist in a folder (when opening a slideshow)
+	private byte max = 0;										//The amount of slides that exist in a slideshow
+	private byte step = 0;										//The current slide of the slideshow
+	private boolean paged = false;								//If file is a slideshow (is made up of multiple files)
+	private boolean image = false;								//If file is an image
+		
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public TutorialArchive()}</pre></p> 
+	 * The constructor. The window starts by identifying all files in the tutorial folder.</p> 
+	 */
 	public TutorialArchive()
 	{
 		readFolder(new File("tutorial"));
 		
 		String[] s = new String[files.size()];
+		//Storing the names of every tutorial files (then adding them to the combo box)
 		for(int i = 0; i < s.length; i++)
 		{
 			s[i] = files.get(i).getName();
@@ -49,8 +64,14 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		this.add(sections);
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setUpPage()}</pre></p> 
+	 * The display is reseted (this method is reusable). It sets up all components upon the reset.</p> 
+	 */
 	public void setUpPage()
 	{
+		//If the window had already been opened / created
 		if(isActive())
 			tutorial.dispose();
 		tutorial = new JFrame("Tutorials");
@@ -65,40 +86,64 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		tutorial.setVisible(true);
 		tutorial.setBackground(Color.WHITE);
 		
+		//Sets the window to a default file
 		sections.setSelectedIndex(0);
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void readDocument(File file)}</pre></p> 
+	 * A file is identified as a document and is read.</p> 
+	 * @param file = file being read
+	 */
 	public void readDocument(File file)
 	{
 		doc.clear();
 		
+		//If file extension is a text document
 		if(file.getName().endsWith(".txt"))
 		{
-			BufferedReader read;
-			
+			//File is read
 			try {
-				read = new BufferedReader(new FileReader(file));
+				BufferedReader read = new BufferedReader(new FileReader(file));
 				
 				String s = null;
+				//lines of text are read until the document ends
 				do
 				{
 					s = read.readLine();
+					//If not at end of document, then add line of text
 					if(!s.equals("END"))
 						doc.add(s);
 				}while(!s.equals("END"));
 				
 				read.close();
-				
-			} catch (FileNotFoundException e) {NotifyAnimation.sendMessage("Error", "Instrument list could not be read.");
-			} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Instrument list could not be read.");}
+			} catch (FileNotFoundException e) {NotifyAnimation.sendMessage("Error", "Document could not be read.");
+			} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Document list could not be read.");
+			} catch (NullPointerException e) {NotifyAnimation.sendMessage("Error", "Document list could not be read.");}
 		}
 		else
 		{
-			image = true;
-			doc.add(file.getPath());
+			//If file is an image
+			if(file.getName().endsWith(".png"))
+			{
+				image = true;
+				doc.add(file.getPath());
+			}
+			//If file cannot be identified
+			else
+			{
+				doc.add("Error: File could not be read");
+			}
 		}
 	}
 
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void readFile(File file)}</pre></p> 
+	 * Identifies if a the file is a folder or not and decides how to read it.</p> 
+	 * @param file = file being read
+	 */
 	public void readFile(File file)
 	{
 		image = false;
@@ -117,21 +162,40 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		}
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public File readForPage(File folder, byte page) }</pre></p> 
+	 * A specified file inside a folder is retrieved.</p> 
+	 * @param folder = folder being read
+	 * @param page = the index of the file being retrieved
+	 * @return The file retrieved 
+	 */
 	public File readForPage(File folder, byte page) 
 	{
+		//Lists all files and the loops through them
 		for (File fileEntry : folder.listFiles()) 
 	    {
+			//If the page has reached 0 (the file is found)
 			if(page == 0)
 				return fileEntry;
 	        page--;
 	    }
+		//If file does not exist
 		return folder;
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void readFolder(File folder)}</pre></p> 
+	 * Adds files from a folder to the file array.</p> 
+	 * @param folder = folder being read
+	 */
 	public void readFolder(File folder) 
 	{
+		//If folder exists
 		if(folder.exists())
 		{
+			//Goes through every file in the folder
 		    for (File fileEntry : folder.listFiles()) 
 		    {
 		        files.add(fileEntry);
@@ -139,62 +203,85 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		}
 		else
 		{
-			NotifyAnimation.sendMessage("Error", "The tutorial folder cannot be located.");
+			NotifyAnimation.sendMessage("Error", "The tutorial folder could not be located.");
 		}
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void countFolder(File folder)}</pre></p> 
+	 * Counts the number of files in the folder.</p> 
+	 * @param folder = folder being read
+	 */
 	public void countFolder(File folder)
 	{
 		for (File fileEntry : folder.listFiles()) 
 	    {
+			//If file is not folder / directory
 			if (!fileEntry.isDirectory())
 	        	max++;
 	    }
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean isActive()}</pre></p> 
+	 * Determines if window is active.</p> 
+	 * @return Whether the window is active
+	 */
 	public boolean isActive()
 	{
-		try
-		{
-			tutorial.isVisible();
+		//Tests to see if the tutorial window exists
+		if(tutorial == null)
+			return false;
+		else
 			return true;
-		}
-		catch(Exception e){return false;}
 	}
 	
-	//paintComponent(Graphics g) responds to the .repaint() method when used
-	//Graphics g = component of the JPanel used to create visual elements
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void paintComponent(Graphics g)}</pre></p> 
+	 * Responds to the .repaint() method when used.</p> 
+	 * @param g = component of the JPanel used to create visual elements
+	 */
 	public void paintComponent(Graphics g) 
 	{
 		g.setColor(Color.WHITE);
 		g.fillRect(0, 50, 400, 150);
-		g.setColor(GUI.colours[GUI.getColourScheme()][3]);
+		g.setColor(GUI.colours[GUI.getColourScheme()][4]);
 		g.fillRect(0, 0, 400, 50);
 		
 		g.setFont(GUI.boldFont);
 		g.setColor(Color.BLACK);
 		g.drawString("SELECT AN ARCHIVE", 20, 15);
 		
-		int space = 50;
-		int width = 400;
+		int space = 50;		//Space is used to keep track how much of the screen is taken up
+		int width = 400;	//width refers to how wide the window needs to be
+		
+		//If file is an image
 		if(image)
 		{
 			try {
+				//Reads file as image
 				BufferedImage image = ImageIO.read(new File(doc.get(0)));
 				g.drawImage(image, 0, space, image.getWidth(), image.getHeight(), this);
 				space += image.getHeight();
 				width = image.getWidth();
 			} catch (IOException e) {}
 		}
+		//If file is a document
 		else
 		{
 			space += 15;
+			//If document is not empty
 			if(!doc.isEmpty())
 			{
 				g.setFont(GUI.defaultFont);
+				//Reads each line of the document
 				for(int i = 0; i < doc.size(); i++)
 				{
 					String s = doc.get(i);
+					//Checks for notation in order to draw an image
 					if(s.contains("<"))
 					{
 						space = decodeImageText(g, s.substring(s.indexOf('<') + 1, s.indexOf('>')), space);
@@ -205,18 +292,30 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 				}
 			}
 		}
+		//space and width determine the size of the screen
 		tutorial.setSize(width, space + 20);
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public int decodeImageText(Graphics g, String text, int space)}</pre></p> 
+	 * Decodes the notation for reading an image.</p> 
+	 * @param g = component of the JPanel used to create visual elements
+	 * @param text = notation taken from the original text (usually written as "<{indent}image>")
+	 * @param space = location to draw image
+	 * @return The new value of space after drawing the image
+	 */
 	public int decodeImageText(Graphics g, String text, int space)
 	{
-		short indent = 0;
+		short indent = 0; //The amount the image is placed from the left side of the window
 		try {
+			//If notation is identified
 			if(text.contains("{"))
 			{
 				indent = Short.parseShort(text.substring(text.indexOf('{') + 1, text.indexOf('}')));
 				text = text.replace(text.substring(text.indexOf('{'), text.indexOf('}') + 1), "");
 			}
+			//image is read and drawn
 			BufferedImage image = ImageIO.read(new File(text));
 			g.drawImage(image, indent, space, image.getWidth(), image.getHeight(), this);
 			space += image.getHeight();
@@ -224,34 +323,80 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		return space;
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void actionPerformed(ActionEvent e)}</pre></p> 
+	 * Responds to the combo box when the file is switched.</p> 
+	 * @param e = event information
+	 */
 	public void actionPerformed(ActionEvent e) {
+		//If event sources from the sections combo box
 		if(e.getSource().equals(sections))
 		{
 			readFile(files.get(sections.getSelectedIndex()));
+			//Only needs to repaint one time after reading a file
 			this.repaint();
 		}
 	}
 
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mouseClicked(MouseEvent e)}</pre></p> 
+	 * Responds to mouse clicks in the program window.</p> 
+	 * @param e = mouse event information
+	 */
 	public void mouseClicked(MouseEvent e) {
+		//If left clicked
 		if(e.getButton() == MouseEvent.BUTTON1)
 		{
+			//If file is paged (slideshow)
 			if(paged == true)
 			{
 				step++;
+				//If on last page
 				if(step >= max)
 					step = (byte)(max - 1);
 				
 				readDocument(readForPage(files.get(sections.getSelectedIndex()), step));
+				//Only needs to repaint one time after reading a file
 				this.repaint();
 			}
 		}
 	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mouseEntered(MouseEvent e)}</pre></p> 
+	 * Responds to the cursor entering the window.</p> 
+	 * @param e = information of the mouse event
+	 */
 	public void mouseEntered(MouseEvent e) {
 	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mouseExited(MouseEvent e)}</pre></p> 
+	 * Responds to the cursor exiting the window.</p> 
+	 * @param e = information of the mouse event
+	 */
 	public void mouseExited(MouseEvent e) {
 	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mousePressed(MouseEvent e)}</pre></p> 
+	 * Responds to any digital input on the mouse being held.</p> 
+	 * @param e = information of the mouse event
+	 */
 	public void mousePressed(MouseEvent e) {
 	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mouseReleased(MouseEvent e)}</pre></p> 
+	 * Responds to any inputs on the mouse being released.</p> 
+	 * @param e = information of the mouse event
+	 */
 	public void mouseReleased(MouseEvent e) {
 	}
 }
