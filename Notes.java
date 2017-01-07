@@ -3,14 +3,14 @@ import java.util.ArrayList;
 import javax.sound.midi.MidiEvent;
 
 /**
- * Date: October 26, 2016
- * 
+ * <b>[Date: October 26, 2016]</b>
+ * <p>
  * This class contains all of the data effecting the notes
  * inside the song. Notes are only loaded when entering the
  * note editor of a track. Only one track's notes are loaded
  * at a time.
+ * </p>
  */
-
 public class Notes extends SelectableObject
 {
 	public final static byte MAX_TONE = 120;		//The maximum note value
@@ -18,19 +18,21 @@ public class Notes extends SelectableObject
 	public final static byte DATA_TONE = 1;			//value assigned to the tone of the note
 	public final static byte DATA_VELOCITY = 2;		//value assigned to the volume of the note
 	
-	private static ArrayList<long[]> copiedNotes = new ArrayList<long[]>();//An array of notes that get copied
-
-	private static int numNotes = 0;				//Number of notes processed
-	private static byte track = 0;					//Track being accessed
-	
+	private static ArrayList<long[]> copiedNotes = new ArrayList<long[]>();	//An array of notes that get copied
+	private static int numNotes = 0;	//Number of notes processed
+	private static byte track = 0;		//Track being accessed
 	private MidiEvent start;			//start of note in sequence
 	private MidiEvent end;				//end of note in sequence
 	private byte tone = 60;				//tone of the note
 	private byte volume = 0;			//volume of the note
 	
-	//Constructor method
-	//MidiEvent s = start of note (event)
-	//MidiEvent e = end of note (event)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public Notes(MidiEvent s, MidiEvent e)}</pre></p> 
+	 * Constructor method.</p> 
+	 * @param s = start of note (event)
+	 * @param e = end of note (event)
+	 */
 	public Notes(MidiEvent s, MidiEvent e)
 	{
 		start = s;
@@ -40,9 +42,14 @@ public class Notes extends SelectableObject
 		numNotes++;
 	}
 	
-	//contains(long x, short y) checks whether the sent coordinates are inside the note's rectangle and returns true or false
-	//long x = x coordinate of mouse
-	//short y = y coordinate of mouse
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean contains(long x, short y)}</pre></p> 
+	 * Checks whether the sent coordinates are inside the note's rectangle and returns true or false.</p> 
+	 * @param x = x coordinate of mouse
+	 * @param y = y coordinate of mouse
+	 * @return Whether the coordinates are inside the note
+	 */
 	public boolean contains(long x, short y)
 	{
 		//If x coordinate is between the x values of the note
@@ -57,9 +64,223 @@ public class Notes extends SelectableObject
 		return false;
 	}
 	
-	//identifyContained(int x, int y) checks every existing note to determine which note is being clicked on, the object number of the note is returned
-	//int x = x coordinate of mouse
-	//int y = y coordinate of mouse
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setMidiEvent(MidiEvent s, MidiEvent e)}</pre></p> 
+	 * Sets the events the note is tied to.</p> 
+	 * @param s = start of note (event)
+	 * @param e = end of note (event)
+	 */
+	public void setMidiEvent(MidiEvent s, MidiEvent e)
+	{
+		start = s;
+		end = e;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setTone(byte t)}</pre></p> 
+	 * Sets the tone value of the note.</p> 
+	 * @param t = new tone
+	 */
+	public void setTone(byte t)
+	{
+		//If tone isn't inside limits
+		if(t < 0)
+			t = 0;
+		if(t > 120)
+			t = 120;
+		tone = t;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setVolume(byte v)}</pre></p> 
+	 * Sets the volume of the note.</p> 
+	 * @param v = new volume
+	 */
+	public void setVolume(byte v)
+	{
+		volume = v;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setEnd(long x)}</pre></p> 
+	 * Sets the end location of the note.</p> 
+	 * @param x = location of note's end
+	 */
+	public void setEnd(long x)
+	{
+		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
+			
+		if(x <= 0 || x <= getTick())
+			x = getTick() + 1;
+		
+		end.setTick(x);;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setLocation(long x, short y)}</pre></p> 
+	 * Sets the location of the note.</p> 
+	 * @param x = location of note
+	 * @param y = tone / y location of note
+	 */
+	public void setLocation(long x, short y)
+	{
+		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
+		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
+		if(x < 0)
+			x = 0;
+		if(x + (end.getTick() - start.getTick()) > MIDISong.getLength())
+			x = MIDISong.getLength() - end.getTick() + start.getTick();
+		end.setTick(x + (end.getTick() - start.getTick()));
+		start.setTick(x);
+		setTone((byte) y);
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setY(short y)}</pre></p> 
+	 * Sets the location of the note.</p> 
+	 * @param y = tone / y location of note
+	 */
+	public void setY(short y)
+	{
+		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
+		setTone((byte) y);
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public long getTick()}</pre></p> 
+	 * Returns the tick of the note.</p> 
+	 * @return The tick of the note
+	 */
+	public long getTick()
+	{
+		return start.getTick();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public MidiEvent getStartMessage()}</pre></p> 
+	 * Returns the event for the start of the note.</p> 
+	 * @return The <b>MidiEvent</b> for the NOTE_ON message
+	 */
+	public MidiEvent getStartMessage()
+	{
+		return start;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public MidiEvent getEndMessage()}</pre></p> 
+	 * Returns the event for the end of the note.</p> 
+	 * @return The <b>MidiEvent</b> for the NOTE_OFF message
+	 */
+	public MidiEvent getEndMessage()
+	{
+		return end;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public long getX()}</pre></p> 
+	 * Returns the x location of the note.</p> 
+	 * @return The x location of the note
+	 */
+	public long getX()
+	{
+		return start.getTick() * MIDIMain.getPreLength();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public long getY()}</pre></p> 
+	 * Returns the y location of the note.</p> 
+	 * @return The y location of the note
+	 */
+	public int getY()
+	{
+		return (MAX_TONE - tone) * MIDIMain.getPreHeight();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public long getEndTick()}</pre></p> 
+	 * Returns the location of the note's end.</p> 
+	 * @return The tick of the note's end
+	 */
+	public long getEndTick()
+	{
+		return end.getTick();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public byte getTone()}</pre></p> 
+	 * Returns the tone of the note.</p> 
+	 * @return The tone of the note
+	 */
+	public byte getTone()
+	{
+		return tone;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public byte getLength()}</pre></p> 
+	 * Returns the length of the note.</p> 
+	 * @return The length of the note in ticks
+	 */
+	public long getLength()
+	{
+		return (end.getTick() - start.getTick()) * MIDIMain.getPreLength();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public byte getVolume()}</pre></p> 
+	 * Returns the volume of the note.</p> 
+	 * @return The volume of the note
+	 */
+	public byte getVolume()
+	{
+		return volume;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void setTrack(byte trackNum)}</pre></p> 
+	 * Sets the track that notes come from.</p>
+	 * @param  trackNum = track in sequence
+	 */
+	public static void setTrack(byte trackNum)
+	{
+		track = trackNum;
+	}
+		
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void resetNotes()}</pre></p> 
+	 * Resets the number of notes.</p>
+	 */
+	public static void resetNotes()
+		{
+		numNotes = 0;
+		track = 0;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static int identifyContained(long x, short y)}</pre></p> 
+	 * Checks every existing note to determine which note is being clicked on, the object number of the note is returned.</p> 
+	 * @param x = x coordinate of mouse
+	 * @param y = y coordinate of mouse
+	 * @return The note that is found to be selected (-1 if none are found)
+	 */
 	public static int identifyContained(long x, short y)
 	{
 		//Notes are not sorted
@@ -78,10 +299,15 @@ public class Notes extends SelectableObject
 		return -1;
 	}
 	
-	//selectContained(Rectangle rect) searches all notes that are contained in the selection box and selects them
-	//Rectangle select = selection box that selects all notes inside of it
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void selectContained(Rectangle select)}</pre></p> 
+	 * Searches all notes that are contained in the selection box and selects them.</p> 
+	 * @param select = selection box that selects all notes inside of it
+	 */
 	public static void selectContained(Rectangle select)
 	{
+		//Checks every note
 		for(int i = 0; i < numNotes; i++)
 		{
 			//If notes are visible on screen
@@ -97,202 +323,95 @@ public class Notes extends SelectableObject
 		}
 	}
 	
-	//selectAllNotes() selects all notes in the track
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void selectAllNotes()}</pre></p> 
+	 * Selects all notes in the track.</p> 
+	 */
 	public static void selectAllNotes()
 	{
+		//Goes through every note
 		for(int i = 0; i < numNotes; i++)
 		{
 			MIDISong.getNotes(track, i).selection(true);
 		}
 	}
 	
-	//copyNotes() clears every note that has been copied (to avoid pasting between tracks)
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void diposeCopiedNotes()}</pre></p> 
+	 * Clears every note that has been copied (to avoid pasting between tracks).</p> 
+	 */
 	public static void diposeCopiedNotes()
 	{
 		copiedNotes.clear();
 	}
 	
-	//copyNotes() copies all of the notes selected
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void copyNotes()}</pre></p> 
+	 * Copies all selected notes in the track.</p> 
+	 */
 	public static void copyNotes()
 	{
 		diposeCopiedNotes();
 		
 		long start = 0;
 		
+		//Checks every note
 		for(int n = 0; n < numNotes; n++)
 		{
+			//Finds the note that is closest to the end (left side)
 			if((start == 0 || start > MIDISong.getNotes(track, n).getTick()) && MIDISong.getNotes(track, n).isSelected())
 			{
 				start = MIDISong.getNotes(track, n).getTick();
 			}
 		}
-		
+		//Goes through every note
 		for(int i = 0; i < numNotes; i++)
 		{
+			//If note is selected
 			if(MIDISong.getNotes(track, i).isSelected())
 			{
+				//Sets the tick location depending on the front note (which was identified before)
 				long[] noteInfo = {MIDISong.getNotes(track, i).getTick() - start, MIDISong.getNotes(track, i).getEndTick() - start, MIDISong.getNotes(track, i).getTone(), MIDISong.getNotes(track, i).getVolume()};
 				copiedNotes.add(noteInfo);
 			}
 		}
 	}
-	
-	//pasteNotes(long tick, byte tone) pastes selected note at a x and y coordinate
-	//long tick = location in the song
-	//byte tone = the pitch/tone of the notes (relative to there original position
-	public static void pasteNotes(long tick, byte tone)
+
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void pasteNotes(long tick, byte tone)}</pre></p> 
+	 * Pastes selected note at a x coordinate (tick).</p> 
+	 * @param tick = location in the song
+	 */
+	public static void pasteNotes(long tick)
 	{
 		for(int i = 0; i < copiedNotes.size(); i++)
 		{
-			MIDISong.addNote(track, MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + copiedNotes.get(i)[0], (byte)copiedNotes.get(i)[2], (byte)copiedNotes.get(i)[3], MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + copiedNotes.get(i)[1]);
+			MIDISong.addNote(track, (byte)copiedNotes.get(i)[2], (byte)copiedNotes.get(i)[3], MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + copiedNotes.get(i)[0], MIDIMain.getXCoordinate()/MIDIMain.getPreLength() + copiedNotes.get(i)[1]);
 		}
 	}
 	
-	//removeNote() decrements the number of notes to acount for a removed note
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void removeNote()}</pre></p> 
+	 * Decrements the number of notes for when a note is removed.</p> 
+	 */
 	public static void removeNote()
 	{
 		numNotes--;
 	}
 	
-	//setMidiEvent(MidiEvent s, MidiEvent e) sets the event the note is tied to
-	//MidiEvent s = start of note (event)
-	//MidiEvent e = end of note (event)
-	public void setMidiEvent(MidiEvent s, MidiEvent e)
-	{
-		start = s;
-		end = e;
-	}
-	
-	//setTone(byte t) sets the tone value of the note
-	//byte t = new tone
-	public void setTone(byte t)
-	{
-		if(t < 0)
-			t = 0;
-		if(t > 120)
-			t = 120;
-		tone = t;
-	}
-	
-	//setVolume(byte v) sets the volume of the note
-	//byte v = new volume
-	public void setVolume(byte v)
-	{
-		volume = v;
-	}
-	
-	//setEnd(long x) sets the end location of the note
-	//long x = location of note's end
-	public void setEnd(long x)
-	{
-		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
-			
-		if(x <= 0 || x <= getTick())
-			x = getTick() + 1;
-		
-		end.setTick(x);;
-	}
-	
-	//setLocation(long x, short y) sets the location of the note
-	//long x = x location of note
-	//short y = tone / y location of note
-	public void setLocation(long x, short y)
-	{
-		x = (x - x%MIDIMain.getPreLength()) / MIDIMain.getPreLength();
-		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
-		if(x < 0)
-			x = 0;
-		if(x + (end.getTick() - start.getTick()) > MIDISong.getLength())
-			x = MIDISong.getLength() - end.getTick() + start.getTick();
-		end.setTick(x + (end.getTick() - start.getTick()));
-		start.setTick(x);
-		setTone((byte) y);
-	}
-	
-	//setLocation(short y) sets the location of the note
-	//short y = tone / y location of note
-	public void setY(short y)
-	{
-		y = (short) (MAX_TONE - ((y - y%MIDIMain.getPreHeight()) / MIDIMain.getPreHeight()));
-		setTone((byte) y);
-	}
-	
-	//setTrack(byte trackNum) sets the track that notes come from
-	//byte trackNum = track in sequence
-	public static void setTrack(byte trackNum)
-	{
-		track = trackNum;
-	}
-	
-	//getTick() returns the tick of the note
-	public long getTick()
-	{
-		return start.getTick();
-	}
-	
-	public MidiEvent getStartMessage()
-	{
-		return start;
-	}
-	
-	public MidiEvent getEndMessage()
-	{
-		return end;
-	}
-	
-	//getX() returns the x location of the note
-	public long getX()
-	{
-		return start.getTick() * MIDIMain.getPreLength();
-	}
-	
-	//getY() returns the y location of the note
-	public int getY()
-	{
-		//return (MAX_TONE - MIDISong.getSequence().getTracks()[MIDIMain.getTrackMenu()].get(begin).getMessage().getMessage()[2]) * MIDIMain.getPreHeight();
-		return (MAX_TONE - tone) * MIDIMain.getPreHeight();
-	}
-	
-	//getX() returns the x location of the note's end
-	public long getEndTick()
-	{
-		return end.getTick();
-	}
-	
-	//getTone() retuns the tone of the note
-	public byte getTone()
-	{
-		return tone;
-	}
-	
-	//getLength() returns the exact length of the note
-	public long getLength()
-	{
-		return (end.getTick() - start.getTick()) * MIDIMain.getPreLength();
-	}
-	
-	//getVolume() returns the volume of the note
-	public byte getVolume()
-	{
-		return volume;
-	}
-	
-	//getNumNotes() returns the number of notes counted
-	public static int getNumNotes()
-	{
-		return numNotes;
-	}
-	
-	//resetNotes() resets the value of numNotes, which resets the number of notes
-	public static void resetNotes()
-	{
-		numNotes = 0;
-		track = 0;
-	}
-	
-	//convertToNote(byte c, boolean sharp) returns the note letter assigned to a note value
-	//byte c = tone value
-	//boolean sharp = whether the tone is displayed as flat of sharp
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static String convertToNote(byte c, boolean sharp)}</pre></p> 
+	 * Converts a tone value to a letter tone.</p> 
+	 * @param c = tone value
+	 * @param sharp = whether the tone is displayed as flat of sharp
+	 * @return The note letter assigned to a note value
+	 */
 	public static String convertToNote(byte c, boolean sharp)
 	{
 		byte octave = (byte) ((c-(c%12))/12);
@@ -373,11 +492,28 @@ public class Notes extends SelectableObject
 		}
 	}
 	
-	//isMessageStatus(byte status, byte comparison) returns true or false whether the status of the message is a variant of its type
-	//byte mesStatus = status message being observed
-	//byte statusType = status message being compared to
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static int getNumNotes()}</pre></p> 
+	 * Returns the number of notes counted.</p> 
+	 * @return The number of notes counted
+	 */
+	public static int getNumNotes()
+	{
+		return numNotes;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static byte getMessageChannel(byte mesStatus, byte statusType)}</pre></p> 
+	 * Determines the channel of a message from a message type.</p> 
+	 * @param mesStatus = status message being observed
+	 * @param statusType = status message being compared to
+	 * @return The channel of a message
+	 */
 	public static byte getMessageChannel(byte mesStatus, byte statusType)
 	{
+		//Checks if message will work with message type
 		if(isMessageStatus(mesStatus, statusType))
 		{
 			return (byte) (mesStatus - statusType);
@@ -385,9 +521,14 @@ public class Notes extends SelectableObject
 		return -1;
 	}
 
-	//isMessageStatus(byte status, byte comparison) returns true or false whether the status of the message is a variant of its type
-	//byte mesStatus = status message being observed
-	//byte statusType = status message being compared to
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static boolean isMessageStatus(byte mesStatus, byte statusType)}</pre></p> 
+	 * Returns true or false whether the status of the message is a variant of its type.</p> 
+	 * @param mesStatus = status message being observed
+	 * @param statusType = status message being compared to
+	 * @return Whether the message is a variant of a message type
+	 */
 	public static boolean isMessageStatus(byte mesStatus, byte statusType)
 	{
 		//If message is 1 of 16 variants
@@ -397,10 +538,16 @@ public class Notes extends SelectableObject
 			return false;
 	}
 	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static boolean isMessageChannel(byte mesStatus, byte statusType)}</pre></p> 
+	 * Returns true or false whether the status of the message is the channel's variant type.</p> 
+	 * @param mesStatus = status message being observed
+	 * @param statusType = status message being compared to
+	 * @param channel = channel that is being compared
+	 * @return Whether the message is set to the channel (-1 if message isn't a variant of its message type
+	 */
 	//isMessageChannel(byte status, byte comparison, byte channel) returns true or false whether the status of the message is the channel's variant type
-	//byte mesStatus = status message being observed
-	//byte statusType = status message being compared to
-	//byte channel = channel that is being used 
 	public static boolean isMessageChannel(byte mesStatus, byte statusType, byte channel)
 	{
 		//If message is 1 of 16 variants
