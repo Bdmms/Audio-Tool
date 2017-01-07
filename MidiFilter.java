@@ -1,22 +1,27 @@
 import java.io.File;
 import javax.swing.filechooser.*;
 
+/**
+ * <b>[Date: October 31, 2016]</b>
+ * <p>
+ * This class checks files and filters only the ones
+ * with the correct extension
+ * </p>
+ */
 public class MIDIFilter extends FileFilter
 {
-	/**
-	 * Date: October 31, 2016
-	 * 
-	 * This class checks files and filters only the ones
-	 * with the correct extension
-	 */
-	
-	public final static String[] mid = {"mid","midi"};  	//Extensions of midi files
-    	public final static String soundbank = "sf2";	 	//Extension of soundbank files
+	public final static String[] mid = {"mid","midi"};  //Extensions of midi files
+    public final static String soundbank = "sf2";	 	//Extension of soundbank files
 	
 	private boolean midiFile = true;	//Determines if .mid or .sf2 extensions should be filtered
 	
-	//accept(File f) determines whether file is accepted
-	//File f = file being checked
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean accept(File f)}</pre></p> 
+	 * Determines whether file is accepted.</p> 
+	 * @param f = file being checked
+	 * @return Whether the file is accepted
+	 */
 	public boolean accept(File f) {
 		//If file is a directory
 		if (f.isDirectory())
@@ -42,8 +47,13 @@ public class MIDIFilter extends FileFilter
 		return false;
 	}
 
-	//getDescription(File f) describes the extension of the file name
-	//File f = file being checked
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public String getDescription(File f)}</pre></p> 
+	 * Describes the extension of the file name.</p> 
+	 * @param f = file being checked
+	 * @return the name of the extension
+	 */
 	public String getDescription(File f) 
 	{
 		String extension = getExtension(f);
@@ -63,8 +73,13 @@ public class MIDIFilter extends FileFilter
 	    return type;
 	}
 	
-	//String getExtension(File f) returns the extension of a file name
-	//File f = file being checked
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static String getExtension(File f)}</pre></p> 
+	 * Returns the extension of the file.</p> 
+	 * @param f = file being checked
+	 * @return the extension name
+	 */
 	public static String getExtension(File f)
 	{
         String ext = null;
@@ -78,14 +93,23 @@ public class MIDIFilter extends FileFilter
         return ext;
     }
 	
-	//setFilterMIDI(boolean midiExtend)
-	//boolean midiExtend = the mode of filtering for the filter
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setFilterMIDI(boolean midiExtend)}</pre></p> 
+	 * Sets the filter mode of the filter.</p> 
+	 * @param midiExtend = the mode of filtering for the filter
+	 */
 	public void setFilterMIDI(boolean midiExtend)
 	{
 		midiFile = midiExtend;
 	}
 
-	//getDescription() is a required method, it returns null always
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public String getDescription()}</pre></p> 
+	 * Is a required method. Unused by the program.</p> 
+	 * @return Always null
+	 */
 	public String getDescription() 
 	{
 		return null;
