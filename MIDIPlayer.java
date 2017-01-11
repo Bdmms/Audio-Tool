@@ -1,8 +1,3 @@
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import javax.sound.midi.*;
 
 /**
@@ -15,13 +10,10 @@ import javax.sound.midi.*;
  */
 public class MIDIPlayer implements MetaEventListener
 {
-	public static final int END_OF_TRACK_MESSAGE = 0x2F;	//the status message for the END_OF_TRACK_MESSAGE
-	
-	private Synthesizer synth;								//The synthesizer of the player
 	private static Sequencer sequencer;						//The sequencer of the player
 	private static MidiChannel chan[];						//The channels the program has access too
+	private Synthesizer synth;								//The synthesizer of the player
 	private boolean loop;									//Determines whether a played song should loop
-	private static boolean play = false;					//Determines if song is being pause
 	private boolean noteOn = false;							//if a note is playing in the synthesizer
 	private byte[] noteData = {0,0};						//The volume and tone of the note playing
 	
@@ -50,25 +42,21 @@ public class MIDIPlayer implements MetaEventListener
 	 * Plays the current song / sequence.</p>
 	 * @param loop = whether the song should loop
 	 */
-	public void play(boolean loop)
+	public void play(boolean looped)
 	{
 		//If all variables are in place
 		if(sequencer != null && MIDISong.getSequence() != null && sequencer.isOpen())
 		{
 			try{
 				//If the song is playing, it turns off
-				if(play)
-				{
+				if(isPlaying())
 					sequencer.stop();
-					play = false;
-				}
 				//Else it plays the song
 				else
 				{
 					sequencer.setSequence(MIDISong.getSequence());
 					sequencer.start();
-					this.loop = loop;
-					play = true;
+					loop = looped;
 				}
 			}catch (Exception ex){NotifyAnimation.sendMessage("Error", "Sequence could not be played.");}
 		}
@@ -82,7 +70,6 @@ public class MIDIPlayer implements MetaEventListener
 	public void stop()
 	{
 		sequencer.stop();
-		play = false;
 	}
 	
 	/**
@@ -189,13 +176,32 @@ public class MIDIPlayer implements MetaEventListener
 		}
 	}
 	
+
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void meta(MetaMessage meta)}</pre></p> 
+	 * Responds to any MetaMessage produced from the midi being played.</p>
+	 * @param meta = event message data
+	 */
+	public void meta(MetaMessage meta) 
+	{
+		//If event is the END_OF_TRACK message
+		if(meta.getType() == 0x2F){
+			//If song is suppose to loop
+			if(loop){
+				sequencer.setTickPosition(sequencer.getLoopStartPoint());;
+				sequencer.start();
+			}
+		}
+	}
+	
 	/**
 	 * <blockquote>
 	 * <p><pre>{@code public void setTickPosition(long t)}</pre></p> 
 	 * Sets the tick position of the song being played.</p>
 	 * @param t = new tick position
 	 */
-	public void setTickPosition(long t)
+	public static void setTickPosition(long t)
 	{
 		sequencer.setTickPosition(t);
 	}
@@ -210,32 +216,6 @@ public class MIDIPlayer implements MetaEventListener
 	public static void setVolume(byte channel, byte volume)
 	{
 		chan[channel].controlChange(7, volume);
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public Sequence getSequence(File file)}</pre></p> 
-	 * Reads the sequence from file.</p>
-	 * @param file = file that contains sequence
-	 * @return The sequence from file
-	 */
-	public Sequence getSequence(File file)
-	{
-		try
-		{
-			//File is converted to read data
-			InputStream is = new FileInputStream(file);
-			//is file supported
-			if(!is.markSupported()){
-				is = new BufferedInputStream(is);
-			}
-			//Sequence is read
-			Sequence s = MidiSystem.getSequence(is);
-			is.close();
-			return s;
-		}catch (IOException ex){NotifyAnimation.sendMessage("Error", "Sequence could not be read.");
-		}catch (InvalidMidiDataException ex){NotifyAnimation.sendMessage("Error", "Sequence could not be read.");}
-		return null;
 	}
 	
 	/**
@@ -257,24 +237,6 @@ public class MIDIPlayer implements MetaEventListener
 	 */
 	public static boolean isPlaying()
 	{
-		return play;
-	}
-
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void meta(MetaMessage meta)}</pre></p> 
-	 * Responds to any MetaMessage produced from the midi being played.</p>
-	 * @param meta = event message data
-	 */
-	public void meta(MetaMessage meta) 
-	{
-		//If event is the END_OF_TRACK message
-		if(meta.getType() == END_OF_TRACK_MESSAGE){
-			//If song is suppose to loop
-			if(loop){
-				sequencer.setTickPosition(sequencer.getLoopStartPoint());;
-				sequencer.start();
-			}
-		}
+		return sequencer.isRunning();
 	}
 }	
