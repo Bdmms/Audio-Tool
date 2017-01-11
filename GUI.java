@@ -23,7 +23,7 @@ public class GUI extends JPanel
 	public final static byte toolBarHeight = 40;							//Height of toolBar
 	public final static byte topBarHeight = 20;								//Height of top label
 	public final static byte fullAddHeight = toolBarHeight + topBarHeight ; //Combined height
-	public final static short sideBarWidth = 100;							//Side label width
+	public final static byte sideBarWidth = 100;							//Side label width
 	public final static byte windowBarHeight = 54;							//Height of window label bar (may change depending on OS)
 	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
 	public static short screenHeight = 480;									//Screen height
@@ -38,12 +38,12 @@ public class GUI extends JPanel
 	public final static Font romanBaseline = new Font("Roman Baseline", Font.ROMAN_BASELINE, 10);					//Roman Baseline font
 	
 	//0 = darkest -> 5 = lightest, 6 = background, 7 = text
-	public final static Color[] Set1 = {new Color(0xCCC2B8), new Color(0x847C99), new Color(0xBDBBCC), new Color(0xFFFFFF), new Color(0xFFE7BF), Color.WHITE, Color.BLACK};				//Default
-	public final static Color[] Set2 = {new Color(0x848CFF), new Color(0xE87EA3), new Color(0xB3E878), new Color(0xFFE591), new Color(0x86FCFF), Color.WHITE, Color.BLACK};				//Analogous
-	public final static Color[] Set3 = {Color.GRAY, new Color(160,160,160), Color.LIGHT_GRAY, new Color(230,230,230), new Color(240,240,240), Color.WHITE, Color.BLACK};				//Monochromatic
-	public final static Color[] Set4 = {new Color(0xB24148), new Color(0x30B250), new Color(0xFF777F), new Color(0xFF9097), new Color(0x77FF99), new Color(255,200,200), Color.BLACK};	//Holiday
-	public final static Color[] Set5 = {new Color(0xCC784B), new Color(0x58B241), new Color(0xB29E93), new Color(0x9390FF), new Color(0x92FF77), Color.WHITE, Color.BLACK};				//Triad
-	public final static Color[][] colours = {Set1, Set2, Set3, Set4, Set5};											//The colour schemes organized into one array
+	public final static Color[] set1 = {new Color(0xCCC2B8), new Color(0x847C99), new Color(0xBDBBCC), new Color(0xFFFFFF), new Color(0xFFE7BF), Color.WHITE, Color.BLACK};				//Default
+	public final static Color[] set2 = {new Color(0x848CFF), new Color(0xE87EA3), new Color(0xB3E878), new Color(0xFFE591), new Color(0x86FCFF), Color.WHITE, Color.BLACK};				//Analogous
+	public final static Color[] set3 = {Color.GRAY, new Color(160,160,160), Color.LIGHT_GRAY, new Color(230,230,230), new Color(240,240,240), Color.WHITE, Color.BLACK};				//Monochromatic
+	public final static Color[] set4 = {new Color(0xB24148), new Color(0x30B250), new Color(0xFF777F), new Color(0xFF9097), new Color(0x77FF99), new Color(255,200,200), Color.BLACK};	//Holiday
+	public final static Color[] set5 = {new Color(0xCC784B), new Color(0x58B241), new Color(0xB29E93), new Color(0x9390FF), new Color(0x92FF77), Color.WHITE, Color.BLACK};				//Triad
+	public final static Color[][] colours = {set1, set2, set3, set4, set5};											//The colour schemes organized into one array
 	
 	private static byte colour = 0;							//The currently selected colour scheme
 	private ToolBar toolBar = new ToolBar();				//The tool bar that holds the buttons for use in the editors
@@ -72,6 +72,30 @@ public class GUI extends JPanel
 		add(info);
 		
 		resizeComponents();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void resizeComponents()}</pre></p> 
+	 * Manually changes the size of components that do not automatically resize.</p> 
+	 */
+	public void resizeComponents()
+	{
+		//Scroll bar
+		//Scroll bar scales differently depending on size
+		if(GUI.screenHeight >= 480)
+			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3);
+		else
+			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3 + (screenHeight - 480)/2);
+		
+		setScrollBarValue();
+		
+		//Info bar
+		info.setBounds(15, screenHeight - 140, (screenWidth / 2) -15, 120);
+		//Tool bar
+		toolBar.setSize(screenWidth, toolBarHeight + 1);
+		toolBar.getTools(ToolBar.toolLength - 1).setLocation(screenWidth - 35,5);
+		toolBar.getComboBox().setSize(GUI.screenWidth/2 - 120, 20);;
 	}
 	
 	/**
@@ -111,74 +135,6 @@ public class GUI extends JPanel
 		g2D.setColor(Color.WHITE);
 		g2D.fillOval(CursorListener.getLocation()[0] - 2 - mouseDisplacement, CursorListener.getLocation()[1] - fullAddHeight - 2 + 5, 4, 4);
 		*/
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public ToolBar getToolBar()}</pre></p> 
-	 * Returns the <b>toolBar</b>.</p> 
-	 * @return The <b>toolBar</b> object
-	 */
-	public ToolBar getToolBar()
-	{
-		return toolBar;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public JScrollBar getScrollBar()}</pre></p> 
-	 * Returns the scrollBar.</p> 
-	 * @return The <b>JScrollBar</b> object
-	 */
-	public JScrollBar getScrollBar()
-	{
-		return scroll;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public InfoBar getInfoBar()}</pre></p> 
-	 * Returns the <b>InfoBar</b>.</p> 
-	 * @return The <b>InfoBar</b> object
-	 */
-	public InfoBar getInfoBar()
-	{
-		return info;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public static byte getColourScheme()}</pre></p> 
-	 * Returns the colour mode that is being used.</p> 
-	 * @return The colour mode that is being used
-	 */
-	public static byte getColourScheme()
-	{
-		return colour;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void resizeComponents()}</pre></p> 
-	 * Manually changes the size of components that do not automatically resize.</p> 
-	 */
-	public void resizeComponents()
-	{
-		//Scroll bar
-		//Scroll bar scales differently depending on size
-		if(GUI.screenHeight >= 480)
-			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3);
-		else
-			scroll.setBounds(screenWidth - 40, 50, 20, screenHeight*2/3 + (screenHeight - 480)/2);
-		
-		setScrollBarValue();
-		
-		//Info bar
-		info.setBounds(15, screenHeight - 140, (screenWidth / 2) -15, 120);
-		//Tool bar
-		toolBar.setSize(screenWidth, toolBarHeight + 1);
-		toolBar.getTools(ToolBar.toolLength - 1).setLocation(screenWidth - 35,5);
-		toolBar.getComboBox().setSize(GUI.screenWidth/2 - 120, 20);;
 	}
 	
 	/**
@@ -237,6 +193,39 @@ public class GUI extends JPanel
 		colour = c;
 		toolBar.setColourScheme(c);
 		toolBar.resetButtonColours();
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public ToolBar getToolBar()}</pre></p> 
+	 * Returns the <b>toolBar</b>.</p> 
+	 * @return The <b>toolBar</b> object
+	 */
+	public ToolBar getToolBar()
+	{
+		return toolBar;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public JScrollBar getScrollBar()}</pre></p> 
+	 * Returns the scrollBar.</p> 
+	 * @return The <b>JScrollBar</b> object
+	 */
+	public JScrollBar getScrollBar()
+	{
+		return scroll;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public InfoBar getInfoBar()}</pre></p> 
+	 * Returns the <b>InfoBar</b>.</p> 
+	 * @return The <b>InfoBar</b> object
+	 */
+	public InfoBar getInfoBar()
+	{
+		return info;
 	}
 	
 	/**
@@ -303,7 +292,7 @@ public class GUI extends JPanel
 		g.drawRect(0, toolBarHeight, sideBarWidth, topBarHeight);
 		//Text
 		g.setFont(smallFont);
-		g.drawString(MIDIReader.getFileName(14), 5, toolBarHeight + 15);
+		g.drawString(MIDIMain.getReadFileName(14), 5, toolBarHeight + 15);
 		g.setStroke(basic);
 	}
 	
@@ -486,6 +475,17 @@ public class GUI extends JPanel
 				g.setStroke(basic);
 			}
 		}
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static byte getColourScheme()}</pre></p> 
+	 * Returns the colour mode that is being used.</p> 
+	 * @return The colour mode that is being used
+	 */
+	public static byte getColourScheme()
+	{
+		return colour;
 	}
 	
 	/**
