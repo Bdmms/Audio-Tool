@@ -66,7 +66,7 @@ public class InfoBar extends JPanel{
 	public void setTextFields()
 	{		
 		field[0].setText("Song Name:");
-		field[1].setText(MIDIReader.getFileName(0));
+		field[1].setText(MIDIMain.getReadFileName(0));
 		field[2].setText("Created by:");
 		field[3].setText("Artist");
 		field[4].setText("Length:");
@@ -109,5 +109,13 @@ public class InfoBar extends JPanel{
 		g.setColor(new Color(0, 0, 0, opacity));
 		g.setStroke(GUI.bold);
 		g.drawRect(0, 0, (GUI.screenWidth / 2) -20, 120);
+	}
+	
+	public boolean isInAnimation()
+	{
+		if(opacity == 0 || opacity == 255)
+			return false;
+		else
+			return true;
 	}
 }
