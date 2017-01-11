@@ -11,7 +11,8 @@ import javax.sound.midi.ShortMessage;
  * <b>[Date: November 1, 2016]</b>
  * <p>
  * This class stores all data in the song, including the sequence, 
- * length, and the tempo.
+ * length, and the tempo. Everything in this class is static, which
+ * allows the data to be accessed from any other class.
  * </p>
  */
 public class MIDISong 
@@ -132,7 +133,7 @@ public class MIDISong
 	private static void searchTrack(byte t)
 	{
 		//Search every event in the track
-		for(int m = 0; m < MIDISong.getSequence().getTracks()[t].size(); m++)
+		for(int m = MIDISong.getSequence().getTracks()[t].size() - 1; m >= 0; m--)
 		{
 			try
 			{
@@ -145,7 +146,7 @@ public class MIDISong
 				//If message is program change (instrument change)
 				if(Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PROGRAM_CHANGE))
 				{
-					tracks.get(Notes.getMessageChannel((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PROGRAM_CHANGE)).setInstrument((byte)MIDISong.getMessage(t, m).getMessage()[1]);
+					tracks.get(Notes.getMessageChannel((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PROGRAM_CHANGE)).addInstrument(MIDISong.getEvent(t, m));
 					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getSequence().getTracks()[t].get(m));
 					m--;
 				}
@@ -169,6 +170,24 @@ public class MIDISong
 						}
 					}
 					tempoChange.add(sequence.getTracks()[t].get(m));
+				}
+				//If event has a negative tick value
+				if(MIDISong.getEvent(t, m).getTick() < 0)
+				{
+					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
+				}
+				//If the event's message is a channel dependent message
+				if(MIDISong.getMessage(t, m).getStatus() >= 0x80 && MIDISong.getMessage(t, m).getStatus() < 0xF0)
+				{
+					//chan = channel that the message changes
+					byte chan = Notes.getMessageChannel((byte)MIDISong.getMessage(t, m).getStatus(), (byte)(MIDISong.getMessage(t, m).getStatus() - MIDISong.getMessage(t, m).getStatus()%16));
+					//If the channel of the track is not the same as the message's channel
+					if(chan != t)
+					{
+						//message is moved to its corresponding track
+						MIDISong.getSequence().getTracks()[chan].add(MIDISong.getEvent(t, m));
+						MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
+					}
 				}
 			}
 			catch(IndexOutOfBoundsException e){
@@ -202,7 +221,6 @@ public class MIDISong
 		for(byte t = 0; t < sequence.getTracks().length; t++)
 		{
 			searchTrack(t);
-			tracks.get(t).cleanTrack();
 			//tracks greater than 16 should be empty after search
 			if(t >= MAX_CHANNELS)
 			{
@@ -367,19 +385,15 @@ public class MIDISong
 	 */
 	public static void mergeTrack(byte trackNum, byte target)
 	{
-		//If the the target and track are not the same
-		if(trackNum != target)
+		//Add every message from one track to another
+		for(int m = 0; m < sequence.getTracks()[trackNum].size(); m++)
 		{
-			//Add every message from one track to another
-			for(int m = 0; m < sequence.getTracks()[trackNum].size(); m++)
-			{
-				sequence.getTracks()[target].add(getEvent(trackNum, m));
-			}
-			tracks.get(target).updateNoteCount();
-			//Remove track
-			deleteTrack(trackNum);
-			NotifyAnimation.sendMessage("Notification", "Merging was successful.");
+			sequence.getTracks()[target].add(getEvent(trackNum, m));
 		}
+		tracks.get(target).updateNoteCount();
+		//Remove track
+		deleteTrack(trackNum);
+		NotifyAnimation.sendMessage("Notification", "Merging was successful.");
 	}
 	
 	/**
