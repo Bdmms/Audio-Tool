@@ -16,12 +16,12 @@ import javax.swing.JPanel;
 public class ToolBar extends JPanel
 {
 	private static final long serialVersionUID = 2L;
-	private static final String[] colourSetNames = {"Default","Analogous","Monochromatic","Christmas","Triad"};
+	private static final String[] colourSetNames = {"Default","Analogous","Monochromatic","Holiday","Triad"};	//The names for the colours
+	public static int toolLength = 11;												//The maximum amount of buttons in the tool bar
 	private JComboBox<String> colourSwap = new JComboBox<String>(colourSetNames);	//A combo box that allows the colour scheme to be changed
 	private JButton[] tools = new JButton[11];										//Tool bar buttons
 	private VolumeSlider slider = new VolumeSlider((short)0, (short)0, false);		//The volume slider for notes
-	private short y = -42;															//Y location of the tool bar extension 
-	public static int toolLength = 11;												//The maximum amount of buttons in the tool bar
+	private short y = -42;															//Y location of the tool bar extension					
 	
 	/**
 	 * <blockquote>
