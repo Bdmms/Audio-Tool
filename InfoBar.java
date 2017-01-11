@@ -9,7 +9,7 @@ import javax.swing.JPanel;
 public class InfoBar extends JPanel{
 
 	/**
-	 * Date: Novemeber 21, 2016
+	 * Date: November 21, 2016
 	 * 
 	 * This class is responsible for displaying the information of the song in the track menu
 	 * This information includes the song's tempo, length and time signature
@@ -33,10 +33,18 @@ public class InfoBar extends JPanel{
 			for(int j = 0; j < field.length/4; j++)
 			{
 				field[i*2+j] = new JLabel();
-				field[i*2+j].setBounds((GUI.screenWidth/4 -10) * j + 10, i*30, GUI.screenWidth/4 -20, 30);
+				field[i*2+j].setBounds((GUI.screenWidth/6 -10) * j + 10, i*30, GUI.screenWidth/2 -145, 30);
 				field[i*2+j].setBackground(Color.WHITE);
 				add(field[i*2+j]);
 			}
+		}
+	}
+	
+	public void resizeInfobar()
+	{
+		for(int i = 0; i<field.length; i++)
+		{
+			field[i].setSize(GUI.screenWidth/2 -145, 30);
 		}
 	}
 	
@@ -95,9 +103,10 @@ public class InfoBar extends JPanel{
 		else if(visible == true)
 			opacity = 255;
 		
-		g.setColor(new Color(GUI.colours[GUI.getColourScheme()][1].getRed(), GUI.colours[GUI.getColourScheme()][1].getGreen(), GUI.colours[GUI.getColourScheme()][1].getBlue(), opacity));
+		g.setColor(Color.LIGHT_GRAY);
+		g.setColor(new Color(Color.LIGHT_GRAY.getRed(), Color.LIGHT_GRAY.getGreen(), Color.LIGHT_GRAY.getBlue(), opacity));
 		g.fillRect(0, 0, (GUI.screenWidth / 2) -20, 120);
-		g.setColor(new Color(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT].getRed(), GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT].getGreen(), GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT].getBlue(), opacity));
+		g.setColor(new Color(0, 0, 0, opacity));
 		g.setStroke(GUI.bold);
 		g.drawRect(0, 0, (GUI.screenWidth / 2) -20, 120);
 	}
