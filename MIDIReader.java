@@ -10,8 +10,9 @@ import javax.sound.midi.*;
  */
 public class MIDIReader {
 
-	private static File midiFile = null;	//The file that contains the sequence
-	private boolean named = false;			//Whether the file has been named
+	private File midiFile = null;	//The file that contains the sequence
+	private boolean named = false;	//Whether the file has been named
+	private byte extUsed = 0; 		//The current extension of the file
 	
 	/**
 	 * <blockquote>
@@ -24,8 +25,13 @@ public class MIDIReader {
 	
 		named = true;
 		
+		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[1]))
+			extUsed = 1;
+		else
+			extUsed = 0;
+		
 		//If file contains a correct extension
-		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[0]) || MIDIFilter.getExtension(file).equals(MIDIFilter.mid[1]))
+		if(MIDIFilter.getExtension(file).equals(MIDIFilter.mid[extUsed]))
 		{
 			midiFile = file;
 				
@@ -46,20 +52,6 @@ public class MIDIReader {
 			catch (Exception ex){NotifyAnimation.sendMessage("Error", "File could not be read.");;}
 		}
 		return null;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public static void setFileName(String s)}</pre></p> 
-	 * Sets the name of the file.</p> 
-	 * @param s = new name of file
-	 */
-	public static void setFileName(String s)
-	{
-		//If s lacks the correct extension
-		if(!s.endsWith(MIDIFilter.mid[0]) && !s.endsWith(MIDIFilter.mid[1]))
-			s += ".mid";
-		midiFile = new File(midiFile.getPath().substring(0, midiFile.getPath().lastIndexOf('/') + 1) + s);
 	}
 	
 	/**
@@ -107,13 +99,13 @@ public class MIDIReader {
 	public void saveFile(Sequence s, File file)
 	{
 		//If file does not have the correct extension name
-		if(!file.getName().endsWith("."+MIDIFilter.mid[0]) && !file.getName().endsWith("."+MIDIFilter.mid[1]))
+		if(!file.getName().endsWith("."+MIDIFilter.mid[extUsed]))
 		{
 			//If file has a period (suggests it has an extension)
 			if(file.getName().contains("."))
-				file = new File(file.getPath().substring(0, file.getPath().lastIndexOf('.')) + "." + MIDIFilter.mid[0]);
+				file = new File(file.getPath().substring(0, file.getPath().lastIndexOf('.')) + "." + MIDIFilter.mid[extUsed]);
 			else
-				file = new File(file.getPath() + "." + MIDIFilter.mid[0]);
+				file = new File(file.getPath() + "." + MIDIFilter.mid[extUsed]);
 		}
 		midiFile = file;
 		try
@@ -149,6 +141,20 @@ public class MIDIReader {
 			//Won't ever be seen though (program closes immediately afterwards)
 			NotifyAnimation.sendMessage("Error", "Configuration failed to save properly");
 		}
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void setFileName(String s)}</pre></p> 
+	 * Sets the name of the file.</p> 
+	 * @param s = new name of file
+	 */
+	public void setFileName(String s)
+	{
+		//If s lacks the correct extension
+		if(!s.endsWith(MIDIFilter.mid[extUsed]))
+			s += ".mid";
+		midiFile = new File(midiFile.getPath().substring(0, midiFile.getPath().lastIndexOf('/') + 1) + s);
 	}
 	
 	/**
@@ -202,6 +208,45 @@ public class MIDIReader {
 	
 	/**
 	 * <blockquote>
+	 * <p><pre>{@code public static String getFileName(int limit)}</pre></p> 
+	 * Returns the String of the file name without its extension.</p> 
+	 * @param limit = how many characters of the String to return (0 = unlimited)
+	 * @return The file name
+	 */
+	public String getFileName(int limit)
+	{
+		if(limit != 0 && midiFile.getName().length() > limit)
+		{
+			return midiFile.getName().replaceAll("."+MIDIFilter.mid[extUsed], "").substring(0, limit -2)+"...";
+		}
+		else
+			return midiFile.getName().replaceAll("."+MIDIFilter.mid[extUsed], "");
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static File getFile()}</pre></p> 
+	 * Returns the file that contains the midi.</p> 
+	 * @return The file that contains the sequence
+	 */
+	public File getFile()
+	{
+		return midiFile;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean isFileNamed()}</pre></p> 
+	 * Determines if the file has been saved before.</p> 
+	 * @return Whether the file has been named
+	 */
+	public boolean isFileNamed()
+	{
+		return named;
+	}
+	
+	/**
+	 * <blockquote>
 	 * <p><pre>{@code public static String[] getInstrumentList()}</pre></p> 
 	 * Reads the instrument list from the document Instrument_List.</p> 
 	 * @param file = file being read
@@ -239,44 +284,5 @@ public class MIDIReader {
 		} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Instrument list could not be read.");}
 		
 		return s;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public static String getFileName(int limit)}</pre></p> 
-	 * Returns the String of the file name without its extension.</p> 
-	 * @param limit = how many characters of the String to return (0 = unlimited)
-	 * @return The file name
-	 */
-	public static String getFileName(int limit)
-	{
-		if(limit != 0 && midiFile.getName().length() > limit)
-		{
-			return midiFile.getName().replaceAll("."+MIDIFilter.mid[0], "").substring(0, limit -2)+"...";
-		}
-		else
-			return midiFile.getName().replaceAll("."+MIDIFilter.mid[0], "");
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public static File getFile()}</pre></p> 
-	 * Returns the file that contains the midi.</p> 
-	 * @return The file that contains the sequence
-	 */
-	public static File getFile()
-	{
-		return midiFile;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public boolean isFileNamed()}</pre></p> 
-	 * Determines if the file has been saved before.</p> 
-	 * @return Whether the file has been named
-	 */
-	public boolean isFileNamed()
-	{
-		return named;
 	}
 }
