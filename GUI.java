@@ -92,6 +92,7 @@ public class GUI extends JPanel
 		
 		//Info bar
 		info.setBounds(15, screenHeight - 140, (screenWidth / 2) -15, 120);
+		info.resizeInfobar();
 		//Tool bar
 		toolBar.setSize(screenWidth, toolBarHeight + 1);
 		toolBar.getTools(ToolBar.toolLength - 1).setLocation(screenWidth - 35,5);
