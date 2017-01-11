@@ -15,7 +15,7 @@ import javax.swing.JComboBox;
  * class stores all notes present in the track.
  * </p>
  * <p>
- * Note: The program trys to keep the track numbers equal to the channel
+ * Note: The program tries to keep the track numbers equal to the channel
  * of the notes contained in the track. However, track number and channel
  * may not always be equal to each other.
  * </p>
@@ -27,12 +27,12 @@ public class Tracks extends SelectableObject
 	public static final short trackHeight = 70;										//The height of the track menus
 	public static final String[] INSTRUMENT_LIST = MIDIReader.getInstrumentList(); 	//The instrument list for the tracks
 	
-	private JButton trackButtons;													//Entry button for track
+	private JButton trackButton;													//Entry button for track
 	private JComboBox<String> instrumentList;										//Instrument indicator for track
 	private VolumeSlider slider = new VolumeSlider((short)0,(short)0, true);		//Volume slider for the track
 	
+	private static ArrayList<MidiEvent> programChange = new ArrayList<MidiEvent>();		//The program change messages in the song (note: only the first is used)
 	private int numNotes = 0;									//The number of notes in a track
-	private byte instrument = 0;								//The instrument used for the track
 	private byte volume = 100;									//The master volume of every note in a track
 	private byte channel = 0;									//The channel that corresponds with track
 	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
@@ -58,7 +58,7 @@ public class Tracks extends SelectableObject
 	public void changeChannel(byte chan)
 	{
 		channel = chan;
-		trackButtons.setText("Track "+(channel+1));
+		trackButton.setText("Track "+(channel+1));
 		updateNoteCount();
 	}
 	
@@ -77,13 +77,13 @@ public class Tracks extends SelectableObject
 		//To allow key listener to work
 		instrumentList.setFocusable(false);
 			
-		trackButtons = new JButton("Track "+(channel+1));
-		trackButtons.setFont(GUI.boldFont);
-		trackButtons.setSize(100, 20);
-		trackButtons.setBackground(Color.WHITE);
-		trackButtons.setVisible(true);
+		trackButton = new JButton("Track "+(channel+1));
+		trackButton.setFont(GUI.boldFont);
+		trackButton.setSize(100, 20);
+		trackButton.setBackground(Color.WHITE);
+		trackButton.setVisible(true);
 		//To allow key listener to work
-		trackButtons.setFocusable(false);
+		trackButton.setFocusable(false);
 	}
 	
 	/**
@@ -96,16 +96,16 @@ public class Tracks extends SelectableObject
 		try
 		{
 			//If button is behind another component
-			if(trackButtons.getLocation().getY() < GUI.toolBarHeight || (trackButtons.getLocation().getY() + trackButtons.getHeight() > GUI.screenHeight - 140  && MIDIMain.isInfoBarVisible()))
+			if(trackButton.getLocation().getY() < GUI.toolBarHeight || (trackButton.getLocation().getY() + trackButton.getHeight() > GUI.screenHeight - 140  && MIDIMain.isInfoBarVisible()))
 			{
 				//Disables button
-				trackButtons.setEnabled(false);
-				trackButtons.setOpaque(false);
+				trackButton.setEnabled(false);
+				trackButton.setOpaque(false);
 			}
 			else
 			{
-				trackButtons.setEnabled(true);
-				trackButtons.setOpaque(true);
+				trackButton.setEnabled(true);
+				trackButton.setOpaque(true);
 			}
 			//If combo box is behind another component
 			if(instrumentList.getLocation().getY() < GUI.toolBarHeight || (instrumentList.getLocation().getY() + instrumentList.getHeight() > GUI.screenHeight - 140 && MIDIMain.isInfoBarVisible()))
@@ -121,46 +121,6 @@ public class Tracks extends SelectableObject
 			}
 		}
 		catch(Exception ex){}//Program is actually more likely to trigger an exception (Due to action listener making edits to the code while it is processing)
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void cleanTrack()}</pre></p> 
-	 * Removes any unwanted or invalid midi messages and sorts messages to their correct channel.</p> 
-	 */
-	public void cleanTrack()
-	{
-		//Cycle through the track to each event
-		for(int m = MIDISong.getSequence().getTracks()[channel].size() - 1; m >= 0; m--)
-		{
-			try
-			{
-				//If event has a negative tick value
-				if(MIDISong.getEvent(channel, m).getTick() < 0)
-				{
-					MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, m));
-				}
-				//If the event's message is a channel dependent message
-				if(MIDISong.getMessage(channel, m).getStatus() >= 0x80 && MIDISong.getMessage(channel, m).getStatus() < 0xF0)
-				{
-					//chan = channel that the message changes
-					byte chan = Notes.getMessageChannel((byte)MIDISong.getMessage(channel, m).getStatus(), (byte)(MIDISong.getMessage(channel, m).getStatus() - MIDISong.getMessage(channel, m).getStatus()%16));
-					//If the channel of the track is not the same as the message's channel
-					if(chan != channel)
-					{
-						//message is moved to its corresponding track
-						MIDISong.getSequence().getTracks()[chan].add(MIDISong.getEvent(channel, m));
-						MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, m));
-					}
-				}
-			}
-			//If the catch is triggered it means that the message effects a channel greater than the track amount
-			catch(IndexOutOfBoundsException e){
-				//solution is to add more tracks until the message is accepted
-				MIDISong.addTrack();
-				m--;
-			};
-		}
 	}
 
 	/**
@@ -295,6 +255,18 @@ public class Tracks extends SelectableObject
 	
 	/**
 	 * <blockquote>
+	 * <p><pre>{@code public void addInstrument(MidiEvent prgChg}</pre></p> 
+	 * Adds a instrument message to the track message list.</p>
+	 * @param inst = instrument event being added
+	 */
+	public void addInstrument(MidiEvent prgChg)
+	{
+		programChange.add(prgChg);
+		instrumentList.setSelectedIndex(getInstrument());
+	}
+	
+	/**
+	 * <blockquote>
 	 * <p><pre>{@code public void removeNote(int note)}</pre></p> 
 	 * Removes the note from the track using its index value.</p> 
 	 * @param note = index of note being removed
@@ -394,8 +366,10 @@ public class Tracks extends SelectableObject
 	 */
 	public void setInstrument(byte inst)
 	{
-		instrument = inst;
-		instrumentList.setSelectedIndex(instrument);
+		try {
+			programChange.set(programChange.size() - 1, new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + channel, inst, channel), 0));
+			instrumentList.setSelectedIndex(0);
+		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "The instrument could not be changed");}
 	}
 	
 	/**
@@ -418,7 +392,17 @@ public class Tracks extends SelectableObject
 	 */
 	public byte getInstrument()
 	{
-		return instrument;
+		//If an instrument hasn't been added to the list
+		if(programChange.isEmpty())
+		{
+			try {
+				programChange.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + channel, 0, channel), 0));
+			} catch (InvalidMidiDataException e) {
+				NotifyAnimation.sendMessage("Error", "Instrument cannot be obtained");
+				return 0;
+			}
+		}
+		return programChange.get(programChange.size() - 1).getMessage().getMessage()[1];
 	}
 	
 	/**
@@ -474,7 +458,7 @@ public class Tracks extends SelectableObject
 	 */
 	public JButton getTrackEntryButton()
 	{
-		return trackButtons;
+		return trackButton;
 	}
 	
 	/**
