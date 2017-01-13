@@ -265,10 +265,11 @@ public class GUI extends JPanel
 	public void drawStartScreen(Graphics2D g)
 	{
 		g.setColor(new Color(255,255,255,144));
-		g.fillRoundRect(screenWidth/2 - 150, screenHeight/2 - 50, 300, 70, 20, 20);
+		g.fillRoundRect(screenWidth/2 - 163, screenHeight/2 - 80, 300, 130, 20, 20);
 		g.setColor(colours[colour][COLOUR_TEXT]);
-		g.setFont(new Font("FONT", Font.BOLD, 50));
-		g.drawString("WELCOME", screenWidth/2 - 130, screenHeight/2);
+		g.setFont(new Font("FONT", Font.BOLD, 45));
+		g.drawString("WELCOME", screenWidth/2 - 130, screenHeight/2 - 30);
+		g.drawString("TO M.E.A.T", screenWidth/2 - 135, screenHeight/2 + 30);
 	}
 	
 	/**
