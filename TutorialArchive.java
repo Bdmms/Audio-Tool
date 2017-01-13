@@ -37,7 +37,7 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	private short fade = 0;										//The value of the fade transition
 	private byte max = 0;										//The amount of slides that exist in a slideshow
 	private byte step = 0;										//The current slide of the slideshow
-	private byte transition = 0;
+	private byte transition = 0;								//The current transition mode being executed
 	private boolean paged = false;								//If file is a slideshow (is made up of multiple files)
 	private boolean image = false;								//If file is an image
 		
