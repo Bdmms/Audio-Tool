@@ -382,7 +382,12 @@ public class MIDIMain implements ActionListener, WindowListener
 		}
 	}
 	
-	//resize() checks the size of the window containing the program
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void resize()}</pre></p> 
+	 * Updates the variables and components to fit window size.</p>
+	 * SEAN: -16, -62 || ETHAN: 0, -44
+	 */
 	public void resize()
 	{
 		//If window size does not equal the size in memory
