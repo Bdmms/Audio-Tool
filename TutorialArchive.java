@@ -34,8 +34,10 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	private JComboBox<String> sections;							//The combo box that is used to navigate the files
 	private ArrayList<String> doc = new ArrayList<String>();	//The array of the lines of text in a document
 	private ArrayList<File> files = new ArrayList<File>();		//The array of files that exist in a folder (when opening a slideshow)
+	private short fade = 0;										//The value of the fade transition
 	private byte max = 0;										//The amount of slides that exist in a slideshow
 	private byte step = 0;										//The current slide of the slideshow
+	private byte transition = 0;
 	private boolean paged = false;								//If file is a slideshow (is made up of multiple files)
 	private boolean image = false;								//If file is an image
 		
@@ -54,10 +56,12 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		{
 			s[i] = files.get(i).getName();
 		}
+		
 		sections = new JComboBox<String>(s);
 		sections.setBounds(10, 25, 200, 20);
 		sections.setVisible(true);
 		sections.addActionListener(this);
+		sections.setFocusable(false);
 		
 		this.setPreferredSize(new Dimension(400,200));
 		this.setLayout(null);
@@ -82,7 +86,6 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		tutorial.add(this);
 		tutorial.addMouseListener(this);
 		tutorial.pack();
-		tutorial.setAlwaysOnTop(true);
 		tutorial.setVisible(true);
 		tutorial.setBackground(Color.WHITE);
 		
@@ -238,6 +241,57 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 			return true;
 	}
 	
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean isTransition()}</pre></p> 
+	 * Determines if window is active.</p> 
+	 * @return Whether the slideshow / paged document is changing pages
+	 */
+	public boolean isTransition()
+	{
+		//If not fading in or out
+		if(transition == 0)
+			return false;
+		else
+			return true;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean isTransition()}</pre></p> 
+	 * Runs the transition between screens, the file is loaded in between the fade in and fade out.</p> 
+	 */
+	public void fadePage()
+	{
+		//If fading out
+		if(transition == 1)
+		{
+			fade += 8;
+			
+			//When the fade out completes
+			if(fade >= 255)
+			{
+				fade = 255;
+				transition = 2;
+				readDocument(readForPage(files.get(sections.getSelectedIndex()), step));
+			}
+		}
+		//If fading back in
+		else if(transition == 2)
+		{
+			fade -= 8;
+			
+			//When the fade in completes
+			if(fade <= 0)
+			{
+				fade = 0;
+				transition = 0;
+			}
+		}
+		this.repaint();
+	}
+	
 	/**
 	 * <blockquote>
 	 * <p><pre>{@code public void paintComponent(Graphics g)}</pre></p> 
@@ -246,15 +300,6 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 */
 	public void paintComponent(Graphics g) 
 	{
-		g.setColor(Color.WHITE);
-		g.fillRect(0, 50, 400, 150);
-		g.setColor(GUI.colours[GUI.getColourScheme()][4]);
-		g.fillRect(0, 0, 400, 50);
-		
-		g.setFont(GUI.boldFont);
-		g.setColor(Color.BLACK);
-		g.drawString("SELECT AN ARCHIVE", 20, 15);
-		
 		int space = 50;		//Space is used to keep track how much of the screen is taken up
 		int width = 400;	//width refers to how wide the window needs to be
 		
@@ -273,6 +318,10 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 		else
 		{
 			space += 15;
+			g.setColor(Color.WHITE);
+			g.fillRect(0, 50, 400, 50 + doc.size()*15);
+			g.setColor(Color.BLACK);
+			
 			//If document is not empty
 			if(!doc.isEmpty())
 			{
@@ -292,6 +341,21 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 				}
 			}
 		}
+		
+		g.setColor(GUI.colours[GUI.getColourScheme()][4]);
+		g.fillRect(0, 0, width, 50);
+		
+		g.setFont(GUI.boldFont);
+		g.setColor(Color.BLACK);
+		g.drawString("SELECT AN ARCHIVE", 20, 15);
+		
+		//If in screen transition
+		if(fade > 0)
+		{
+			g.setColor(new Color(0, 0, 0, fade));
+			g.fillRect(0, 50, width, space);
+		}
+		
 		//space and width determine the size of the screen
 		tutorial.setSize(width, space + 20);
 	}
@@ -329,11 +393,15 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * Responds to the combo box when the file is switched.</p> 
 	 * @param e = event information
 	 */
-	public void actionPerformed(ActionEvent e) {
+	public void actionPerformed(ActionEvent e) 
+	{
 		//If event sources from the sections combo box
 		if(e.getSource().equals(sections))
 		{
-			readFile(files.get(sections.getSelectedIndex()));
+			//Trys to read file (file may have been deleted while program is running)
+			try{
+				readFile(files.get(sections.getSelectedIndex()));
+			}catch(NullPointerException ex){doc.add("Error: File could not be read");}
 			//Only needs to repaint one time after reading a file
 			this.repaint();
 		}
@@ -345,21 +413,30 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * Responds to mouse clicks in the program window.</p> 
 	 * @param e = mouse event information
 	 */
-	public void mouseClicked(MouseEvent e) {
-		//If left clicked
+	public void mouseClicked(MouseEvent e)
+	{
+		//If left clicked (Next slide)
 		if(e.getButton() == MouseEvent.BUTTON1)
 		{
-			//If file is paged (slideshow)
-			if(paged == true)
+			//If file is paged (slideshow) && If not on last page
+			if(paged == true && step < max - 1)
 			{
 				step++;
-				//If on last page
-				if(step >= max)
-					step = (byte)(max - 1);
-				
-				readDocument(readForPage(files.get(sections.getSelectedIndex()), step));
-				//Only needs to repaint one time after reading a file
-				this.repaint();
+				//Trigger transition
+				transition = 1;
+				fade = 0;
+			}
+		}
+		//If right clicked (Back a slide)
+		if(e.getButton() == MouseEvent.BUTTON3)
+		{
+			//If file is paged (slideshow) & If not on the first page
+			if(paged == true && step > 0)
+			{
+				step--;
+				//Trigger transition
+				transition = 1;
+				fade = 0;
 			}
 		}
 	}
@@ -370,7 +447,7 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * Responds to the cursor entering the window.</p> 
 	 * @param e = information of the mouse event
 	 */
-	public void mouseEntered(MouseEvent e) {
+	public void mouseEntered(MouseEvent e){
 	}
 	
 	/**
@@ -379,7 +456,7 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * Responds to the cursor exiting the window.</p> 
 	 * @param e = information of the mouse event
 	 */
-	public void mouseExited(MouseEvent e) {
+	public void mouseExited(MouseEvent e){
 	}
 	
 	/**
@@ -388,7 +465,7 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * Responds to any digital input on the mouse being held.</p> 
 	 * @param e = information of the mouse event
 	 */
-	public void mousePressed(MouseEvent e) {
+	public void mousePressed(MouseEvent e){
 	}
 	
 	/**
@@ -397,6 +474,6 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * Responds to any inputs on the mouse being released.</p> 
 	 * @param e = information of the mouse event
 	 */
-	public void mouseReleased(MouseEvent e) {
+	public void mouseReleased(MouseEvent e){
 	}
 }
