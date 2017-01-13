@@ -52,6 +52,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	private static byte mode = 0;								//Determines which menu the program displays
 	private static byte track = -1;								//Determines which track has been entered
 	private static byte[] limit = {1,6};						//Determines the limit to the zoom
+	private static byte[] winBorderDim = {0,0};					//The thickness of the window border across the x and y axis
 	private static short[] scale = {20, 20};					//The values that are used to space the grid layout (x, y)
 	private static short scrollY = 0;							//The value assigned to the scroll bar
 	private static short y = 1000;								//The y value used in the note editor (At 1000 to start user at mid-range notes)
@@ -93,6 +94,8 @@ public class MIDIMain implements ActionListener, WindowListener
 			
 			if(MIDIPlayer.isPlaying())
 				x = scale[0]*MIDIPlayer.getTickPosition();
+			if(tutor.isTransition())
+				tutor.fadePage();
 			
 			//Outputs
 			window.repaint();
@@ -110,6 +113,19 @@ public class MIDIMain implements ActionListener, WindowListener
 	 */
 	public void initialization()
 	{
+		System.out.println(System.getProperty("os.name"));
+		//Attempt at operating system correct
+		if(System.getProperty("os.name").contains("Windows"))
+		{
+			winBorderDim[0] = 16;
+			winBorderDim[1] = 62;
+		}
+		else
+		{
+			winBorderDim[0] = 0;
+			winBorderDim[1] = 44;
+		}
+		
 		//{screenWidth, screenHeight, x location, y location, color palette)
 		short[] config = reader.getConfig();
 		
@@ -386,15 +402,14 @@ public class MIDIMain implements ActionListener, WindowListener
 	 * <blockquote>
 	 * <p><pre>{@code public void resize()}</pre></p> 
 	 * Updates the variables and components to fit window size.</p>
-	 * SEAN: -16, -62 || ETHAN: 0, -44
 	 */
 	public void resize()
-	{
+	{	
 		//If window size does not equal the size in memory
-		if(window.getWidth() - 16 != GUI.screenWidth || window.getHeight() - 62 != GUI.screenHeight)
+		if(window.getWidth() - winBorderDim[0] != GUI.screenWidth || window.getHeight() - winBorderDim[1] != GUI.screenHeight)
 		{
-			GUI.screenWidth = (short) (window.getWidth() - 16);
-			GUI.screenHeight = (short) (window.getHeight() - 62);
+			GUI.screenWidth = (short) (window.getWidth() - winBorderDim[0]);
+			GUI.screenHeight = (short) (window.getHeight() - winBorderDim[1]);
 			
 			//If mode is set to track editor or note editor
 			if(mode > 0)
