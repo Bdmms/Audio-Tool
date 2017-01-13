@@ -296,7 +296,11 @@ public class GUI extends JPanel
 	{
 		//It's important with the note editor the order each object is drawn (it forces separation of for loops and such)
 		drawGridField(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
-		drawNotes(g);
+		
+		if(MIDIMain.getPreLength() > 5 && MIDIMain.getPreHeight() > 5)
+			drawNotes(g, true);
+		else
+			drawNotes(g, false);
 		drawGridLabels(g, (short) ((screenHeight - fullAddHeight)/MIDIMain.getPreHeight() + 1), (short) ((screenWidth - sideBarWidth)/MIDIMain.getPreLength() + 1));
 	}
 	
@@ -486,7 +490,7 @@ public class GUI extends JPanel
 	 * Draws the notes in a track.</p> 
 	 * @param g = component of the JPanel used to create visual elements
 	 */
-	public void drawNotes(Graphics2D g)
+	public void drawNotes(Graphics2D g, boolean detail)
 	{
 		//Loops through every note and draws it as a rectangle
 		for(int i = 0; i < Notes.getNumNotes(); i++)
@@ -499,10 +503,19 @@ public class GUI extends JPanel
 					g.setColor(colours[colour][0]);
 				else
 					g.setColor(colours[colour][4]);
-				g.fillRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
-				g.setColor(colours[colour][COLOUR_TEXT]);
-				g.setStroke(bold);
-				g.drawRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+				if(detail)
+				{
+					g.fillRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+					g.setColor(colours[colour][COLOUR_TEXT]);
+					g.setStroke(bold);
+					g.drawRoundRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1, (MIDIMain.getPreLength()*3)/4, (MIDIMain.getPreHeight()*3)/4);
+				}
+				else
+				{
+					g.fillRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1);
+					g.setColor(colours[colour][COLOUR_TEXT]);
+					g.drawRect((int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getX() - MIDIMain.getXCoordinate() + sideBarWidth), MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getY() + 1 - MIDIMain.getYCoordinate() + fullAddHeight, (int)(MIDISong.getNotes(MIDIMain.getTrackMenu(), i).getLength()), MIDIMain.getPreHeight() - 1);
+				}
 				g.setStroke(basic);
 			}
 		}
