@@ -5,7 +5,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -118,6 +121,9 @@ public class MIDIMain implements ActionListener, WindowListener
 		
 		//JFrame is initialized and contains all other components and listeners
 		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		try {
+			window.setIconImage(ImageIO.read(new File("Images/MEAT_Icon.png")));
+		} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Icon could not be read.");}
         window.setSize(720, 480);
         window.setMinimumSize(new Dimension(700, 360));
         window.setBackground(Color.WHITE);
@@ -424,7 +430,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	public void playPause()
 	{
 		//If in note editor
-		if(mode == 2)
+		if(mode == 2 && !MIDIPlayer.isPlaying())
 			MIDISong.saveTrack(track);
 		player.play(true);
 		toolBar.changeIcon(MIDIPlayer.isPlaying());
@@ -441,7 +447,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	public void startStop()
 	{
 		//If in note editor
-		if(mode == 2)
+		if(mode == 2 && !MIDIPlayer.isPlaying())
 			MIDISong.saveTrack(track);
 		MIDIPlayer.setTickPosition(0);
 		x = 0;
