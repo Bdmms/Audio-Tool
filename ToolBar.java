@@ -41,6 +41,7 @@ public class ToolBar extends JPanel
 			this.add(tools[i]);
 		}
 		colourSwap.setBounds(GUI.screenWidth/2 + 50, 10, 200, 20);
+		colourSwap.setFocusable(false);
 		this.add(colourSwap);
 		
 		toolLength = tools.length;
@@ -104,7 +105,9 @@ public class ToolBar extends JPanel
 		//TOOL: START
 		else if(buttonType == 1)
 		{
+			g.setStroke(GUI.superBold);
 			g.drawRect(7, 7, 15, 15);
+			g.setStroke(GUI.basic);
 		}
 		//TOOL: ADD
 		else if(buttonType == 2)
@@ -162,14 +165,20 @@ public class ToolBar extends JPanel
 		//TOOL: TOGGLE INFOBAR
 		else if(buttonType == 8)
 		{
-			g.drawRect(7, 7, 16, 16);
-			g.drawRect(10, 10, 10, 10);
+			g.fillRect(12, 13, 6, 12);
+			g.fillRect(10, 13, 8, 2);
+			g.fillRect(10, 23, 10, 2);
+			g.fillOval(11, 4, 7, 7);
 		}
 		//TOOL: SELECT ALL
 		else if(buttonType == 9)
 		{
-			g.setStroke(GUI.superBold);
-			g.drawOval(7, 7, 16, 16);
+			g.fillRect(6, 7, 13, 2);
+			g.fillRect(6, 7, 2, 13);
+			g.drawRect(9, 10, 13, 13);
+			g.setStroke(GUI.bold);
+			g.drawLine(12, 16, 15, 18);
+			g.drawLine(15, 18, 20, 14);
 			g.setStroke(GUI.basic);
 		}
 		//TOOL: RETURN / GO BACK
@@ -294,6 +303,7 @@ public class ToolBar extends JPanel
 	public void setColourScheme(byte c)
 	{
 		colourSwap.setSelectedIndex(c);
+		colourSwap.setBackground(GUI.colours[c][GUI.COLOUR_BG]);
 	}
 	
 	/**
