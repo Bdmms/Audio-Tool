@@ -1,34 +1,32 @@
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
 
-/** 
- * Date: October 24, 2016
- *
+/**
+ * <b>[Date: October 24, 2016]</b>
+ * <p>
  * This class controls the animation and text of the message
- * panel that slide onto screen
+ * panel that slide onto screen.
+ * </p>
  */
-
 public class NotifyAnimation 
 {
-	//Sets minimum limit to character space in notification window
-	private static byte characterLimit = 50;
-	//Determines whether the window should appear
-	private static boolean trigger = false;
-	//The current time of the animation
-	private static short anmTimer = 0;
-	//The y location of the notification window
-	private static short y = 0;
-	//The animation value for the window
-	private static short value = 0;
-	//The message contained in the window
-	private static ArrayList<String> message = new ArrayList<String>();
-	//The header of the message
-	private static String header;
+	private static final byte characterLimit = 44; 						//Sets minimum limit to character space in notification window
+	private static boolean trigger = false; 							//Determines whether the window should appear
+	private static short anmTimer = 0; 									//The current time of the animation
+	private static short y = 0; 										//The y location of the notification window
+	private static short value = 0;										//The animation value for the window
+	private static String header;										//The header of the message
+	private static ArrayList<String> message = new ArrayList<String>();	//The message contained in the window
 	
-	//drawNoteWindow(Graphics g) draws the notification window
-	//Graphics g = component of the JPanel used to create visual elements
-	public static void drawNoteWindow(Graphics2D g){
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void drawNoteWindow(Graphics2D g)}</pre></p> 
+	 * Draws the notification window.</p> 
+	 * @param g = component of the JPanel used to create visual elements
+	 */
+	public static void drawNoteWindow(Graphics2D g)
+	{
+		//If a message has been sent
 		if(trigger == true)
 		{
 			y = GUI.screenHeight;
@@ -59,15 +57,14 @@ public class NotifyAnimation
 			
 			//Text Box
 			g.setStroke(GUI.bold);
-			g.setColor(Color.WHITE);
+			g.setColor(GUI.colours[GUI.getColourScheme()][5]);
 			g.fillRect(GUI.screenWidth - 330, y +value, 320, 100);
-			g.setColor(Color.BLACK);
+			g.setColor(GUI.colours[GUI.getColourScheme()][6]);
 			g.drawRect(GUI.screenWidth - 330, y +value, 320, 100);
-			
 			g.setStroke(GUI.basic);
 			
 			//Message
-			g.setFont(GUI.defaultFont);
+			g.setFont(GUI.boldFont);
 			g.drawString("- "+header+" -", GUI.screenWidth - 320, y + value + 20);
 			g.setFont(GUI.romanBaseline);
 			for(byte i = 0; i < message.size(); i++)
@@ -77,8 +74,14 @@ public class NotifyAnimation
 		}
 	}
 	
-	//sendMessage(String s) receives a sent class
-	//String s = full length string of message
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void sendMessage(String head, String s)}</pre></p> 
+	 * Receives a sent message.</p> 
+	 * @param head = header to message
+	 * @param s = message
+	 * 
+	 */
 	public static void sendMessage(String head, String s){
 		header = head;
 		message.clear();
@@ -120,6 +123,7 @@ public class NotifyAnimation
 		}
 		message.add(s);
 		
+		//Checks if any of the lines are empty
 		for(byte i = 0; i < message.size(); i++)
 		{
 			//If a line of the message equals null
@@ -127,7 +131,7 @@ public class NotifyAnimation
 				message.remove(i);
 		}
 		
-		value = 0;	//Reset location
+		value = 0;					//Reset location
 		anmTimer = 0;				//Reset timer
 		trigger = true;				//Turn on animation
 	}

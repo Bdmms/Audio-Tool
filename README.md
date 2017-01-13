@@ -1,7 +1,7 @@
 # Audio-Tool
 Audio-Tool Project
 
-Classes needed:
-
-  - Midi Player and Reader classes
+NOTE:
+  
+  A folder named "tutorial" is needed for the archive class. A introductory document should be created as a test for the TutorialArchive class.
   

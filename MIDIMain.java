@@ -48,7 +48,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	//If mode == 1 (0 = normal | >0 track is selected)| If mode == 2 (0 = single | 1 = selecting notes | 2 = selected notes)
 	private static byte mode = 0;								//Determines which menu the program displays
 	private static byte track = -1;								//Determines which track has been entered
-	private static byte limit = 1;								//Determines the limit to the zoom
+	private static byte[] limit = {1,6};						//Determines the limit to the zoom
 	private static short[] scale = {20, 20};					//The values that are used to space the grid layout (x, y)
 	private static short scrollY = 0;							//The value assigned to the scroll bar
 	private static short y = 1000;								//The y value used in the note editor (At 1000 to start user at mid-range notes)
@@ -84,7 +84,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				resize();
 				mouseControl();
 				keyControl();
-				if(scroll.getValue() != scrollY)
+				if(scroll.getValue() != scrollY || info.isInAnimation())
 					scrollY = visual.setComponentsOfScrollBar();
 			}
 			
@@ -117,6 +117,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		setGUIComponents();	//Special method for setting components
 		
 		//JFrame is initialized and contains all other components and listeners
+		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         window.setSize(720, 480);
         window.setMinimumSize(new Dimension(700, 360));
         window.setBackground(Color.WHITE);
@@ -391,8 +392,11 @@ public class MIDIMain implements ActionListener, WindowListener
 				visual.resizeComponents();
 				Tracks.resizeButtons();
 				changeLimit();
+				scrollY = visual.setComponentsOfScrollBar();
 			}
 		}
+		//Updates combo boxes and components (prevents update glitches)
+		visual.updateUI();
 	}
 	
 	/**
@@ -402,10 +406,13 @@ public class MIDIMain implements ActionListener, WindowListener
 	 */
 	public void changeLimit()
 	{
-		limit = 1;
+		limit[0] = 1;
+		limit[1] = 6;
 		//repeat until length is a larger size than the window
-		while((GUI.screenWidth - GUI.sideBarWidth) > limit*MIDISong.getLength())
-			limit++;
+		while((GUI.screenWidth - GUI.sideBarWidth) > limit[0]*MIDISong.getLength())
+			limit[0]++;
+		while((GUI.screenHeight - GUI.fullAddHeight) > limit[1]*120)
+			limit[1]++;
 	}
 	
 	/**
@@ -422,7 +429,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		toolBar.changeIcon(MIDIPlayer.isPlaying());
 		//If song is playing
 		if(MIDIPlayer.isPlaying())
-			player.setTickPosition(x/scale[0]);
+			MIDIPlayer.setTickPosition(x/scale[0]);
 	}
 	
 	/**
@@ -435,7 +442,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		//If in note editor
 		if(mode == 2)
 			MIDISong.saveTrack(track);
-		player.setTickPosition(0);
+		MIDIPlayer.setTickPosition(0);
 		x = 0;
 		player.play(true);
 		toolBar.changeIcon(MIDIPlayer.isPlaying());
@@ -500,14 +507,14 @@ public class MIDIMain implements ActionListener, WindowListener
 	{
 		//If in track editor
 		if(mode == 1)
-			player.setTickPosition(MIDIPlayer.getTickPosition() - (long)(MIDISong.getMeasureLength()*MIDISong.getTempoBpm()));
+			MIDIPlayer.setTickPosition(MIDIPlayer.getTickPosition() - (long)(MIDISong.getMeasureLength()*MIDISong.getTempoBpm()));
 		//Assumed to be note editor
 		else
 		{
 			x -= (GUI.screenWidth - GUI.sideBarWidth);
 			gridLimits();
 			if(MIDIPlayer.isPlaying())
-				player.setTickPosition(x/scale[0]);
+				MIDIPlayer.setTickPosition(x/scale[0]);
 		}
 	}
 	
@@ -520,15 +527,55 @@ public class MIDIMain implements ActionListener, WindowListener
 	{
 		//If in track editor
 		if(mode == 1)
-			player.setTickPosition(MIDIPlayer.getTickPosition() + (long)(MIDISong.getMeasureLength()*MIDISong.getTempoBpm()));
+			MIDIPlayer.setTickPosition(MIDIPlayer.getTickPosition() + (long)(MIDISong.getMeasureLength()*MIDISong.getTempoBpm()));
 		//Assumed to be note editor
 		else
 		{
 			x += (GUI.screenWidth - GUI.sideBarWidth);
 			gridLimits();
 			if(MIDIPlayer.isPlaying())
-				player.setTickPosition(x/scale[0]);
+				MIDIPlayer.setTickPosition(x/scale[0]);
 		}
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void swapSelection(byte track)}</pre></p> 
+	 * Responds to the swapping of tracks.</p>
+	 * @param track = track that is selected
+	 */
+	public void swapSelection(byte track)
+	{
+		if(track != selected - 1)
+		{
+			MIDISong.moveTrack(track, (byte)(selected - 1));
+			//Adjust Components
+			visual.setComponentsOfScrollBar();
+		}
+		else
+			NotifyAnimation.sendMessage("Notification", "Action was canceled.");
+		selected = 0;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void mergeSelection(byte track)}</pre></p> 
+	 * Responds to the merging of tracks.</p>
+	 * @param track = track that is selected
+	 */
+	public void mergeSelection(byte track)
+	{
+		//If the the target and track are not the same
+		if(track != selected - 17)
+		{
+			removeTrackButton((byte)(selected - 17));
+			MIDISong.mergeTrack((byte)(selected - 17), track);
+			//Adjust Components
+			visual.setComponentsOfScrollBar();
+		}
+		else
+			NotifyAnimation.sendMessage("Notification", "Action was canceled.");
+		selected = 0;
 	}
 	
 	/**
@@ -546,7 +593,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		//If file has been given a name
 		if(reader.isFileNamed())
 		{
-			reader.saveFile(MIDISong.saveSequence(), MIDIReader.getFile());
+			reader.saveFile(MIDISong.saveSequence(), reader.getFile());
 			NotifyAnimation.sendMessage("Notification","File saved...");
 			return true;
 		}
@@ -586,7 +633,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	 */
 	public void close()
 	{
-		reader.saveConfig(window.getWidth(), window.getHeight(), window.getX(), window.getY(), GUI.getColourScheme());
+		reader.saveConfig(GUI.screenWidth, GUI.screenHeight, window.getX(), window.getY(), GUI.getColourScheme());
 		System.exit(1);
 		//Program ends here
 	}
@@ -661,84 +708,68 @@ public class MIDIMain implements ActionListener, WindowListener
 		{
 			skipRight();
 		}
-		//Tool #7 SWAP TRACKS
-		if(e.getSource() == toolBar.getTools(6))
+		//Tool #7 SWAP TRACKS (and if in track editor)
+		if(e.getSource() == toolBar.getTools(6) && mode == 1)
 		{
-			//If in track editor
-			if(mode == 1)
+			//If selected mode is neutral
+			if(selected == 0)
 			{
-				//If selected mode is neutral
-				if(selected == 0)
+				//Check every track
+				for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 				{
 					//Check every track
 					for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 					{
-						//If track is selected
-						if(MIDISong.getTracks(t).isSelected())
-						{
-							selected = (byte) (t + 1);
-							NotifyAnimation.sendMessage("Notification", "Choose another track to switch with.");
-						}
+						selected = (byte) (t + 1);
+						NotifyAnimation.sendMessage("Notification", "Choose another track to switch with.");
 					}
 				}
-				else
-				{
-					selected = 0;
-					NotifyAnimation.sendMessage("Notification", "Action was canceled");
-				}
+			}
+			else
+			{
+				selected = 0;
+				NotifyAnimation.sendMessage("Notification", "Action was canceled.");
 			}
 		}
-		//Tool #8 MERGE TRACKS
-		if(e.getSource() == toolBar.getTools(7))
+		//Tool #8 MERGE TRACKS (and if in track editor)
+		if(e.getSource() == toolBar.getTools(7) && mode == 1)
 		{
-			//If in track editor
-			if(mode == 1)
+			//If selected mode is neutral
+			if(selected == 0)
 			{
-				//If selected mode is neutral
-				if(selected == 0)
+				//Check every track
+				for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 				{
 					//Check every track
 					for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 					{
-						//If track is selected
-						if(MIDISong.getTracks(t).isSelected())
-						{
-							selected = (byte) (t + 17);
-							NotifyAnimation.sendMessage("Notification", "Choose the track to merge this track with.");
-						}
+						selected = (byte) (t + 17);
+						NotifyAnimation.sendMessage("Notification", "Choose the track to merge this track with.");
 					}
 				}
-				else
-				{
-					selected = 0;
-					NotifyAnimation.sendMessage("Notification", "Action was canceled");
-				}
+			}
+			else
+			{
+				selected = 0;
+				NotifyAnimation.sendMessage("Notification", "Action was canceled.");
 			}
 		}
-		//Tool #9 TOGGLE INFOBAR
-		if(e.getSource() == toolBar.getTools(8))
+		//Tool #9 TOGGLE INFOBAR (and if in track editor)
+		if(e.getSource() == toolBar.getTools(8) && mode == 1)
 		{
-			//If in track editor
-			if(mode == 1)
-			{
-				//If info bar is visible
-				if(info.isVisible())
-					info.setVisibleAnimation(false);	
-				else
-					info.setVisibleAnimation(true);
-			}
+			//If info bar is visible
+			if(info.isVisible())
+				info.setVisibleAnimation(false);	
+			else
+				info.setVisibleAnimation(true);
 		}
-		//Tool #10 SELECT ALL
-		if(e.getSource() == toolBar.getTools(9))
+		//Tool #10 SELECT ALL (and if in note editor)
+		if(e.getSource() == toolBar.getTools(9) && mode == 2)
 		{
-			//If in note editor
-			if(mode == 2)
-			{
-				Notes.selectAllNotes();
-				//selection mode set to multi-select
-				selected = 2;
-				NotifyAnimation.sendMessage("Notification", "All notes have been selected");
-			}
+			Notes.selectAllNotes();
+			//selection mode set to multi-select
+			selected = 2;
+			NotifyAnimation.sendMessage("Notification", "All notes have been selected.");
 		}
 		//Tool #11: GO BACK
 		if(e.getSource() == toolBar.getTools(ToolBar.toolLength - 1))
@@ -766,7 +797,8 @@ public class MIDIMain implements ActionListener, WindowListener
 		if(e.getActionCommand().equals("New"))
 		{
 			player.stop();
-			player.setTickPosition(0);
+			MIDIPlayer.setTickPosition(0);
+			clearAllTrackButtons();
 			MIDISong.setSong(reader.createFile());
 			setTrackButtons((byte)1);
 			mode(1);
@@ -775,6 +807,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		if(e.getActionCommand().equals("Open"))
 		{
 			player.stop();
+			MIDIPlayer.setTickPosition(0);
 			filter.setFilterMIDI(true);
 			int v = fileIn.showOpenDialog(window);
 			//If file is usable
@@ -784,7 +817,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	            player.setAllInstruments();
 				setTrackButtons(MIDISong.getTracksLength());
 				mode(1);
-				NotifyAnimation.sendMessage("Notification","Opening: "+MIDIReader.getFileName(0));
+				NotifyAnimation.sendMessage("Notification","Opening: "+reader.getFileName(0));
 	        } else {
 	        	NotifyAnimation.sendMessage("Notification","File was not be opened.");
 	        }
@@ -865,11 +898,11 @@ public class MIDIMain implements ActionListener, WindowListener
 		//MenuBar -> Song -> Rename Song
 		if(e.getActionCommand().equals("Rename Song"))
 		{
-			String s = JOptionPane.showInputDialog("What will you name the song?", MIDIReader.getFileName(0));
+			String s = JOptionPane.showInputDialog("What will you name the song?", reader.getFileName(0));
 			
 			//If name is not empty
 			if(s.length() > 0)
-				MIDIReader.setFileName(s);
+				reader.setFileName(s);
 			else
 				NotifyAnimation.sendMessage("Invalid", "Name was not used.");
 		}
@@ -880,7 +913,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			{
 				double t = Double.parseDouble(JOptionPane.showInputDialog("What will be the new tempo (beats per minute)?", MIDISong.getTempoBpm()));
 				//If tempo is valid
-				if(t > 0)
+				if(t > 0 && t < 500)
 					//Due to the tempo being stored as microseconds per beat, a rounding error may occur
 					MIDISong.setTempoBpm(t);
 				else
@@ -1062,21 +1095,10 @@ public class MIDIMain implements ActionListener, WindowListener
 						MIDISong.getTracks(t).selection(true);
 						//If selection mode is set to merge tracks
 						if(selected > 16)
-						{
-							MIDISong.mergeTrack((byte)(selected - 17), t);
-							selected = 0;
-							//Adjust Components
-							removeTrackButton((byte)(selected - 17));
-							visual.setComponentsOfScrollBar();
-						}
+							mergeSelection(t);
 						//If selection mode is set to swap tracks
 						else if(selected > 0)
-						{
-							MIDISong.moveTrack(t, (byte)(selected - 1));
-							selected = 0;
-							//Adjust Components
-							visual.setComponentsOfScrollBar();
-						}
+							swapSelection(t);
 					}
 				}
 				else
@@ -1112,7 +1134,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				{
 					if(MIDISong.getNotes(track, i).isSelected())
 					{
-						MIDISong.getNotes(track, i).setVolume((byte)(127*visual.getToolBar().getSlider().getDecimal()));
+						MIDISong.getNotes(track, i).setVolume(visual.getToolBar().getSlider().getVolume());
 					}
 				}
 			}
@@ -1120,6 +1142,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			else
 			{
 				Notes.unSelectAll();
+				//If mouse is clicking on the side bar (where all of the tone values are listed)
 				if(CursorListener.getLocation()[0] - GUI.mouseDisplacement < GUI.sideBarWidth && CursorListener.getLocation()[1] > GUI.fullAddHeight + GUI.windowBarHeight)
 				{
 					player.noteOn((byte)(Notes.MAX_TONE - (CursorListener.getLocation()[1] - GUI.windowBarHeight - GUI.fullAddHeight + y)/scale[1]), (byte) 78);
@@ -1278,7 +1301,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			scale[1] -= CursorListener.getMouseWheel()*2;
 			
 			//If scale is in limits
-			if(scale[0] >= limit && scale[1] > 5 && scale[0] <= 100 && scale[1] <= 100)
+			if(scale[0] >= limit[0] && scale[1] >= limit[1] && scale[0] <= 100 && scale[1] <= 100)
 			{
 				//grid zooms in on the location of the mouse
 				x = (long) ((x + CursorListener.getLocation()[0] - GUI.sideBarWidth - GUI.mouseDisplacement)/(double)(scale[0] + CursorListener.getMouseWheel()*2)*scale[0] - (CursorListener.getLocation()[0] - GUI.sideBarWidth - GUI.mouseDisplacement));
@@ -1298,10 +1321,10 @@ public class MIDIMain implements ActionListener, WindowListener
 	public void gridLimits()
 	{
 		//Limits to the scale
-		if(scale[0] < limit)
-			scale[0] = limit;
-		if(scale[1] < 6)
-			scale[1] = 6;
+		if(scale[0] < limit[0])
+			scale[0] = limit[0];
+		if(scale[1] < limit[1])
+			scale[1] = limit[1];
 		if(scale[0] > 100)
 			scale[0] = 100;
 		if(scale[1] > 100)
@@ -1315,7 +1338,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			x = 0;
 		if(y < 0)
 			y = 0;
-		if(y > 120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight))
+		if(y + (GUI.screenHeight - GUI.fullAddHeight) > 120*scale[1])
 			//the bottom of the screen cannot exceed the tone values
 			y = (short) (120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight));
 	}
@@ -1444,6 +1467,18 @@ public class MIDIMain implements ActionListener, WindowListener
 	
 	/**
 	 * <blockquote>
+	 * <p><pre>{@code public static String getReadFileName(int limit)}</pre></p> 
+	 * Returns the String of the file name without its extension from the <b>MIDIReader</b> class.</p> 
+	 * @param limit = how many characters of the String to return (0 = unlimited)
+	 * @return The file name
+	 */
+	public static String getReadFileName(int limit)
+	{
+		return reader.getFileName(limit);
+	}
+	
+	/**
+	 * <blockquote>
 	 * <p><pre>{@code public static boolean isSelecting()}</pre></p> 
 	 * Returns the selection mode of the program (meaning varies).</p>
 	 * @return The state of selection (neutral, single, multiple, etc.)
@@ -1501,6 +1536,8 @@ public class MIDIMain implements ActionListener, WindowListener
 			else if(choice == JOptionPane.NO_OPTION)
 				close();
 		}
+		else
+			close();
 	}
 
 	/**

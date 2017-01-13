@@ -14,117 +14,6 @@ public class KeyboardListener implements KeyListener
 
 	/**
 	 * <blockquote>
-	 * <p><pre>{@code public boolean[] getLetters()}</pre></p> 
-	 * Returns the boolean value of every letter on the keyboard.</p> 
-	 * @return The array of key inputs for letter keys
-	 */
-	public boolean[] getLetters()
-	{
-		return letters;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void setLetter(boolean state, byte letter)}</pre></p> 
-	 * Sets the boolean value of a specific letter.</p> 
-	 * @param state = the boolean value being set to the letter
-	 * @param letter = the index of the letter in the array
-	 */
-	public void setLetter(boolean state, byte letter)
-	{
-		letters[letter] = state;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public boolean getEnter()}</pre></p> 
-	 * Returns the boolean value of the enter key.</p> 
-	 * @return The value of the enter key
-	 */
-	public boolean getEnter()
-	{
-		return enter;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void setEnter(boolean state)}</pre></p> 
-	 * Sets the boolean value of the enter key.</p> 
-	 * @param state = the boolean value of the enter key
-	 */
-	public void setEnter(boolean state)
-	{
-		enter = state;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public boolean getDelete()}</pre></p> 
-	 * Returns the boolean value of the delete key.</p> 
-	 * @return The boolean value of the delete key
-	 */
-	public boolean getDelete()
-	{
-		return delete;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void setDelete(boolean state)}</pre></p> 
-	 * Sets the boolean value of the delete key.</p> 
-	 * @param state = the boolean value of the delete key
-	 */
-	public void setDelete(boolean state)
-	{
-		delete = state;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public boolean getSpace()}</pre></p> 
-	 * Returns the boolean value of the backspace key.</p> 
-	 * @return The boolean value of the backspace key
-	 */
-	public boolean getSpace()
-	{
-		return space;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void setSpace(boolean state)}</pre></p> 
-	 * Sets the boolean value of the backspace key.</p> 
-	 * @param state = the boolean value of the backspace key
-	 */
-	public void setSpace(boolean state)
-	{
-		space = state;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public boolean getControl()}</pre></p> 
-	 * Returns the boolean value of the control key.</p> 
-	 * @return The boolean value of the control key
-	 */
-	public boolean getControl()
-	{
-		return ctrl;
-	}
-	
-	/**
-	 * <blockquote>
-	 * <p><pre>{@code public void setControl(boolean state)}</pre></p> 
-	 * Sets the boolean value of the control key.</p> 
-	 * @param state = the boolean value of the control key
-	 */
-	public void setControl(boolean state)
-	{
-		ctrl = state;
-	}
-	
-	/**
-	 * <blockquote>
 	 * <p><pre>{@code public void keyTyped(KeyEvent e)}</pre></p> 
 	 * Mandatory method for the implementation of KeyListener.</p> 
 	 * @param e = the detected event value from the keyboard
@@ -168,7 +57,6 @@ public class KeyboardListener implements KeyListener
 			else if(e.getKeyChar() - 97 == c)
 			{
 				letters [c] = true;
-				System.out.println((char)(c+97));
 			}
 		}
 		
@@ -230,5 +118,116 @@ public class KeyboardListener implements KeyListener
 				letters[c] = false;
 			}
 		}
+	}
+  
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setLetter(boolean state, byte letter)}</pre></p> 
+	 * Sets the boolean value of a specific letter.</p> 
+	 * @param state = the boolean value being set to the letter
+	 * @param letter = the index of the letter in the array
+	 */
+	public void setLetter(boolean state, byte letter)
+	{
+		letters[letter] = state;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setEnter(boolean state)}</pre></p> 
+	 * Sets the boolean value of the enter key.</p> 
+	 * @param state = the boolean value of the enter key
+	 */
+	public void setEnter(boolean state)
+	{
+		enter = state;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setDelete(boolean state)}</pre></p> 
+	 * Sets the boolean value of the delete key.</p> 
+	 * @param state = the boolean value of the delete key
+	 */
+	public void setDelete(boolean state)
+	{
+		delete = state;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setSpace(boolean state)}</pre></p> 
+	 * Sets the boolean value of the backspace key.</p> 
+	 * @param state = the boolean value of the backspace key
+	 */
+	public void setSpace(boolean state)
+	{
+		space = state;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void setControl(boolean state)}</pre></p> 
+	 * Sets the boolean value of the control key.</p> 
+	 * @param state = the boolean value of the control key
+	 */
+	public void setControl(boolean state)
+	{
+		ctrl = state;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean[] getLetters()}</pre></p> 
+	 * Returns the boolean value of every letter on the keyboard.</p> 
+	 * @return The array of key inputs for letter keys
+	 */
+	public boolean[] getLetters()
+	{
+		return letters;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean getEnter()}</pre></p> 
+	 * Returns the boolean value of the enter key.</p> 
+	 * @return The value of the enter key
+	 */
+	public boolean getEnter()
+	{
+		return enter;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean getDelete()}</pre></p> 
+	 * Returns the boolean value of the delete key.</p> 
+	 * @return The boolean value of the delete key
+	 */
+	public boolean getDelete()
+	{
+		return delete;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean getSpace()}</pre></p> 
+	 * Returns the boolean value of the backspace key.</p> 
+	 * @return The boolean value of the backspace key
+	 */
+	public boolean getSpace()
+	{
+		return space;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public boolean getControl()}</pre></p> 
+	 * Returns the boolean value of the control key.</p> 
+	 * @return The boolean value of the control key
+	 */
+	public boolean getControl()
+	{
+		return ctrl;
 	}
 }
