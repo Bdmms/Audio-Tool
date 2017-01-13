@@ -38,6 +38,12 @@ public class InfoBar extends JPanel{
 				add(field[i*2+j]);
 			}
 		}
+		
+		field[0].setText("Song Name:");
+		field[2].setText("Created by:");
+		field[3].setText("Artist");
+		field[4].setText("Length:");
+		field[6].setText("Tempo:");
 	}
 	
 	public void resizeInfobar()
@@ -57,21 +63,15 @@ public class InfoBar extends JPanel{
 	{
 		String time = null;
 		short elapsed = tickToTime();
-		time = elapsed/60 + ":" + String.format("%02d",(elapsed % 60)) + "/" + (seconds/60)  + ":" + String.format("%02d",(seconds % 60));
-		
+		time = elapsed/60 + ":" + String.format("%02d",(elapsed % 60)) + " / " + (seconds/60)  + ":" + String.format("%02d",(seconds % 60));
 		
 		return time;		
 	}
 	
 	public void setTextFields()
 	{		
-		field[0].setText("Song Name:");
 		field[1].setText(MIDIMain.getReadFileName(0));
-		field[2].setText("Created by:");
-		field[3].setText("Artist");
-		field[4].setText("Length:");
 		field[5].setText(timeConverter((short)(MIDISong.getSequence().getMicrosecondLength() / 1000000)));
-		field[6].setText("Tempo:");
 		field[7].setText(Math.round(MIDISong.getTempoBpm()) + " bpm");
 	}
 	
@@ -80,6 +80,14 @@ public class InfoBar extends JPanel{
 		visible = state;
 		if(state == true)
 			this.setVisible(true);
+	}
+	
+	public boolean isInAnimation()
+	{
+		if(opacity == 0 || opacity == 255)
+			return false;
+		else
+			return true;
 	}
 	
 	public void paintComponent(Graphics g) 
@@ -109,13 +117,5 @@ public class InfoBar extends JPanel{
 		g.setColor(new Color(0, 0, 0, opacity));
 		g.setStroke(GUI.bold);
 		g.drawRect(0, 0, (GUI.screenWidth / 2) -20, 120);
-	}
-	
-	public boolean isInAnimation()
-	{
-		if(opacity == 0 || opacity == 255)
-			return false;
-		else
-			return true;
 	}
 }
