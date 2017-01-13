@@ -39,11 +39,12 @@ public class MIDISong
 		sequence = seq;
 		length = sequence.getTickLength();
 
-		//DEBUG
+		//DEBUG (NOTE: Reads messages before they are moved
 		/*
+		System.out.println((byte)ShortMessage.PROGRAM_CHANGE);
 		for(byte t = 0; t < sequence.getTracks().length; t++)
 		{
-			if(t >= 0)
+			if(t == 1)
 			{
 				System.out.println("\nTrack "+(t+1)+" ----------------------------------------");
 				for(int i = 0; i < MIDISong.getSequence().getTracks()[t].size(); i++)
@@ -148,7 +149,6 @@ public class MIDISong
 				{
 					tracks.get(Notes.getMessageChannel((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PROGRAM_CHANGE)).addInstrument(MIDISong.getEvent(t, m));
 					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getSequence().getTracks()[t].get(m));
-					m--;
 				}
 				//If message is a volume change
 				if(Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.CONTROL_CHANGE) && MIDISong.getMessage(t, m).getMessage()[1] == 7)
@@ -157,7 +157,6 @@ public class MIDISong
 					MIDISong.getTracks(t).setVolume(MIDISong.getMessage(t, m).getMessage()[2]);
 					MIDIPlayer.setVolume(i, MIDISong.getMessage(t, m).getMessage()[2]);
 					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
-					m--;
 				}
 				//If message is a tempo change
 				if(getMessage(t, m).getMessage()[1] == 0x51)
