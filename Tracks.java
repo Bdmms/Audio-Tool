@@ -1,6 +1,7 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
+import java.util.Stack;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiEvent;
@@ -31,11 +32,11 @@ public class Tracks extends SelectableObject
 	private JComboBox<String> instrumentList;										//Instrument indicator for track
 	private VolumeSlider slider = new VolumeSlider((short)0,(short)0, true);		//Volume slider for the track
 	
-	private static ArrayList<MidiEvent> programChange = new ArrayList<MidiEvent>();		//The program change messages in the song (note: only the first is used)
+	private Stack<MidiEvent> programChange = new Stack<MidiEvent>();				//The program change messages in the song (note: only the first is used)
+	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
 	private int numNotes = 0;									//The number of notes in a track
 	private byte volume = 100;									//The master volume of every note in a track
 	private byte channel = 0;									//The channel that corresponds with track
-	private ArrayList<Notes> notes = new ArrayList<Notes>();	//The array of note contained in the track
 
 	/**
 	 * <blockquote>
@@ -69,21 +70,23 @@ public class Tracks extends SelectableObject
 	 */
 	public void createTrackButtons()
 	{
-		instrumentList = new JComboBox<String>(INSTRUMENT_LIST);
-		instrumentList.setFont(GUI.smallFont);
-		instrumentList.setSize(GUI.screenWidth/3, 20);
-		instrumentList.setBackground(Color.WHITE);
-		instrumentList.setVisible(true);
-		//To allow key listener to work
-		instrumentList.setFocusable(false);
-			
 		trackButton = new JButton("Track "+(channel+1));
 		trackButton.setFont(GUI.boldFont);
 		trackButton.setSize(100, 20);
 		trackButton.setBackground(Color.WHITE);
 		trackButton.setVisible(true);
+		trackButton.setBackground(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_BG]);
 		//To allow key listener to work
 		trackButton.setFocusable(false);
+		
+		instrumentList = new JComboBox<String>(INSTRUMENT_LIST);
+		instrumentList.setFont(GUI.smallFont);
+		instrumentList.setSize(GUI.screenWidth/3, 20);
+		instrumentList.setBackground(Color.WHITE);
+		instrumentList.setVisible(true);
+		instrumentList.setBackground(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_BG]);
+		//To allow key listener to work
+		instrumentList.setFocusable(false);
 	}
 	
 	/**
@@ -98,7 +101,6 @@ public class Tracks extends SelectableObject
 			//If button is behind another component
 			if(trackButton.getLocation().getY() < GUI.toolBarHeight || (trackButton.getLocation().getY() + trackButton.getHeight() > GUI.screenHeight - 140  && MIDIMain.isInfoBarVisible()))
 			{
-				//Disables button
 				trackButton.setEnabled(false);
 				trackButton.setOpaque(false);
 			}
@@ -107,10 +109,10 @@ public class Tracks extends SelectableObject
 				trackButton.setEnabled(true);
 				trackButton.setOpaque(true);
 			}
+			
 			//If combo box is behind another component
 			if(instrumentList.getLocation().getY() < GUI.toolBarHeight || (instrumentList.getLocation().getY() + instrumentList.getHeight() > GUI.screenHeight - 140 && MIDIMain.isInfoBarVisible()))
 			{
-				//Disables combo box
 				instrumentList.setEnabled(false);
 				instrumentList.setOpaque(false);
 			}
@@ -261,8 +263,11 @@ public class Tracks extends SelectableObject
 	 */
 	public void addInstrument(MidiEvent prgChg)
 	{
-		programChange.add(prgChg);
-		instrumentList.setSelectedIndex(getInstrument());
+		if(prgChg.getMessage().getMessage()[1] != 0)
+		{
+			programChange.add(prgChg);
+			instrumentList.setSelectedIndex(programChange.peek().getMessage().getMessage()[1]);
+		}
 	}
 	
 	/**
@@ -367,8 +372,12 @@ public class Tracks extends SelectableObject
 	public void setInstrument(byte inst)
 	{
 		try {
-			programChange.set(programChange.size() - 1, new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + channel, inst, channel), 0));
-			instrumentList.setSelectedIndex(0);
+			//If there are no instruments currently set to the track
+			if(programChange.isEmpty())
+				programChange.add(new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + channel, inst, channel), 0));
+			else
+				programChange.set(programChange.size() - 1, new MidiEvent(new ShortMessage(ShortMessage.PROGRAM_CHANGE + channel, inst, channel), 0));
+			instrumentList.setSelectedIndex(programChange.peek().getMessage().getMessage()[1]);
 		} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "The instrument could not be changed");}
 	}
 	
@@ -402,7 +411,7 @@ public class Tracks extends SelectableObject
 				return 0;
 			}
 		}
-		return programChange.get(programChange.size() - 1).getMessage().getMessage()[1];
+		return programChange.peek().getMessage().getMessage()[1];
 	}
 	
 	/**
@@ -483,54 +492,58 @@ public class Tracks extends SelectableObject
 		//yLoc is the y location of the track window after considering window size and the scroll value
 		int yLoc = trackSpace + GUI.toolBarHeight + (trackHeight + 5)*channel - MIDIMain.getScrollValue();
 		
-		//Background
-		g.setColor(GUI.colours[GUI.getColourScheme()][2]);
-		g.fillRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
-		
-		//Volume Slider
-		slider.setBounds((short)(GUI.screenWidth/2 + 25), (short)(GUI.fullAddHeight + (trackHeight + 5)*channel + trackSpace - MIDIMain.getScrollValue()), (short)(GUI.screenWidth*3/4 - GUI.screenWidth/2), (short)30);
-		slider.drawVolumeSlider(g);
-		volume = slider.getPercent();
-		
-		//If track is selected
-		if(isSelected())
+		//If the track is being drawn on screen
+		if(yLoc < GUI.screenHeight)
 		{
-			g.setStroke(GUI.superBold);
-			g.setColor(GUI.colours[GUI.getColourScheme()][4]);
-			g.drawRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
-			g.setStroke(GUI.basic);
-		}
-		else
-		{
+			//Background
+			g.setColor(GUI.colours[GUI.getColourScheme()][2]);
+			g.fillRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
+			
+			//Volume Slider
+			slider.setBounds((short)(GUI.screenWidth/2 + 25), (short)(GUI.fullAddHeight + (trackHeight + 5)*channel + trackSpace - MIDIMain.getScrollValue()), (short)(GUI.screenWidth*3/4 - GUI.screenWidth/2), (short)30);
+			slider.drawVolumeSlider(g);
+			volume = slider.getVolume();
+			
+			//If track is selected
+			if(isSelected())
+			{
+				g.setStroke(GUI.superBold);
+				g.setColor(GUI.colours[GUI.getColourScheme()][4]);
+				g.drawRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
+				g.setStroke(GUI.basic);
+			}
+			else
+			{
+				g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
+				g.drawRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
+			}
+			
+			//Text Boxes
+			g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_BG]);
+			g.fillRect(201, 11 + yLoc, 98, 18);
+			g.fillRect(GUI.screenWidth*3/4 + 41, 16 + yLoc, 68, 18);
+			g.fillRect(GUI.screenWidth*3/4 + 41, 36 + yLoc, 68, 18);
+			
+			//Borders
 			g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
-			g.drawRoundRect(50, yLoc, GUI.screenWidth-100, trackHeight, 50, 50);
-		}
-		
-		//Text Boxes
-		g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_BG]);
-		g.fillRect(201, 11 + yLoc, 98, 18);
-		g.fillRect(GUI.screenWidth*3/4 + 41, 16 + yLoc, 68, 18);
-		g.fillRect(GUI.screenWidth*3/4 + 41, 36 + yLoc, 68, 18);
-		
-		//Borders
-		g.setColor(GUI.colours[GUI.getColourScheme()][GUI.COLOUR_TEXT]);
-		g.drawRect(200, 10 + yLoc, 100, 20);
-		g.drawRect(GUI.screenWidth*3/4 + 40, 15 + yLoc, 70, 20);
-		g.drawRect(GUI.screenWidth*3/4 + 40, 35 + yLoc, 70, 20);
-		//Text
-		g.setFont(GUI.defaultFont);
-		g.drawString(numNotes+" notes", 210, 25 + yLoc);
-		g.drawString(volume+"%", GUI.screenWidth*3/4 + 50, 50 + yLoc);
-		g.setFont(GUI.boldFont);
-		g.drawString("VOLUME", GUI.screenWidth*3/4 + 50, 30 + yLoc);
-		//Divider
-		g.drawLine(GUI.screenWidth/2, 5 + yLoc, GUI.screenWidth/2, trackHeight + yLoc - 5);
-
-		//If channel is the percussion track
-		if(channel == 9)
-		{
+			g.drawRect(200, 10 + yLoc, 100, 20);
+			g.drawRect(GUI.screenWidth*3/4 + 40, 15 + yLoc, 70, 20);
+			g.drawRect(GUI.screenWidth*3/4 + 40, 35 + yLoc, 70, 20);
+			//Text
+			g.setFont(GUI.defaultFont);
+			g.drawString(numNotes+" notes", 210, 25 + yLoc);
+			g.drawString(slider.getPercent()+"%", GUI.screenWidth*3/4 + 50, 50 + yLoc);
 			g.setFont(GUI.boldFont);
-			g.drawString("[Percussion]", GUI.screenWidth*5/8, 15 + yLoc);
+			g.drawString("VOLUME", GUI.screenWidth*3/4 + 50, 30 + yLoc);
+			//Divider
+			g.drawLine(GUI.screenWidth/2, 5 + yLoc, GUI.screenWidth/2, trackHeight + yLoc - 5);
+	
+			//If channel is the percussion track
+			if(channel == 9)
+			{
+				g.setFont(GUI.boldFont);
+				g.drawString("[Percussion]", GUI.screenWidth*5/8, 15 + yLoc);
+			}
 		}
 	}
 	
