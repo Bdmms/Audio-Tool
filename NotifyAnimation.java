@@ -10,13 +10,13 @@ import java.util.ArrayList;
  */
 public class NotifyAnimation 
 {
-	private static final byte characterLimit = 58; 						//Sets minimum limit to character space in notification window
+	private static final byte characterLimit = 44; 						//Sets minimum limit to character space in notification window
 	private static boolean trigger = false; 							//Determines whether the window should appear
 	private static short anmTimer = 0; 									//The current time of the animation
 	private static short y = 0; 										//The y location of the notification window
 	private static short value = 0;										//The animation value for the window
-	private static ArrayList<String> message = new ArrayList<String>();	//The message contained in the window
 	private static String header;										//The header of the message
+	private static ArrayList<String> message = new ArrayList<String>();	//The message contained in the window
 	
 	/**
 	 * <blockquote>
@@ -61,11 +61,10 @@ public class NotifyAnimation
 			g.fillRect(GUI.screenWidth - 330, y +value, 320, 100);
 			g.setColor(GUI.colours[GUI.getColourScheme()][6]);
 			g.drawRect(GUI.screenWidth - 330, y +value, 320, 100);
-			
 			g.setStroke(GUI.basic);
 			
 			//Message
-			g.setFont(GUI.defaultFont);
+			g.setFont(GUI.boldFont);
 			g.drawString("- "+header+" -", GUI.screenWidth - 320, y + value + 20);
 			g.setFont(GUI.romanBaseline);
 			for(byte i = 0; i < message.size(); i++)
