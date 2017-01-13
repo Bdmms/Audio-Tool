@@ -3,7 +3,11 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
+import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 
@@ -22,7 +26,7 @@ public class GUI extends JPanel
 	public final static byte COLOUR_TEXT = 6;								//The index for the text/border colour
 	public final static byte toolBarHeight = 40;							//Height of toolBar
 	public final static byte topBarHeight = 20;								//Height of top label
-	public final static byte fullAddHeight = toolBarHeight + topBarHeight ; //Combined height
+	public final static byte fullAddHeight = toolBarHeight + topBarHeight;	//Combined height
 	public final static byte sideBarWidth = 100;							//Side label width
 	public final static byte windowBarHeight = 54;							//Height of window label bar (may change depending on OS)
 	public final static byte mouseDisplacement = 8;							//The horizontal displacement of the mouse (seriously why is this a thing)
@@ -35,16 +39,17 @@ public class GUI extends JPanel
 	public final static Font defaultFont = new Font("default", Font.PLAIN, 12);										//Default Font
 	public final static Font smallFont = new Font("small", Font.PLAIN, 10);											//Smaller Font size
 	public final static Font boldFont = new Font("bold", Font.BOLD, 12);											//Bold default font
-	public final static Font romanBaseline = new Font("Roman Baseline", Font.ROMAN_BASELINE, 10);					//Roman Baseline font
+	public final static Font romanBaseline = new Font("Roman Baseline", Font.ROMAN_BASELINE, 12);					//Roman Baseline font
 	
 	//0 = darkest -> 5 = lightest, 6 = background, 7 = text
 	public final static Color[] set1 = {new Color(0xCCC2B8), new Color(0x847C99), new Color(0xBDBBCC), new Color(0xFFFFFF), new Color(0xFFE7BF), Color.WHITE, Color.BLACK};				//Default
 	public final static Color[] set2 = {new Color(0x848CFF), new Color(0xE87EA3), new Color(0xB3E878), new Color(0xFFE591), new Color(0x86FCFF), Color.WHITE, Color.BLACK};				//Analogous
-	public final static Color[] set3 = {Color.GRAY, new Color(160,160,160), Color.LIGHT_GRAY, new Color(230,230,230), new Color(240,240,240), Color.WHITE, Color.BLACK};				//Monochromatic
+	public final static Color[] set3 = {Color.GRAY, new Color(0XA0A0A0), Color.LIGHT_GRAY, new Color(0xE62E6E6), new Color(0xF0F0F0), Color.WHITE, Color.BLACK};						//Monochromatic
 	public final static Color[] set4 = {new Color(0xB24148), new Color(0x30B250), new Color(0xFF777F), new Color(0xFF9097), new Color(0x77FF99), new Color(255,200,200), Color.BLACK};	//Holiday
 	public final static Color[] set5 = {new Color(0xCC784B), new Color(0x58B241), new Color(0xB29E93), new Color(0x9390FF), new Color(0x92FF77), Color.WHITE, Color.BLACK};				//Triad
 	public final static Color[][] colours = {set1, set2, set3, set4, set5};											//The colour schemes organized into one array
 	
+	private static BufferedImage background; 				//The background for the program window
 	private static byte colour = 0;							//The currently selected colour scheme
 	private ToolBar toolBar = new ToolBar();				//The tool bar that holds the buttons for use in the editors
 	private JScrollBar scroll = new JScrollBar();			//The scroll bar used in the track editor
@@ -57,6 +62,14 @@ public class GUI extends JPanel
 	 */
 	public GUI()
 	{
+		//initialize background
+		try {
+			background = ImageIO.read(new File("Images/M.E.A.T Background.png"));
+		} catch (IOException e) {
+			background = null;
+			NotifyAnimation.sendMessage("Error", "Background could not be loaded.");
+		}
+		
 		//initialize tool bar
 		toolBar.setLayout(null);
 		toolBar.setBackground(colours[colour][2]);
@@ -109,8 +122,16 @@ public class GUI extends JPanel
 	{
 		Graphics2D g2D = (Graphics2D) g;	//Graphics2D allows access more methods	
 		
-		g2D.setColor(colours[colour][COLOUR_BG]);
-		g2D.fillRect(0, 0, screenWidth, screenHeight);
+		//Draw background
+		if(MIDIMain.getMode() == 2)
+		{
+			g2D.setColor(colours[colour][COLOUR_BG]);
+			g2D.fillRect(0, 0, screenWidth, screenHeight);
+		}
+		else
+		{
+			g.drawImage(background, 0, 0, screenWidth, screenHeight, this);
+		}
 		
 		g2D.setColor(colours[colour][COLOUR_TEXT]);
 		g2D.setStroke(basic);
@@ -193,6 +214,12 @@ public class GUI extends JPanel
 	{
 		colour = c;
 		toolBar.setColourScheme(c);
+		//Changing the background colours of the buttons and combo boxes
+		for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+		{
+			MIDISong.getTracks(t).getTrackEntryButton().setBackground(colours[colour][COLOUR_BG]);
+			MIDISong.getTracks(t).getInstrumentListComboBox().setBackground(colours[colour][COLOUR_BG]);
+		}
 		toolBar.resetButtonColours();
 	}
 	
@@ -237,6 +264,9 @@ public class GUI extends JPanel
 	 */
 	public void drawStartScreen(Graphics2D g)
 	{
+		g.setColor(new Color(255,255,255,144));
+		g.fillRoundRect(screenWidth/2 - 150, screenHeight/2 - 50, 300, 70, 20, 20);
+		g.setColor(colours[colour][COLOUR_TEXT]);
 		g.setFont(new Font("FONT", Font.BOLD, 50));
 		g.drawString("WELCOME", screenWidth/2 - 130, screenHeight/2);
 	}
@@ -399,8 +429,8 @@ public class GUI extends JPanel
 			//If scale <= 5 (Only every fourth tone is visible)
 			else
 			{
-				g.setColor(colours[colour][2]);
-				g.drawLine((sideBarWidth*3)/4, y, sideBarWidth, 5 + y);
+				g.setColor(colours[colour][COLOUR_TEXT]);
+				g.drawLine((sideBarWidth*3)/4, y, sideBarWidth, y);
 			}
 		}
 	}
