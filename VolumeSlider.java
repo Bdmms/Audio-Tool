@@ -18,7 +18,7 @@ public class VolumeSlider
 	private short height = 30;			//How tall the volume slider should be
 	private short x = 0;				//The x - location of the volume slider
 	private short y = 0;				//The y - location of the volume slider
-	private float value = 1;			//The value assigned to the slider (location of the bar on the slider)
+	private float value = 1;			//The value assigned to the slider (Decimal of percent)
 	
 	/**
 	 * <blockquote>
@@ -198,7 +198,7 @@ public class VolumeSlider
 	 */
 	public void setVolume(byte v)
 	{
-		value = (float)v/128;
+		value = (float)v/127;
 	}
 	
 	/**
@@ -220,13 +220,24 @@ public class VolumeSlider
 	
 	/**
 	 * <blockquote>
+	 * <p><pre>{@code public byte getVolume()}</pre></p> 
+	 * Returns the volume of the slider (0 - 127).</p>
+	 * @return The value of the slider's volume
+	 */
+	public byte getVolume()
+	{
+		return (byte)Math.round(value*127);
+	}
+	
+	/**
+	 * <blockquote>
 	 * <p><pre>{@code public byte getPercent()}</pre></p> 
 	 * Returns the current value of the volume slider as a percent.</p>
 	 * @return The percent value of the bar's location
 	 */
 	public byte getPercent()
 	{
-		return (byte) Math.round(value*100);
+		return (byte)Math.round(value*100);
 	}
 	
 	/**
