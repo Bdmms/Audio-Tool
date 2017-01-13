@@ -48,7 +48,7 @@ public class MIDIMain implements ActionListener, WindowListener
 	//If mode == 1 (0 = normal | >0 track is selected)| If mode == 2 (0 = single | 1 = selecting notes | 2 = selected notes)
 	private static byte mode = 0;								//Determines which menu the program displays
 	private static byte track = -1;								//Determines which track has been entered
-	private static byte limit = 1;								//Determines the limit to the zoom
+	private static byte[] limit = {1,6};						//Determines the limit to the zoom
 	private static short[] scale = {20, 20};					//The values that are used to space the grid layout (x, y)
 	private static short scrollY = 0;							//The value assigned to the scroll bar
 	private static short y = 1000;								//The y value used in the note editor (At 1000 to start user at mid-range notes)
@@ -392,8 +392,12 @@ public class MIDIMain implements ActionListener, WindowListener
 				visual.resizeComponents();
 				Tracks.resizeButtons();
 				changeLimit();
+				
+				scrollY = visual.setComponentsOfScrollBar();
 			}
 		}
+		//Updates combo boxes and components (prevents update glitches)
+		visual.updateUI();
 	}
 	
 	/**
@@ -403,10 +407,13 @@ public class MIDIMain implements ActionListener, WindowListener
 	 */
 	public void changeLimit()
 	{
-		limit = 1;
+		limit[0] = 1;
+		limit[1] = 6;
 		//repeat until length is a larger size than the window
-		while((GUI.screenWidth - GUI.sideBarWidth) > limit*MIDISong.getLength())
-			limit++;
+		while((GUI.screenWidth - GUI.sideBarWidth) > limit[0]*MIDISong.getLength())
+			limit[0]++;
+		while((GUI.screenHeight - GUI.fullAddHeight) > limit[1]*120)
+			limit[1]++;
 	}
 	
 	/**
@@ -547,7 +554,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			visual.setComponentsOfScrollBar();
 		}
 		else
-			NotifyAnimation.sendMessage("Notification", "Action was canceled");
+			NotifyAnimation.sendMessage("Notification", "Action was canceled.");
 		selected = 0;
 	}
 	
@@ -568,7 +575,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			visual.setComponentsOfScrollBar();
 		}
 		else
-			NotifyAnimation.sendMessage("Notification", "Action was canceled");
+			NotifyAnimation.sendMessage("Notification", "Action was canceled.");
 		selected = 0;
 	}
 	
@@ -722,7 +729,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			else
 			{
 				selected = 0;
-				NotifyAnimation.sendMessage("Notification", "Action was canceled");
+				NotifyAnimation.sendMessage("Notification", "Action was canceled.");
 			}
 		}
 		//Tool #8 MERGE TRACKS (and if in track editor)
@@ -745,7 +752,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			else
 			{
 				selected = 0;
-				NotifyAnimation.sendMessage("Notification", "Action was canceled");
+				NotifyAnimation.sendMessage("Notification", "Action was canceled.");
 			}
 		}
 		//Tool #9 TOGGLE INFOBAR (and if in track editor)
@@ -763,7 +770,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			Notes.selectAllNotes();
 			//selection mode set to multi-select
 			selected = 2;
-			NotifyAnimation.sendMessage("Notification", "All notes have been selected");
+			NotifyAnimation.sendMessage("Notification", "All notes have been selected.");
 		}
 		//Tool #11: GO BACK
 		if(e.getSource() == toolBar.getTools(ToolBar.toolLength - 1))
@@ -792,6 +799,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		{
 			player.stop();
 			MIDIPlayer.setTickPosition(0);
+			clearAllTrackButtons();
 			MIDISong.setSong(reader.createFile());
 			setTrackButtons((byte)1);
 			mode(1);
@@ -800,6 +808,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		if(e.getActionCommand().equals("Open"))
 		{
 			player.stop();
+			MIDIPlayer.setTickPosition(0);
 			filter.setFilterMIDI(true);
 			int v = fileIn.showOpenDialog(window);
 			//If file is usable
@@ -905,7 +914,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			{
 				double t = Double.parseDouble(JOptionPane.showInputDialog("What will be the new tempo (beats per minute)?", MIDISong.getTempoBpm()));
 				//If tempo is valid
-				if(t > 0)
+				if(t > 0 && t < 500)
 					//Due to the tempo being stored as microseconds per beat, a rounding error may occur
 					MIDISong.setTempoBpm(t);
 				else
@@ -1126,7 +1135,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				{
 					if(MIDISong.getNotes(track, i).isSelected())
 					{
-						MIDISong.getNotes(track, i).setVolume((byte)(127*visual.getToolBar().getSlider().getDecimal()));
+						MIDISong.getNotes(track, i).setVolume(visual.getToolBar().getSlider().getVolume());
 					}
 				}
 			}
@@ -1134,6 +1143,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			else
 			{
 				Notes.unSelectAll();
+				//If mouse is clicking on the side bar (where all of the tone values are listed)
 				if(CursorListener.getLocation()[0] - GUI.mouseDisplacement < GUI.sideBarWidth && CursorListener.getLocation()[1] > GUI.fullAddHeight + GUI.windowBarHeight)
 				{
 					player.noteOn((byte)(Notes.MAX_TONE - (CursorListener.getLocation()[1] - GUI.windowBarHeight - GUI.fullAddHeight + y)/scale[1]), (byte) 78);
@@ -1292,7 +1302,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			scale[1] -= CursorListener.getMouseWheel()*2;
 			
 			//If scale is in limits
-			if(scale[0] >= limit && scale[1] > 5 && scale[0] <= 100 && scale[1] <= 100)
+			if(scale[0] >= limit[0] && scale[1] >= limit[1] && scale[0] <= 100 && scale[1] <= 100)
 			{
 				//grid zooms in on the location of the mouse
 				x = (long) ((x + CursorListener.getLocation()[0] - GUI.sideBarWidth - GUI.mouseDisplacement)/(double)(scale[0] + CursorListener.getMouseWheel()*2)*scale[0] - (CursorListener.getLocation()[0] - GUI.sideBarWidth - GUI.mouseDisplacement));
@@ -1312,10 +1322,10 @@ public class MIDIMain implements ActionListener, WindowListener
 	public void gridLimits()
 	{
 		//Limits to the scale
-		if(scale[0] < limit)
-			scale[0] = limit;
-		if(scale[1] < 6)
-			scale[1] = 6;
+		if(scale[0] < limit[0])
+			scale[0] = limit[0];
+		if(scale[1] < limit[1])
+			scale[1] = limit[1];
 		if(scale[0] > 100)
 			scale[0] = 100;
 		if(scale[1] > 100)
@@ -1329,7 +1339,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			x = 0;
 		if(y < 0)
 			y = 0;
-		if(y > 120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight))
+		if(y + (GUI.screenHeight - GUI.fullAddHeight) > 120*scale[1])
 			//the bottom of the screen cannot exceed the tone values
 			y = (short) (120*scale[1] - (GUI.screenHeight - GUI.fullAddHeight));
 	}
