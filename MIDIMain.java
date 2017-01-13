@@ -392,6 +392,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				visual.resizeComponents();
 				Tracks.resizeButtons();
 				changeLimit();
+				
 				scrollY = visual.setComponentsOfScrollBar();
 			}
 		}
@@ -717,8 +718,8 @@ public class MIDIMain implements ActionListener, WindowListener
 				//Check every track
 				for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 				{
-					//Check every track
-					for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+					//If track is selected
+					if(MIDISong.getTracks(t).isSelected())
 					{
 						selected = (byte) (t + 1);
 						NotifyAnimation.sendMessage("Notification", "Choose another track to switch with.");
@@ -740,8 +741,8 @@ public class MIDIMain implements ActionListener, WindowListener
 				//Check every track
 				for(byte t = 0; t < MIDISong.getTracksLength(); t++)
 				{
-					//Check every track
-					for(byte t = 0; t < MIDISong.getTracksLength(); t++)
+					//If track is selected
+					if(MIDISong.getTracks(t).isSelected())
 					{
 						selected = (byte) (t + 17);
 						NotifyAnimation.sendMessage("Notification", "Choose the track to merge this track with.");
