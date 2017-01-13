@@ -123,14 +123,19 @@ public class GUI extends JPanel
 		Graphics2D g2D = (Graphics2D) g;	//Graphics2D allows access more methods	
 		
 		//Draw background
-		if(MIDIMain.getMode() == 2)
+		if(MIDIMain.getMode() == 0)
 		{
-			g2D.setColor(colours[colour][COLOUR_BG]);
-			g2D.fillRect(0, 0, screenWidth, screenHeight);
+			g.drawImage(background, 0, 0, screenWidth, screenHeight, this);
+		}
+		else if(MIDIMain.getMode() == 1)
+		{
+			//Crop out a part of the background
+			g.drawImage(background, 0, toolBarHeight, screenWidth, screenHeight, 0, toolBarHeight, background.getWidth(), background.getHeight(), this);
 		}
 		else
 		{
-			g.drawImage(background, 0, 0, screenWidth, screenHeight, this);
+			g2D.setColor(colours[colour][COLOUR_BG]);
+			g2D.fillRect(0, 0, screenWidth, screenHeight);
 		}
 		
 		g2D.setColor(colours[colour][COLOUR_TEXT]);
