@@ -1,10 +1,13 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.File;
@@ -27,7 +30,7 @@ import javax.swing.JPanel;
  * also provides its own JPanel and MouseListener.
  * </p>
  */
-public class TutorialArchive extends JPanel implements ActionListener, MouseListener
+public class TutorialArchive extends JPanel implements ActionListener, MouseListener, WindowStateListener
 {
 	private static final long serialVersionUID = 1L;
 	private JFrame tutorial;									//The window for the tutorials
@@ -40,6 +43,7 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	private byte transition = 0;								//The current transition mode being executed
 	private boolean paged = false;								//If file is a slideshow (is made up of multiple files)
 	private boolean image = false;								//If file is an image
+	private boolean fullscreen = false;							//If window is in fullscreen
 		
 	/**
 	 * <blockquote>
@@ -80,15 +84,14 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 			tutorial.dispose();
 		tutorial = new JFrame("Tutorials");
 		tutorial.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		tutorial.setSize(400, 200);
-		tutorial.setResizable(false);
+		tutorial.setResizable(true);
 		tutorial.setLocation(0, 0);
 		tutorial.add(this);
 		tutorial.addMouseListener(this);
+		tutorial.addWindowStateListener(this);
 		tutorial.pack();
 		tutorial.setVisible(true);
 		tutorial.setBackground(Color.WHITE);
-		
 		//Sets the window to a default file
 		sections.setSelectedIndex(0);
 	}
@@ -276,6 +279,7 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 				transition = 2;
 				readDocument(readForPage(files.get(sections.getSelectedIndex()), step));
 			}
+			this.repaint();
 		}
 		//If fading back in
 		else if(transition == 2)
@@ -288,8 +292,8 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 				fade = 0;
 				transition = 0;
 			}
+			this.repaint();
 		}
-		this.repaint();
 	}
 	
 	/**
@@ -300,8 +304,11 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 */
 	public void paintComponent(Graphics g) 
 	{
-		int space = 50;		//Space is used to keep track how much of the screen is taken up
+		int space = 0;		//Space is used to keep track how much of the screen is taken up
 		int width = 400;	//width refers to how wide the window needs to be
+		
+		if(!fullscreen)
+			space += 50;
 		
 		//If file is an image
 		if(image)
@@ -309,24 +316,46 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 			try {
 				//Reads file as image
 				BufferedImage image = ImageIO.read(new File(doc.get(0)));
-				g.drawImage(image, 0, space, image.getWidth(), image.getHeight(), this);
-				space += image.getHeight();
-				width = image.getWidth();
-			} catch (IOException e) {}
+				if(fullscreen)
+				{
+					//Background
+					g.setColor(Color.BLACK);
+					g.fillRect(0, 0, tutorial.getHeight(), tutorial.getWidth());
+					
+					//Centers image horizontally
+					space += (tutorial.getWidth() - image.getWidth()) / 2;		
+					
+					int height = -20;	//height determines vertical location of image (-20 represents window bar at the top)
+					//If image fits onto screen (determines height of the screen)
+					if(Toolkit.getDefaultToolkit().getScreenSize().getHeight() > image.getHeight())
+						//Centers image vertically
+						height = (tutorial.getHeight() - image.getHeight()) / 2;
+					//If image is too high, the program tries to fit as much of it on screen
+					
+					g.drawImage(image, space, height, image.getWidth(), image.getHeight(), this);
+				}
+				else
+				{
+					g.drawImage(image, 0, space, image.getWidth(), image.getHeight(), this);
+					space += image.getHeight();
+					width = image.getWidth();
+				}
+			} catch (IOException e) {};
 		}
 		//If file is a document
 		else
 		{
-			space += 15;
 			g.setColor(Color.WHITE);
-			g.fillRect(0, 50, 400, 50 + doc.size()*15);
+			g.fillRect(0, space, 400, 50 + doc.size()*15);
 			g.setColor(Color.BLACK);
+			space += 15;
 			
 			//If document is not empty
 			if(!doc.isEmpty())
 			{
 				g.setFont(GUI.defaultFont);
 				//Reads each line of the document
+				
 				for(int i = 0; i < doc.size(); i++)
 				{
 					String s = doc.get(i);
@@ -341,23 +370,35 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 				}
 			}
 		}
-		
-		g.setColor(GUI.colours[GUI.getColourScheme()][4]);
-		g.fillRect(0, 0, width, 50);
-		
-		g.setFont(GUI.boldFont);
-		g.setColor(Color.BLACK);
-		g.drawString("SELECT AN ARCHIVE", 20, 15);
+	
+		//If not in fullscreen
+		if(!fullscreen)
+		{
+			g.setColor(GUI.colours[GUI.getColourScheme()][4]);
+			g.fillRect(0, 0, width, 50);
+			
+			g.setFont(GUI.boldFont);
+			g.setColor(Color.BLACK);
+			g.drawString("SELECT AN ARCHIVE", 20, 15);
+			
+			//space and width determine the size of the screen
+			tutorial.setSize(width, space + 20);
+			
+			space = 50;
+			sections.setVisible(true);
+		}
+		else
+		{
+			space = 0;
+			sections.setVisible(false);
+		}
 		
 		//If in screen transition
 		if(fade > 0)
 		{
 			g.setColor(new Color(0, 0, 0, fade));
-			g.fillRect(0, 50, width, space);
+			g.fillRect(0, space, tutorial.getWidth(), tutorial.getHeight());
 		}
-		
-		//space and width determine the size of the screen
-		tutorial.setSize(width, space + 20);
 	}
 	
 	/**
@@ -475,5 +516,26 @@ public class TutorialArchive extends JPanel implements ActionListener, MouseList
 	 * @param e = information of the mouse event
 	 */
 	public void mouseReleased(MouseEvent e){
+	}
+
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void windowStateChanged(WindowEvent e)}</pre></p> 
+	 * Responds to the change in size when the window is resized.</p> 
+	 * @param e = information of the window event
+	 */
+	public void windowStateChanged(WindowEvent e)
+	{
+		//If screen is at maximum size (fullscreen)
+		if(e.getNewState() == JFrame.MAXIMIZED_BOTH)
+		{
+			fullscreen = true;
+			tutorial.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		}
+		else
+		{
+			fullscreen = false;
+		}
+		repaint();
 	}
 }
