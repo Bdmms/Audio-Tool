@@ -419,7 +419,7 @@ public class GUI extends JPanel
 		g.setStroke(basic);
 		g.setFont(defaultFont);
 		
-		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
+		for(short i = (short) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
 		{
 			int y = fullAddHeight + MIDIMain.getPreHeight()*i - MIDIMain.getYCoordinate();
 			//If scale > 15
@@ -482,7 +482,7 @@ public class GUI extends JPanel
 		g.setStroke(basic);
 		g.setColor(colours[colour][0]);
 		//Goes through every tone
-		for(byte i = (byte) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
+		for(short i = (short) (MIDIMain.getYCoordinate()/MIDIMain.getPreHeight()); i < MIDIMain.getYCoordinate()/MIDIMain.getPreHeight() + height + 1; i++)
 		{
 			//Scale changes the amount of lines drawn
 			if(MIDIMain.getPreHeight() > 15 || i%2 == 0)
