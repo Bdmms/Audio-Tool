@@ -16,7 +16,7 @@ import javax.swing.JPanel;
 public class ToolBar extends JPanel
 {
 	private static final long serialVersionUID = 2L;
-	private static final String[] colourSetNames = {"Default","Analogous","Monochromatic","Holiday","Triad"};	//The names for the colours
+	private static final String[] colourSetNames = {"Default","Vibrant","Monochromatic","Holiday","Misteak"};	//The names for the colours
 	public static int toolLength = 11;												//The maximum amount of buttons in the tool bar
 	private JComboBox<String> colourSwap = new JComboBox<String>(colourSetNames);	//A combo box that allows the colour scheme to be changed
 	private JButton[] tools = new JButton[11];										//Tool bar buttons
