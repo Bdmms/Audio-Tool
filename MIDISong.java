@@ -23,6 +23,7 @@ public class MIDISong
 	private static ArrayList<MidiEvent> tempoChange = new ArrayList<MidiEvent>();		//The tempo change messages in the song (note: only the first is used in the program)
 	private static Sequence sequence;			//The sequence for the song
 	private static MidiEvent endOfTrack = null;	//The END_OF_TRACK message
+	private static String artistName = "Artist";//The artist of the song
 	private static long length = 1;				//The length of the song in ticks
 	private static long tempo = 0;				//The tempo of the song (in microseconds per beat)
 	private static byte[] measureLength = {4,4};//The time signature of the song (beats per measure, ticks per beat)
@@ -172,6 +173,11 @@ public class MIDISong
 				}
 				//If event has a negative tick value
 				if(MIDISong.getEvent(t, m).getTick() < 0)
+				{
+					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
+				}
+				//If message is pitch bend (program does not support pitch bending notes)
+				if(Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PITCH_BEND))
 				{
 					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
 				}
@@ -518,6 +524,17 @@ public class MIDISong
 	
 	/**
 	 * <blockquote>
+	 * <p><pre>{@code public static void setArtistName(String name)}</pre></p> 
+	 * Sets the name of the artist.</p> 
+	 * @param name = new name of the artist
+	 */
+	public static void setArtistName(String name)
+	{
+		artistName = name;
+	}
+	
+	/**
+	 * <blockquote>
 	 * <p><pre>{@code public static byte getAvgVolume(byte trackNum)}</pre></p> 
 	 * Returns the average volume of all selected notes.</p> 
 	 * @param trackNum = track containing notes
@@ -664,9 +681,19 @@ public class MIDISong
 	 * Returns the length of each measure.</p> 
 	 * @return the length of a measure in ticks
 	 */
-	//getMeasureLength() returns the length of each measure in ticks
 	public static long getMeasureLength()
 	{
 		return measureLength[0]*16/measureLength[1];
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static String getArtistName()}</pre></p> 
+	 * Returns the name of the artist.</p> 
+	 * @return the name of the artist who made the song
+	 */
+	public static String getArtistName()
+	{
+		return artistName;
 	}
 }
