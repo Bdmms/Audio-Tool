@@ -1,4 +1,3 @@
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
@@ -9,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 
 import javax.imageio.ImageIO;
+import javax.sound.midi.Sequence;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -113,15 +113,16 @@ public class MIDIMain implements ActionListener, WindowListener
 	 */
 	public void initialization()
 	{
-		System.out.println(System.getProperty("os.name"));
-		//Attempt at operating system correct
+		//Attempt at operating system correction
 		if(System.getProperty("os.name").contains("Windows"))
 		{
+			//Data tested on Sean's computer
 			winBorderDim[0] = 16;
 			winBorderDim[1] = 62;
 		}
 		else
 		{
+			//Data tested on Ethan's computer
 			winBorderDim[0] = 0;
 			winBorderDim[1] = 44;
 		}
@@ -137,12 +138,13 @@ public class MIDIMain implements ActionListener, WindowListener
 		
 		//JFrame is initialized and contains all other components and listeners
 		window.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		
+		//Icon image is loaded (image of a steak)
 		try {
 			window.setIconImage(ImageIO.read(new File("Images/MEAT_Icon.png")));
 		} catch (IOException e) {NotifyAnimation.sendMessage("Error", "Icon could not be read.");}
-        window.setSize(720, 480);
-        window.setMinimumSize(new Dimension(700, 360));
-        window.setBackground(Color.WHITE);
+        
+		window.setMinimumSize(new Dimension(700, 360));
         window.setResizable(true);
         window.setLocation(config[2], config[3]);
         window.add(visual);
@@ -153,11 +155,11 @@ public class MIDIMain implements ActionListener, WindowListener
         window.addMouseWheelListener(mouse);
         window.addWindowListener(this);
         window.addKeyListener(key);
-        toolBar.addKeyListener(key);
+        toolBar.addKeyListener(key);		//Tool bar normally blocks key inputs
         window.setVisible(true);
-        setFileChooser();
+        setFileChooser();					//Special method for setting the file chooser/explorer
         
-        mode(0);	//Set the menu mode
+        mode(0);							//Set the menu mode
 	}
 	
 	/**
@@ -209,7 +211,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		JMenuItem[] file = {new JMenuItem("New"), new JMenuItem("Open"), new JMenuItem("Save"), new JMenuItem("Save As"), new JMenuItem("Quit")};
 		JMenuItem[] edit = {new JMenuItem("Copy"), new JMenuItem("Cut"), new JMenuItem("Paste"), new JMenuItem("Delete")};
 		JMenuItem[] view = {new JMenuItem("Precision"), new JMenuItem("Zoom")};
-		JMenuItem[] song = {new JMenuItem("Rename Song"), new JMenuItem("Set Tempo"), new JMenuItem("Set Length"), new JMenuItem("Set Time Signature")};
+		JMenuItem[] song = {new JMenuItem("Rename Song"), new JMenuItem("Set Artist"), new JMenuItem("Set Tempo"), new JMenuItem("Set Length"), new JMenuItem("Set Time Signature")};
 		JMenuItem[] soundbank = {new JMenuItem("Load Soundbank"), new JMenuItem("Set to Default")};
 		JMenuItem[] help = {new JMenuItem("Tutorials")};
 		
@@ -218,21 +220,21 @@ public class MIDIMain implements ActionListener, WindowListener
 		{
 			menu[i].addActionListener(this);
 			menuBar.add(menu[i]);
-			//menus with less than 6 items
+			//menus with 5 items
 			if(i < 5)
 			{
 				file[i].addActionListener(this);
 				menu[0].add(file[i]);
+				song[i].addActionListener(this);
+				menu[3].add(song[i]);
 			}
-			//menus with less than 5 items
+			//menus with 4 items
 			if(i < 4)
 			{
 				edit[i].addActionListener(this);
 				menu[1].add(edit[i]);
-				song[i].addActionListener(this);
-				menu[3].add(song[i]);
 			}
-			//menus with less than 3 items
+			//menus with 2 items
 			if(i < 2)
 			{
 				view[i].addActionListener(this);
@@ -240,7 +242,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				menu[2].add(view[i]);
 				menu[4].add(soundbank[i]);
 			}
-			//menus with less than 2 items
+			//menus with 1 item
 			if(i < 1)
 			{
 				help[i].addActionListener(this);
@@ -417,7 +419,7 @@ public class MIDIMain implements ActionListener, WindowListener
 				Tracks.tracksVisible = (byte)((GUI.screenHeight - GUI.fullAddHeight - info.getHeight() - 20)/(Tracks.trackHeight+Tracks.trackSpace));
 				visual.resizeComponents();
 				Tracks.resizeButtons();
-				changeLimit();
+				changeLimit(); //New screen size effects boundaries of limits
 				
 				scrollY = visual.setComponentsOfScrollBar();
 			}
@@ -440,6 +442,34 @@ public class MIDIMain implements ActionListener, WindowListener
 			limit[0]++;
 		while((GUI.screenHeight - GUI.fullAddHeight) > limit[1]*120)
 			limit[1]++;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public void openFile()}</pre></p> 
+	 * The function for opening a midi file.</p>
+	 */
+	public void openFile(Sequence midiSeq)
+	{
+		//If player is playing the song (player is turned off while loading another song)
+		if(MIDIPlayer.isPlaying())
+		{
+			player.stop();
+			toolBar.changeIcon(false);
+		}
+		MIDIPlayer.setTickPosition(0);
+		
+		//All current tracks have to be removed
+		clearAllTrackButtons();
+       
+		//Sequence is set to the song
+		MIDISong.setSong(midiSeq);
+        player.setAllInstruments();
+		setTrackButtons(MIDISong.getTracksLength());
+		
+		//Adjustments are made to the interface
+		changeLimit();
+		mode(1);
 	}
 	
 	/**
@@ -683,7 +713,12 @@ public class MIDIMain implements ActionListener, WindowListener
 			if(e.getSource() == MIDISong.getTracks(t).getTrackEntryButton())
 			{
 				SelectableObject.unSelectAll();
-				player.stop();
+				//If player is playing the song
+				if(MIDIPlayer.isPlaying())
+				{
+					player.stop();
+					toolBar.changeIcon(false);
+				}
 				track = t;
 				MIDISong.openTrack(track);
 				mode(2);
@@ -823,31 +858,21 @@ public class MIDIMain implements ActionListener, WindowListener
 		//MenuBar -> File -> New
 		if(e.getActionCommand().equals("New"))
 		{
-			player.stop();
-			MIDIPlayer.setTickPosition(0);
-			clearAllTrackButtons();
-			MIDISong.setSong(reader.createFile());
-			setTrackButtons((byte)1);
-			mode(1);
+			openFile(reader.createFile());
 		}
 		//MenuBar -> File -> Open
 		if(e.getActionCommand().equals("Open"))
 		{
-			player.stop();
-			MIDIPlayer.setTickPosition(0);
 			filter.setFilterMIDI(true);
 			int v = fileIn.showOpenDialog(window);
 			//If file is usable
-			if (v == JFileChooser.APPROVE_OPTION) {
-				clearAllTrackButtons();
-	            MIDISong.setSong(reader.readFile(fileIn.getSelectedFile()));
-	            player.setAllInstruments();
-				setTrackButtons(MIDISong.getTracksLength());
-				mode(1);
+			if (v == JFileChooser.APPROVE_OPTION) 
+			{
+				openFile(reader.readFile(fileIn.getSelectedFile()));
 				NotifyAnimation.sendMessage("Notification","Opening: "+reader.getFileName(0));
-	        } else {
+	        } 
+			else
 	        	NotifyAnimation.sendMessage("Notification","File was not be opened.");
-	        }
 		}
 		//MenuBar -> File -> Save
 		if(e.getActionCommand().equals("Save"))
@@ -933,12 +958,23 @@ public class MIDIMain implements ActionListener, WindowListener
 			else
 				NotifyAnimation.sendMessage("Invalid", "Name was not used.");
 		}
+		//MenuBar -> Song -> Set Artist
+		if(e.getActionCommand().equals("Set Artist"))
+		{
+			String s = JOptionPane.showInputDialog("What will the new name of the artist be?", MIDISong.getArtistName());
+			
+			//If name is not empty
+			if(s.length() > 0)
+				MIDISong.setArtistName(s);
+			else
+				NotifyAnimation.sendMessage("Invalid", "Name was not used.");
+		}
 		//MenuBar -> Song -> Set Tempo
 		if(e.getActionCommand().equals("Set Tempo"))
 		{
 			try
 			{
-				double t = Double.parseDouble(JOptionPane.showInputDialog("What will be the new tempo (beats per minute)?", MIDISong.getTempoBpm()));
+				double t = Double.parseDouble(JOptionPane.showInputDialog("What will be the new tempo in beats per minute? (0 - 500bpm)", MIDISong.getTempoBpm()));
 				//If tempo is valid
 				if(t > 0 && t < 500)
 					//Due to the tempo being stored as microseconds per beat, a rounding error may occur
@@ -954,7 +990,7 @@ public class MIDIMain implements ActionListener, WindowListener
 			{
 				int l = Integer.parseInt(JOptionPane.showInputDialog("How many measures should the song have?", MIDISong.getLength()/MIDISong.getMeasureLength()));
 				//If length is greater than a reasonable amount (in this case the amount has to be greater than 640 ticks)
-				if(l*MIDISong.getMeasureLength() > 640)
+				if(l > 0)
 				{
 					MIDISong.setLength(l);
 					changeLimit();
