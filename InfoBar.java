@@ -5,7 +5,6 @@ import java.awt.Graphics2D;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-
 public class InfoBar extends JPanel{
 
 	/**
@@ -17,7 +16,6 @@ public class InfoBar extends JPanel{
 	
 	private static final long serialVersionUID = 2L;
 	private boolean visible = true;
-	//private short seconds = 0;
 	private short opacity = 255;
 	private JLabel [] field = new JLabel[8];
 	
@@ -41,7 +39,6 @@ public class InfoBar extends JPanel{
 		
 		field[0].setText("Song Name:");
 		field[2].setText("Created by:");
-		field[3].setText("Artist");
 		field[4].setText("Length:");
 		field[6].setText("Tempo:");
 	}
@@ -71,6 +68,7 @@ public class InfoBar extends JPanel{
 	public void setTextFields()
 	{		
 		field[1].setText(MIDIMain.getReadFileName(0));
+		field[3].setText(MIDISong.getArtistName());
 		field[5].setText(timeConverter((short)(MIDISong.getSequence().getMicrosecondLength() / 1000000)));
 		field[7].setText(Math.round(MIDISong.getTempoBpm()) + " bpm");
 	}
