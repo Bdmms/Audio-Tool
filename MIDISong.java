@@ -171,13 +171,8 @@ public class MIDISong
 					}
 					tempoChange.add(sequence.getTracks()[t].get(m));
 				}
-				//If event has a negative tick value
-				if(MIDISong.getEvent(t, m).getTick() < 0)
-				{
-					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
-				}
-				//If message is pitch bend (program does not support pitch bending notes)
-				if(Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PITCH_BEND))
+				//If event has a negative tick value or message is pitch bend (program does not support pitch bending notes)
+				if(MIDISong.getEvent(t, m).getTick() < 0 || Notes.isMessageStatus((byte)MIDISong.getMessage(t, m).getStatus(), (byte)ShortMessage.PITCH_BEND))
 				{
 					MIDISong.getSequence().getTracks()[t].remove(MIDISong.getEvent(t, m));
 				}
@@ -251,7 +246,15 @@ public class MIDISong
 				sequence.getTracks()[0].add(tempoChange.get(0));
 			} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Tempo cannot be added to song. Song is currently lacking a tempo.");}
 		}
-			
+		
+		//If the end of track has not been initialized
+		if(endOfTrack == null)
+		{
+			byte[] a = {};
+			try {
+				endOfTrack = new MidiEvent(new MetaMessage(0x2F, a, 0), 16*40);
+			} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Song cannot have its end defined.");}
+		}
 	}
 	
 	/**
@@ -350,23 +353,15 @@ public class MIDISong
 			seq.createTrack();
 			
 			//create temporary (from target)
-			for(int m = 0; m < sequence.getTracks()[target].size(); m++)
+			for(int m = sequence.getTracks()[target].size() - 1; m >= 0; m--)
 			{
 				seq.getTracks()[0].add(getEvent(target, m));
-			}
-			//remove from target
-			for(int m = sequence.getTracks()[target].size() - 1; m >= 0; m--)
-					{
 				sequence.getTracks()[target].remove(getEvent(target, m));
 			}
 			//add to target (from track)
-			for(int m = 0; m < sequence.getTracks()[trackNum].size(); m++)
-			{
-				sequence.getTracks()[target].add(getEvent(trackNum, m));
-			}
-			//remove from track
 			for(int m = sequence.getTracks()[trackNum].size() - 1; m >= 0; m--)
 			{
+				sequence.getTracks()[target].add(getEvent(trackNum, m));
 				sequence.getTracks()[trackNum].remove(getEvent(trackNum, m));
 			}
 			//add to track (from temp)
@@ -376,7 +371,6 @@ public class MIDISong
 			}
 			tracks.get(trackNum).changeChannel(trackNum);
 			tracks.get(target).changeChannel(target);	
-			
 			NotifyAnimation.sendMessage("Notification", "Swaping was successful.");
 		}
 	}
@@ -531,6 +525,17 @@ public class MIDISong
 	public static void setArtistName(String name)
 	{
 		artistName = name;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static void setEndOfTrackChannel(byte channel)}</pre></p> 
+	 * Sets the channel that contains the END_OF_TRACK message.</p> 
+	 * @param channel = new channel for message
+	 */
+	public static void setEndOfTrackChannel(byte channel)
+	{
+		endInChannel = channel;
 	}
 	
 	/**
@@ -695,5 +700,16 @@ public class MIDISong
 	public static String getArtistName()
 	{
 		return artistName;
+	}
+	
+	/**
+	 * <blockquote>
+	 * <p><pre>{@code public static byte getEndOfTrackChannel()}</pre></p> 
+	 * Returns the the END_OF_TRACK event.</p> 
+	 * @return The END_OF_TRACK MidiEvent object
+	 */
+	public static MidiEvent getEndOfTrack()
+	{
+		return endOfTrack;
 	}
 }
