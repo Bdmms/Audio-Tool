@@ -69,10 +69,6 @@ public class MIDIReader {
 			//fileName = "Song";
 			midiFile = new File("Song");
 			
-			//SYSEX MESSAGE		
-			//byte[] b = {(byte)0xF0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, (byte)0xF7};
-			//s.getTracks()[0].add(new MidiEvent(new SysexMessage(b,8), 0));
-
 			//SET TEMPO
 			//{32,0,0} (0x200000)
 			byte[] c = {0x20, 0x0, 0x0};
