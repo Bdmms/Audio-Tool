@@ -516,9 +516,7 @@ public class MIDIMain implements ActionListener, WindowListener
 		if(mode == 1)//ADD TRACK
 		{
 			addTrackButtons(MIDISong.addTrack());
-			
 			visual.setScrollBarValue();
-			
 			scrollY = visual.setComponentsOfScrollBar();
 		}
 		//note editor
@@ -546,9 +544,9 @@ public class MIDIMain implements ActionListener, WindowListener
 				{
 					removeTrackButton(t);
 					MIDISong.deleteTrack(t);
+					visual.setComponentsOfScrollBar();
 				}
 			}
-			visual.setComponentsOfScrollBar();
 		}
 		//Assumed to be note editor
 		else//REMOVE NOTE
