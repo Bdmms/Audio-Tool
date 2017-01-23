@@ -58,9 +58,38 @@ public class Tracks extends SelectableObject
 	 */
 	public void changeChannel(byte chan)
 	{
-		channel = chan;
-		trackButton.setText("Track "+(channel+1));
-		updateNoteCount();
+		if(chan != channel)
+		{
+			channel = chan;
+			trackButton.setText("Track "+(channel+1));
+			
+			//events = temporary array for storing the events with updated channel
+			MidiEvent[] events = new MidiEvent[MIDISong.getSequence().getTracks()[channel].size()];
+			//Every message is added to the array and removed from the track
+			for(int m = MIDISong.getSequence().getTracks()[channel].size() - 1; m >= 0; m--)
+			{
+				//If the event's message is a channel dependent message
+				if(MIDISong.getMessage(channel, m).getStatus() >= 0x80 && MIDISong.getMessage(channel, m).getStatus() < 0xF0)
+				{
+					try {
+						//Event has its channel updated
+						events[m] = new MidiEvent(new ShortMessage(MIDISong.getMessage(channel, m).getStatus() - MIDISong.getMessage(channel, m).getStatus()%16 + channel, channel, MIDISong.getMessage(channel, m).getMessage()[1], MIDISong.getMessage(channel, m).getMessage()[2]), MIDISong.getEvent(channel, m).getTick());
+						MIDISong.getSequence().getTracks()[channel].remove(MIDISong.getEvent(channel, m));
+						
+						//If track/message contains important end of track data
+						if(MIDISong.getEvent(channel, m).equals(MIDISong.getEndOfTrack()))
+							MIDISong.setEndOfTrackChannel(channel);
+					} catch (InvalidMidiDataException e) {NotifyAnimation.sendMessage("Error", "Message channels are out of sync.");}
+				}
+				else
+					events[m] = MIDISong.getEvent(channel, m);
+			}
+			//Events are added back into the track
+			for(int m = 0; m < events.length; m++)
+			{
+				MIDISong.getSequence().getTracks()[channel].add(events[m]);
+			}
+		}
 	}
 	
 	/**
